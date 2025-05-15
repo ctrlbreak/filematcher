@@ -5,7 +5,7 @@ A Python utility script that finds files with identical content but different na
 ## Features
 
 - Recursively scans directories and subdirectories
-- Compares file content using SHA-256 hashes
+- Compares file content using MD5 hashes for fast performance
 - Identifies files with identical content but different names
 - Can detect and report files with no content matches in either directory
 - Efficiently handles large files by reading in chunks
@@ -59,7 +59,7 @@ The repository includes a test script (`run_tests.sh`) and test directories with
 
 ## How it Works
 
-1. The script indexes each directory, computing SHA-256 hashes for all files
+1. The script indexes each directory, computing MD5 hashes for all files
 2. Files are matched based on identical content hashes
 3. Files with matching content but different names are identified
 4. Optionally, files with no content matches can be identified 

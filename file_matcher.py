@@ -8,8 +8,8 @@ from pathlib import Path
 
 
 def get_file_hash(filepath):
-    """Calculate SHA-256 hash of file content."""
-    h = hashlib.sha256()
+    """Calculate MD5 hash of file content. Much faster than SHA-256."""
+    h = hashlib.md5()  # Changed from sha256 to md5 for better performance
     with open(filepath, 'rb') as f:
         # Read file in chunks to handle large files efficiently
         for chunk in iter(lambda: f.read(4096), b''):
