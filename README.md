@@ -5,7 +5,7 @@ A Python utility script that finds files with identical content but different na
 ## Features
 
 - Recursively scans directories and subdirectories
-- Compares file content using MD5 hashes for fast performance
+- Compares file content using selectable hashing algorithms (MD5 or SHA-256)
 - Identifies files with identical content but different names
 - Can detect and report files with no content matches in either directory
 - Efficiently handles large files by reading in chunks
@@ -13,12 +13,25 @@ A Python utility script that finds files with identical content but different na
 ## Usage
 
 ```bash
-# Basic usage
+# Basic usage (uses MD5 by default)
 python file_matcher.py <directory1> <directory2>
 
 # Show unmatched files as well
 python file_matcher.py <directory1> <directory2> --show-unmatched
+
+# Use SHA-256 for more robust hashing (slower)
+python file_matcher.py <directory1> <directory2> --hash sha256
+
+# Combined options
+python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256
 ```
+
+## Command-line Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--show-unmatched` | `-u` | Display files with no content match |
+| `--hash` | `-H` | Select hash algorithm: `md5` (default, faster) or `sha256` (more secure) |
 
 ## Example Output
 

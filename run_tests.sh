@@ -11,19 +11,28 @@ echo "Running file matcher tests..."
 echo "=============================="
 echo ""
 
-# Run the file matcher script with test directories (matched files only)
-echo "TEST 1: Default output (matched files only)"
-echo "-------------------------------------------"
+# Test 1: Default output with MD5 (matched files only)
+echo "TEST 1: Default output with MD5 (matched files only)"
+echo "---------------------------------------------------"
 python3 file_matcher.py test_dir1 test_dir2
 
 echo ""
 echo "=============================="
 echo ""
 
-# Run the file matcher script including unmatched files
-echo "TEST 2: Including unmatched files"
-echo "--------------------------------"
+# Test 2: Including unmatched files with MD5
+echo "TEST 2: Including unmatched files with MD5"
+echo "----------------------------------------"
 python3 file_matcher.py test_dir1 test_dir2 --show-unmatched
+
+echo ""
+echo "=============================="
+echo ""
+
+# Test 3: Using SHA-256 algorithm
+echo "TEST 3: Using SHA-256 algorithm"
+echo "------------------------------"
+python3 file_matcher.py test_dir1 test_dir2 --hash sha256
 
 echo ""
 echo "=============================="

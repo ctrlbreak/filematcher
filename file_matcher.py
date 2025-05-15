@@ -7,9 +7,24 @@ from collections import defaultdict
 from pathlib import Path
 
 
-def get_file_hash(filepath):
-    """Calculate MD5 hash of file content. Much faster than SHA-256."""
-    h = hashlib.md5()  # Changed from sha256 to md5 for better performance
+def get_file_hash(filepath, hash_algorithm='md5'):
+    """
+    Calculate hash of file content using the specified algorithm.
+    
+    Args:
+        filepath: Path to the file to hash
+        hash_algorithm: Hashing algorithm to use ('md5' or 'sha256')
+    
+    Returns:
+        Hexadecimal digest of the hash
+    """
+    if hash_algorithm == 'md5':
+        h = hashlib.md5()  # Faster but less secure
+    elif hash_algorithm == 'sha256':
+        h = hashlib.sha256()  # Slower but more secure
+    else:
+        raise ValueError(f"Unsupported hash algorithm: {hash_algorithm}")
+        
     with open(filepath, 'rb') as f:
         # Read file in chunks to handle large files efficiently
         for chunk in iter(lambda: f.read(4096), b''):
@@ -17,10 +32,14 @@ def get_file_hash(filepath):
     return h.hexdigest()
 
 
-def index_directory(directory):
+def index_directory(directory, hash_algorithm='md5'):
     """
     Recursively index all files in a directory and its subdirectories.
     Returns a dict mapping content hashes to lists of file paths.
+    
+    Args:
+        directory: Directory path to index
+        hash_algorithm: Hashing algorithm to use
     """
     hash_to_files = defaultdict(list)
     directory_path = Path(directory)
@@ -28,7 +47,7 @@ def index_directory(directory):
     for filepath in directory_path.rglob('*'):
         if filepath.is_file():
             try:
-                file_hash = get_file_hash(filepath)
+                file_hash = get_file_hash(filepath, hash_algorithm)
                 # Store full absolute path
                 hash_to_files[file_hash].append(str(filepath.absolute()))
             except (PermissionError, OSError) as e:
@@ -37,21 +56,26 @@ def index_directory(directory):
     return hash_to_files
 
 
-def find_matching_files(dir1, dir2):
+def find_matching_files(dir1, dir2, hash_algorithm='md5'):
     """
     Find files that have identical content but different names
     across two directory hierarchies.
     
+    Args:
+        dir1: First directory to scan
+        dir2: Second directory to scan
+        hash_algorithm: Hashing algorithm to use
+        
     Returns:
-    - matches: Dict where keys are content hashes and values are tuples of (files_from_dir1, files_from_dir2)
-    - unmatched1: List of files in dir1 with no content match in dir2
-    - unmatched2: List of files in dir2 with no content match in dir1
+        - matches: Dict where keys are content hashes and values are tuples of (files_from_dir1, files_from_dir2)
+        - unmatched1: List of files in dir1 with no content match in dir2
+        - unmatched2: List of files in dir2 with no content match in dir1
     """
     print(f"Indexing directory: {dir1}")
-    hash_to_files1 = index_directory(dir1)
+    hash_to_files1 = index_directory(dir1, hash_algorithm)
     
     print(f"Indexing directory: {dir2}")
-    hash_to_files2 = index_directory(dir2)
+    hash_to_files2 = index_directory(dir2, hash_algorithm)
     
     # Find hashes that exist in both directories
     common_hashes = set(hash_to_files1.keys()) & set(hash_to_files2.keys())
@@ -90,6 +114,8 @@ def main():
     parser.add_argument('dir1', help='First directory to compare')
     parser.add_argument('dir2', help='Second directory to compare')
     parser.add_argument('--show-unmatched', '-u', action='store_true', help='Display files with no content match')
+    parser.add_argument('--hash', '-H', choices=['md5', 'sha256'], default='md5',
+                        help='Hash algorithm to use (default: md5)')
     
     args = parser.parse_args()
     
@@ -97,7 +123,10 @@ def main():
         print("Error: Both arguments must be directories")
         return 1
     
-    matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2)
+    hash_algo = args.hash
+    print(f"Using {hash_algo.upper()} hashing algorithm")
+    
+    matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2, hash_algo)
     
     # Display matching files results
     if not matches:
