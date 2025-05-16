@@ -114,9 +114,13 @@ class TestFileMatcher(unittest.TestCase):
         # Identical files should have identical hashes
         self.assertEqual(hash1, hash2)
         
-        # Now modify the beginning of the duplicate file slightly
+        # Now modify the end of the duplicate file
+        # This ensures we're testing a modification in a later chunk
         with open(duplicate_file_path, 'r+b') as f:
-            f.write(b'MODIFIED')  # Overwrite first 8 bytes
+            # Seek to near the end of the file - specifically to the last chunk
+            # The chunk size in get_file_hash is 4KB (4096 bytes)
+            f.seek(file_size - 100)  # 100 bytes from the end
+            f.write(b'MODIFIED_END')  # Modify the last chunk
         
         # Get hash of modified file
         modified_hash = get_file_hash(duplicate_file_path)
@@ -128,7 +132,7 @@ class TestFileMatcher(unittest.TestCase):
         hash1_sha256 = get_file_hash(large_file_path, 'sha256')
         modified_hash_sha256 = get_file_hash(duplicate_file_path, 'sha256')
         self.assertNotEqual(hash1_sha256, modified_hash_sha256)
-        
+
     def test_index_directory(self):
         """Test directory indexing functionality."""
         index1 = index_directory(self.test_dir1)
