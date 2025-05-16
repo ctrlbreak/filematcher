@@ -62,17 +62,41 @@ Unique files in dir2 (1):
   /path/to/dir2/another_unique.txt
 ```
 
-## Testing
+## Examples
 
-The repository includes a test script (`run_tests.sh`) and test directories with sample files to demonstrate the functionality:
+The repository includes an example script (`example.sh`) and test directories with sample files to demonstrate the functionality:
 
 ```bash
-./run_tests.sh
+./example.sh
 ```
+
+## Testing
+
+The project includes comprehensive unit tests to validate all functionality:
+
+```bash
+# Run all unit tests
+python run_tests.py
+
+# Run specific test files
+python test_file_matcher.py
+python test_real_directories.py
+
+# Run a specific test
+python -m unittest test_file_matcher.TestFileMatcher.test_large_file_chunking
+```
+
+The unit tests cover:
+
+- File hashing with various algorithms
+- Directory indexing
+- Finding matching files across directories
+- Handling large files with chunking
+- Nested directory processing
 
 ## How it Works
 
-1. The script indexes each directory, computing MD5 hashes for all files
+1. The script indexes each directory, computing hashes for all files
 2. Files are matched based on identical content hashes
 3. Files with matching content but different names are identified
 4. Optionally, files with no content matches can be identified 
