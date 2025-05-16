@@ -2,6 +2,10 @@
 
 import unittest
 import os
+import sys
+
+# Add parent directory to path so we can import the file_matcher module
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from file_matcher import index_directory, find_matching_files, get_file_hash
 
 class TestRealDirectories(unittest.TestCase):
@@ -9,7 +13,7 @@ class TestRealDirectories(unittest.TestCase):
     
     def setUp(self):
         """Set up paths to test directories."""
-        self.current_dir = os.path.dirname(os.path.abspath(__file__))
+        self.current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.test_dir1 = os.path.join(self.current_dir, "test_dir1")
         self.test_dir2 = os.path.join(self.current_dir, "test_dir2")
         
@@ -105,6 +109,29 @@ class TestRealDirectories(unittest.TestCase):
         # The nested files must be either matched or unmatched
         self.assertTrue(nested_in_matches or nested_in_unmatched, 
                       f"Nested file {nested1_full_path} not found in either matches or unmatched lists")
+    
+    def test_complex_matching_patterns(self):
+        """Test various complex matching scenarios if complex_test directory exists."""
+        complex_dir1 = os.path.join(self.current_dir, "complex_test", "dir1")
+        complex_dir2 = os.path.join(self.current_dir, "complex_test", "dir2")
+        
+        # Only run this test if complex test directories exist
+        if not (os.path.isdir(complex_dir1) and os.path.isdir(complex_dir2)):
+            self.skipTest("Complex test directories not found")
+            
+        matches, unmatched1, unmatched2 = find_matching_files(complex_dir1, complex_dir2)
+        
+        # Verify we have multiple matches
+        self.assertGreater(len(matches), 1, "Should have multiple matches in complex test directories")
+        
+        # Check for asymmetric matches (where one dir has more copies than the other)
+        asymmetric_match_found = False
+        for file_hash, (files1, files2) in matches.items():
+            if len(files1) != len(files2):
+                asymmetric_match_found = True
+                break
+                
+        self.assertTrue(asymmetric_match_found, "Should find asymmetric matches in complex test dirs")
 
 
 if __name__ == "__main__":

@@ -24,9 +24,6 @@ python file_matcher.py <directory1> <directory2> --show-unmatched
 # Use SHA-256 for more robust hashing (slower)
 python file_matcher.py <directory1> <directory2> --hash sha256
 
-# Use summary mode to show counts only
-python file_matcher.py <directory1> <directory2> --summary
-
 # Use fast mode for large files
 python file_matcher.py <directory1> <directory2> --fast
 
@@ -135,27 +132,52 @@ python file_matcher.py complex_test/dir1 complex_test/dir2 --fast
 
 ## Testing
 
-The project includes comprehensive unit tests to validate all functionality:
+The project includes comprehensive unit tests to validate all functionality, organized into specific test areas:
 
 ```bash
 # Run all unit tests
-python run_tests.py
+python3 run_tests.py
 
-# Run specific test files
-python test_file_matcher.py
-python test_real_directories.py
+# Run tests from a specific category
+python3 -m tests.test_file_hashing
+python3 -m tests.test_fast_mode
+python3 -m tests.test_directory_operations
+python3 -m tests.test_cli
 
 # Run a specific test
-python -m unittest test_file_matcher.TestFileMatcher.test_large_file_chunking
+python3 -m unittest tests.test_fast_mode.TestFastMode.test_sparse_hash_fast_mode
 ```
 
-The unit tests cover:
+### Test Coverage
 
-- File hashing with various algorithms
-- Directory indexing
-- Finding matching files across directories
-- Handling large files with chunking
-- Nested directory processing
+The unit tests are organized into logical modules by functionality:
+
+#### Test Organization
+- **`tests/test_file_hashing.py`**: Basic file hash calculations and large file handling
+- **`tests/test_fast_mode.py`**: Fast mode and sparse block sampling for large files
+- **`tests/test_directory_operations.py`**: Directory scanning and file matching functionality 
+- **`tests/test_real_directories.py`**: Comprehensive tests using real test directories with complex matching patterns
+- **`tests/test_cli.py`**: Command-line interface and output formatting
+- **`tests/test_base.py`**: Common base test class with shared setup/teardown functionality
+
+#### Core Functionality Tests
+- **File Hashing**: Verifies that identical content produces identical hashes and different content produces different hashes
+- **Directory Indexing**: Tests the creation and structure of file indexes for directories
+- **Match Finding**: Validates that files with identical content but different names are correctly identified
+- **File Processing**: Confirms that nested directories and subfolders are properly processed
+
+#### Advanced Feature Tests
+- **Large File Handling**: Tests that large files (8MB+) are correctly hashed when processed in chunks
+- **Fast Mode**: Validates the sparse sampling approach used for large files in fast mode
+- **Summary Mode**: Ensures the correct counts are displayed in summary output
+- **Hash Algorithms**: Tests both MD5 and SHA-256 hash algorithms
+
+#### Environment Tests
+- **Temporary Test Environment**: Creates controlled test directories to validate functionality
+- **Actual Test Directories**: Uses the real test directories included in the repository
+- **Complex Matching Patterns**: Tests multiple file matches, asymmetric matches, and nested directories
+
+The test suite is designed to catch regressions and ensure reliability across different operating environments and file patterns.
 
 ## How it Works
 

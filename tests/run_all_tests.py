@@ -6,11 +6,11 @@ import os
 
 if __name__ == "__main__":
     print("==================================================")
-    print("Starting File Matcher tests")
+    print("Running tests from tests directory")
     print("==================================================")
     
     # Discover and run all tests in the tests directory
-    test_suite = unittest.defaultTestLoader.discover('./tests', pattern='test_*.py')
+    test_suite = unittest.defaultTestLoader.discover('.', pattern='test_*.py')
     
     # Run tests with verbose output
     test_runner = unittest.TextTestRunner(verbosity=2)
