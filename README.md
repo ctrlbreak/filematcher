@@ -86,10 +86,29 @@ Unmatched files summary:
 
 ## Examples
 
-The repository includes an example script (`example.sh`) and test directories with sample files to demonstrate the functionality:
+The repository includes test directories that you can use to try out the script:
+
+### Simple Test Directories (test_dir1, test_dir2)
+```bash
+# Basic usage with test directories
+python file_matcher.py test_dir1 test_dir2
+
+# With unmatched files
+python file_matcher.py test_dir1 test_dir2 --show-unmatched
+
+# Summary mode
+python file_matcher.py test_dir1 test_dir2 --summary
+```
+
+### Complex Test Directories (complex_test/dir1, complex_test/dir2)
+These directories contain various matching patterns including multiple matches, asymmetric matches, and nested directories:
 
 ```bash
-./example.sh
+# Detailed view of complex matching patterns
+python file_matcher.py complex_test/dir1 complex_test/dir2
+
+# Summary of complex matching patterns
+python file_matcher.py complex_test/dir1 complex_test/dir2 --summary --show-unmatched
 ```
 
 ## Testing
