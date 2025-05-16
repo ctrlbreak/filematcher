@@ -10,6 +10,7 @@ A Python utility script that finds files with identical content but different na
 - Can detect and report files with no content matches in either directory
 - Efficiently handles large files by reading in chunks
 - Provides both detailed listing and summary count modes
+- Offers a fast mode for processing very large files quickly
 
 ## Usage
 
@@ -26,8 +27,11 @@ python file_matcher.py <directory1> <directory2> --hash sha256
 # Use summary mode to show counts only
 python file_matcher.py <directory1> <directory2> --summary
 
+# Use fast mode for large files
+python file_matcher.py <directory1> <directory2> --fast
+
 # Combined options
-python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256 --summary
+python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256 --summary --fast
 ```
 
 ## Command-line Options
@@ -37,6 +41,21 @@ python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256 
 | `--show-unmatched` | `-u` | Display files with no content match |
 | `--hash` | `-H` | Select hash algorithm: `md5` (default, faster) or `sha256` (more secure) |
 | `--summary` | `-s` | Show only counts instead of listing all files |
+| `--fast` | `-f` | Enable fast mode for large files (>100MB) |
+
+## Fast Mode
+
+The fast mode provides significant performance improvements when comparing large files (like videos, images, or datasets) by using smart sampling techniques:
+
+1. **File Size Comparison**: Files with different sizes can never be identical, so they are quickly rejected
+2. **Sparse Block Sampling**: Instead of hashing the entire file, samples are taken from:
+   - The beginning of the file
+   - The end of the file
+   - The middle of the file
+   - The 1/4 and 3/4 positions
+3. **Size-Aware Hashing**: File size is incorporated into the hash to further improve accuracy
+
+For files smaller than 100MB, the normal full-content hashing is used. This provides a good balance between speed and accuracy, making it particularly useful for comparing large media libraries.
 
 ## Example Output
 
@@ -109,6 +128,9 @@ python file_matcher.py complex_test/dir1 complex_test/dir2
 
 # Summary of complex matching patterns
 python file_matcher.py complex_test/dir1 complex_test/dir2 --summary --show-unmatched
+
+# Using fast mode with complex directories
+python file_matcher.py complex_test/dir1 complex_test/dir2 --fast
 ```
 
 ## Testing
@@ -140,4 +162,5 @@ The unit tests cover:
 1. The script indexes each directory, computing hashes for all files
 2. Files are matched based on identical content hashes
 3. Files with matching content but different names are identified
-4. Optionally, files with no content matches can be identified 
+4. Optionally, files with no content matches can be identified
+5. In fast mode, large files are compared using intelligent sampling instead of full content hashing 
