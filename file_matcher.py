@@ -116,6 +116,8 @@ def main():
     parser.add_argument('--show-unmatched', '-u', action='store_true', help='Display files with no content match')
     parser.add_argument('--hash', '-H', choices=['md5', 'sha256'], default='md5',
                         help='Hash algorithm to use (default: md5)')
+    parser.add_argument('--summary', '-s', action='store_true', 
+                        help='Show only counts of matched/unmatched files instead of listing them all')
     
     args = parser.parse_args()
     
@@ -128,39 +130,55 @@ def main():
     
     matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2, hash_algo)
     
-    # Display matching files results
-    if not matches:
-        print("No matching files with different names found.")
-    else:
-        print(f"\nFound {len(matches)} hashes with matching files:\n")
-        for file_hash, (files1, files2) in matches.items():
-            print(f"Hash: {file_hash[:10]}...")
-            print(f"  Files in {args.dir1}:")
-            for f in files1:
-                print(f"    {f}")
-            print(f"  Files in {args.dir2}:")
-            for f in files2:
-                print(f"    {f}")
-            print()
+    # Count total matched files in each directory
+    matched_files1 = sum(len(files) for files, _ in matches.values())
+    matched_files2 = sum(len(files) for _, files in matches.values())
     
-    # Optionally display unmatched files
-    if args.show_unmatched:
-        print("\nFiles with no content matches:")
-        print("==============================")
+    # Display matching files results
+    if args.summary:
+        print(f"\nMatched files summary:")
+        print(f"  Unique content hashes with matches: {len(matches)}")
+        print(f"  Files in {args.dir1} with matches in {args.dir2}: {matched_files1}")
+        print(f"  Files in {args.dir2} with matches in {args.dir1}: {matched_files2}")
         
-        if unmatched1:
-            print(f"\nUnique files in {args.dir1} ({len(unmatched1)}):")
-            for f in sorted(unmatched1):
-                print(f"  {f}")
+        if args.show_unmatched:
+            print(f"\nUnmatched files summary:")
+            print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
+            print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
+    else:
+        # Detailed output
+        if not matches:
+            print("No matching files with different names found.")
         else:
-            print(f"\nNo unique files in {args.dir1}")
-        
-        if unmatched2:
-            print(f"\nUnique files in {args.dir2} ({len(unmatched2)}):")
-            for f in sorted(unmatched2):
-                print(f"  {f}")
-        else:
-            print(f"\nNo unique files in {args.dir2}")
+            print(f"\nFound {len(matches)} hashes with matching files:\n")
+            for file_hash, (files1, files2) in matches.items():
+                print(f"Hash: {file_hash[:10]}...")
+                print(f"  Files in {args.dir1}:")
+                for f in files1:
+                    print(f"    {f}")
+                print(f"  Files in {args.dir2}:")
+                for f in files2:
+                    print(f"    {f}")
+                print()
+    
+        # Optionally display unmatched files (detailed mode)
+        if args.show_unmatched and not args.summary:
+            print("\nFiles with no content matches:")
+            print("==============================")
+            
+            if unmatched1:
+                print(f"\nUnique files in {args.dir1} ({len(unmatched1)}):")
+                for f in sorted(unmatched1):
+                    print(f"  {f}")
+            else:
+                print(f"\nNo unique files in {args.dir1}")
+            
+            if unmatched2:
+                print(f"\nUnique files in {args.dir2} ({len(unmatched2)}):")
+                for f in sorted(unmatched2):
+                    print(f"  {f}")
+            else:
+                print(f"\nNo unique files in {args.dir2}")
 
 
 if __name__ == "__main__":

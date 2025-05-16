@@ -9,6 +9,7 @@ A Python utility script that finds files with identical content but different na
 - Identifies files with identical content but different names
 - Can detect and report files with no content matches in either directory
 - Efficiently handles large files by reading in chunks
+- Provides both detailed listing and summary count modes
 
 ## Usage
 
@@ -22,8 +23,11 @@ python file_matcher.py <directory1> <directory2> --show-unmatched
 # Use SHA-256 for more robust hashing (slower)
 python file_matcher.py <directory1> <directory2> --hash sha256
 
+# Use summary mode to show counts only
+python file_matcher.py <directory1> <directory2> --summary
+
 # Combined options
-python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256
+python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256 --summary
 ```
 
 ## Command-line Options
@@ -32,10 +36,13 @@ python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256
 |--------|-------|-------------|
 | `--show-unmatched` | `-u` | Display files with no content match |
 | `--hash` | `-H` | Select hash algorithm: `md5` (default, faster) or `sha256` (more secure) |
+| `--summary` | `-s` | Show only counts instead of listing all files |
 
 ## Example Output
 
-When run with the `--show-unmatched` flag, the script provides comprehensive output:
+### Detailed Mode (Default)
+
+When run with the `--show-unmatched` flag in detailed mode, the script provides comprehensive output:
 
 ```
 Found 3 hashes with matching files:
@@ -60,6 +67,21 @@ Unique files in dir1 (1):
 
 Unique files in dir2 (1):
   /path/to/dir2/another_unique.txt
+```
+
+### Summary Mode
+
+When run with the `--summary` flag, the script produces a compact count-based output:
+
+```
+Matched files summary:
+  Unique content hashes with matches: 3
+  Files in dir1 with matches in dir2: 4
+  Files in dir2 with matches in dir1: 3
+
+Unmatched files summary:
+  Files in dir1 with no match: 2
+  Files in dir2 with no match: 1
 ```
 
 ## Examples

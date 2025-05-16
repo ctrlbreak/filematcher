@@ -6,8 +6,11 @@ import tempfile
 import shutil
 import random
 import string
+import io
+import sys
+from contextlib import redirect_stdout
 from pathlib import Path
-from file_matcher import get_file_hash, index_directory, find_matching_files
+from file_matcher import get_file_hash, index_directory, find_matching_files, main
 
 class TestFileMatcher(unittest.TestCase):
     def setUp(self):
@@ -172,6 +175,57 @@ class TestFileMatcher(unittest.TestCase):
         
         # In dir2: file4.txt, common_name.txt, subdir/different_nested.txt
         self.assertEqual(len(unmatched2), 3)
+
+    def test_summary_mode(self):
+        """Test summary mode output with matched and unmatched files."""
+        # Save original sys.argv
+        original_argv = sys.argv.copy()
+        
+        try:
+            # Set up arguments for summary mode with unmatched files
+            sys.argv = ['file_matcher.py', self.test_dir1, self.test_dir2, '--summary', '--show-unmatched']
+            
+            # Capture stdout
+            f = io.StringIO()
+            with redirect_stdout(f):
+                main()
+                
+            output = f.getvalue()
+            
+            # Check summary output format
+            self.assertIn("Matched files summary:", output)
+            self.assertIn("Unique content hashes with matches:", output)
+            self.assertIn("Files in", output)
+            
+            # Check that it includes unmatched summary
+            self.assertIn("Unmatched files summary:", output)
+            
+            # Actual numbers should be in the output
+            self.assertIn("with matches in", output)  # Check for this specific text
+            self.assertIn("with no match:", output)
+            
+            # The output should not contain detailed file listings
+            self.assertNotIn("Hash:", output)
+            # Directory paths will be in the summary, but there shouldn't be individual file listings
+            self.assertNotIn("file1.txt", output)
+            self.assertNotIn("file2.txt", output)
+            
+            # Now test summary mode without unmatched files
+            sys.argv = ['file_matcher.py', self.test_dir1, self.test_dir2, '--summary']
+            
+            f = io.StringIO()
+            with redirect_stdout(f):
+                main()
+                
+            output = f.getvalue()
+            
+            # Should have matched summary but not unmatched summary
+            self.assertIn("Matched files summary:", output)
+            self.assertNotIn("Unmatched files summary:", output)
+            
+        finally:
+            # Restore original sys.argv
+            sys.argv = original_argv
         
     def test_with_real_directories(self):
         """Test with the actual test directories in the project."""
