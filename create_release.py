@@ -4,6 +4,13 @@ Release Package Creator for File Matcher
 
 This script creates a release package for distribution on GitHub.
 It creates a clean archive with only the necessary files for users.
+
+To create a release package:
+# Update version in create_release.py and file_matcher.py
+python3 create_release.py 1.1.0
+git tag -a v1.1.0 -m "Release version 1.1.0"
+git push origin v1.1.0
+# Then upload the new archives to GitHub
 """
 
 import os

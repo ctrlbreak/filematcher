@@ -11,6 +11,10 @@ dist/
 build/
 *.egg-info/
 
+# Release packages
+filematcher-*.zip
+filematcher-*.tar.gz
+
 # Unit test / coverage reports
 htmlcov/
 .tox/
