@@ -11,6 +11,7 @@ A Python utility script that finds files with identical content but different na
 - Efficiently handles large files by reading in chunks
 - Provides both detailed listing and summary count modes
 - Offers a fast mode for processing very large files quickly
+- Verbose mode shows processing progress for each file
 
 ## Usage
 
@@ -27,8 +28,11 @@ python file_matcher.py <directory1> <directory2> --hash sha256
 # Use fast mode for large files
 python file_matcher.py <directory1> <directory2> --fast
 
+# Show verbose progress output
+python file_matcher.py <directory1> <directory2> --verbose
+
 # Combined options
-python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256 --summary --fast
+python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256 --summary --fast --verbose
 ```
 
 ## Command-line Options
@@ -39,6 +43,7 @@ python file_matcher.py <directory1> <directory2> --show-unmatched --hash sha256 
 | `--hash` | `-H` | Select hash algorithm: `md5` (default, faster) or `sha256` (more secure) |
 | `--summary` | `-s` | Show only counts instead of listing all files |
 | `--fast` | `-f` | Enable fast mode for large files (>100MB) |
+| `--verbose` | `-v` | Show detailed progress for each file being processed |
 
 ## Fast Mode
 
@@ -84,6 +89,39 @@ Unique files in dir1 (1):
 Unique files in dir2 (1):
   /path/to/dir2/another_unique.txt
 ```
+
+## Verbose Mode
+
+The verbose mode (`--verbose` or `-v`) provides detailed progress information during file processing, which is especially useful when working with large directory trees or many files:
+
+```bash
+python file_matcher.py test_dir1 test_dir2 --verbose
+```
+
+**Verbose mode output includes:**
+- Total number of files found in each directory
+- Progress counter showing current file being processed
+- Individual file names and their sizes in human-readable format
+- Summary of unique content hashes found after processing each directory
+
+**Example verbose output:**
+```
+Using MD5 hashing algorithm
+Verbose mode enabled: Showing progress for each file
+Found 5 files to process in test_dir1
+[1/5] Processing file1.txt (23 B)
+[2/5] Processing file2.txt (23 B)
+[3/5] Processing large_file.mkv (2.3 GB)
+[4/5] Processing document.pdf (456.2 KB)
+[5/5] Processing image.jpg (1.2 MB)
+Completed indexing test_dir1: 5 unique file contents found
+```
+
+This mode is particularly helpful for:
+- Monitoring progress when processing large directory trees
+- Identifying which files are taking longer to process
+- Debugging issues with specific files
+- Understanding the distribution of file sizes in your directories
 
 ### Summary Mode
 
@@ -157,7 +195,7 @@ The unit tests are organized into logical modules by functionality:
 - **`tests/test_fast_mode.py`**: Fast mode and sparse block sampling for large files
 - **`tests/test_directory_operations.py`**: Directory scanning and file matching functionality 
 - **`tests/test_real_directories.py`**: Comprehensive tests using real test directories with complex matching patterns
-- **`tests/test_cli.py`**: Command-line interface and output formatting
+- **`tests/test_cli.py`**: Command-line interface and output formatting (including verbose mode)
 - **`tests/test_base.py`**: Common base test class with shared setup/teardown functionality
 
 #### Core Functionality Tests

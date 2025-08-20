@@ -152,6 +152,50 @@ class TestCLI(BaseFileMatcherTest):
         finally:
             # Restore original sys.argv
             sys.argv = original_argv
+    
+    def test_verbose_mode_option(self):
+        """Test the verbose mode command-line option."""
+        # Save original sys.argv
+        original_argv = sys.argv.copy()
+        
+        try:
+            # Test with verbose mode enabled
+            sys.argv = ['file_matcher.py', self.test_dir1, self.test_dir2, '--verbose']
+            
+            f = io.StringIO()
+            with redirect_stdout(f):
+                main()
+                
+            output = f.getvalue()
+            
+            # Check for verbose mode indicators
+            self.assertIn("Verbose mode enabled", output)
+            self.assertIn("Found", output)
+            self.assertIn("files to process", output)
+            self.assertIn("Processing", output)
+            self.assertIn("Completed indexing", output)
+            
+            # Should show progress for each file
+            self.assertIn("[1/", output)  # Progress counter
+            self.assertIn("B)", output)   # File size
+            
+            # Test verbose mode with summary
+            sys.argv = ['file_matcher.py', self.test_dir1, self.test_dir2, '--verbose', '--summary']
+            
+            f = io.StringIO()
+            with redirect_stdout(f):
+                main()
+                
+            output = f.getvalue()
+            
+            # Should still show verbose progress with summary output
+            self.assertIn("Verbose mode enabled", output)
+            self.assertIn("Processing", output)
+            self.assertIn("Matched files summary:", output)
+            
+        finally:
+            # Restore original sys.argv
+            sys.argv = original_argv
 
 
 if __name__ == "__main__":

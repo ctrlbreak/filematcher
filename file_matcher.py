@@ -15,6 +15,31 @@ from collections import defaultdict
 from pathlib import Path
 
 
+def format_file_size(size_bytes):
+    """
+    Convert file size in bytes to human-readable format.
+    
+    Args:
+        size_bytes: Size in bytes
+        
+    Returns:
+        Formatted string with appropriate unit
+    """
+    if size_bytes == 0:
+        return "0 B"
+    
+    size_names = ["B", "KB", "MB", "GB", "TB"]
+    i = 0
+    while size_bytes >= 1024.0 and i < len(size_names) - 1:
+        size_bytes /= 1024.0
+        i += 1
+    
+    if i == 0:
+        return f"{int(size_bytes)} {size_names[i]}"
+    else:
+        return f"{size_bytes:.1f} {size_names[i]}"
+
+
 def get_file_hash(filepath, hash_algorithm='md5', fast_mode=False, size_threshold=100*1024*1024):  # 100MB threshold
     """
     Calculate hash of file content using the specified algorithm.
@@ -115,7 +140,7 @@ def get_sparse_hash(filepath, hash_algorithm='md5', file_size=None, sample_size=
     return h.hexdigest()
 
 
-def index_directory(directory, hash_algorithm='md5', fast_mode=False):
+def index_directory(directory, hash_algorithm='md5', fast_mode=False, verbose=False):
     """
     Recursively index all files in a directory and its subdirectories.
     Returns a dict mapping content hashes to lists of file paths.
@@ -124,23 +149,41 @@ def index_directory(directory, hash_algorithm='md5', fast_mode=False):
         directory: Directory path to index
         hash_algorithm: Hashing algorithm to use
         fast_mode: If True, use faster hashing for large files
+        verbose: If True, show progress for each file being processed
     """
     hash_to_files = defaultdict(list)
     directory_path = Path(directory)
     
+    # Count total files first if verbose mode is enabled
+    if verbose:
+        total_files = sum(1 for filepath in directory_path.rglob('*') if filepath.is_file())
+        processed_files = 0
+        print(f"Found {total_files} files to process in {directory}")
+    
     for filepath in directory_path.rglob('*'):
         if filepath.is_file():
             try:
+                if verbose:
+                    processed_files += 1
+                    file_size = os.path.getsize(filepath)
+                    size_str = format_file_size(file_size)
+                    print(f"[{processed_files}/{total_files}] Processing {filepath.name} ({size_str})")
+                
                 file_hash = get_file_hash(filepath, hash_algorithm, fast_mode)
                 # Store full absolute path
                 hash_to_files[file_hash].append(str(filepath.absolute()))
             except (PermissionError, OSError) as e:
                 print(f"Error processing {filepath}: {e}")
+                if verbose:
+                    processed_files += 1
+    
+    if verbose:
+        print(f"Completed indexing {directory}: {len(hash_to_files)} unique file contents found")
     
     return hash_to_files
 
 
-def find_matching_files(dir1, dir2, hash_algorithm='md5', fast_mode=False):
+def find_matching_files(dir1, dir2, hash_algorithm='md5', fast_mode=False, verbose=False):
     """
     Find files that have identical content but different names
     across two directory hierarchies.
@@ -150,17 +193,20 @@ def find_matching_files(dir1, dir2, hash_algorithm='md5', fast_mode=False):
         dir2: Second directory to scan
         hash_algorithm: Hashing algorithm to use
         fast_mode: If True, use faster hashing for large files
+        verbose: If True, show progress for each file being processed
         
     Returns:
         - matches: Dict where keys are content hashes and values are tuples of (files_from_dir1, files_from_dir2)
         - unmatched1: List of files in dir1 with no content match in dir2
         - unmatched2: List of files in dir2 with no content match in dir1
     """
-    print(f"Indexing directory: {dir1}")
-    hash_to_files1 = index_directory(dir1, hash_algorithm, fast_mode)
+    if not verbose:
+        print(f"Indexing directory: {dir1}")
+    hash_to_files1 = index_directory(dir1, hash_algorithm, fast_mode, verbose)
     
-    print(f"Indexing directory: {dir2}")
-    hash_to_files2 = index_directory(dir2, hash_algorithm, fast_mode)
+    if not verbose:
+        print(f"Indexing directory: {dir2}")
+    hash_to_files2 = index_directory(dir2, hash_algorithm, fast_mode, verbose)
     
     # Find hashes that exist in both directories
     common_hashes = set(hash_to_files1.keys()) & set(hash_to_files2.keys())
@@ -205,6 +251,8 @@ def main():
                         help='Show only counts of matched/unmatched files instead of listing them all')
     parser.add_argument('--fast', '-f', action='store_true',
                         help='Use fast mode for large files (uses file size + partial content sampling)')
+    parser.add_argument('--verbose', '-v', action='store_true',
+                        help='Show detailed progress for each file being processed')
     
     args = parser.parse_args()
     
@@ -218,7 +266,10 @@ def main():
     if args.fast:
         print("Fast mode enabled: Using sparse sampling for large files")
     
-    matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2, hash_algo, args.fast)
+    if args.verbose:
+        print("Verbose mode enabled: Showing progress for each file")
+    
+    matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2, hash_algo, args.fast, args.verbose)
     
     # Count total matched files in each directory
     matched_files1 = sum(len(files) for files, _ in matches.values())

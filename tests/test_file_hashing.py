@@ -8,7 +8,7 @@ import unittest
 
 # Add parent directory to path so we can import the file_matcher module
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from file_matcher import get_file_hash
+from file_matcher import get_file_hash, format_file_size
 from tests.test_base import BaseFileMatcherTest
 
 
@@ -84,6 +84,29 @@ class TestFileHashing(BaseFileMatcherTest):
         hash1_sha256 = get_file_hash(large_file_path, 'sha256')
         modified_hash_sha256 = get_file_hash(duplicate_file_path, 'sha256')
         self.assertNotEqual(hash1_sha256, modified_hash_sha256)
+    
+    def test_format_file_size(self):
+        """Test the file size formatting function."""
+        # Test bytes
+        self.assertEqual(format_file_size(0), "0 B")
+        self.assertEqual(format_file_size(512), "512 B")
+        self.assertEqual(format_file_size(1023), "1023 B")
+        
+        # Test kilobytes
+        self.assertEqual(format_file_size(1024), "1.0 KB")
+        self.assertEqual(format_file_size(1536), "1.5 KB")
+        self.assertEqual(format_file_size(2048), "2.0 KB")
+        
+        # Test megabytes
+        self.assertEqual(format_file_size(1024*1024), "1.0 MB")
+        self.assertEqual(format_file_size(1024*1024*1.5), "1.5 MB")
+        
+        # Test gigabytes
+        self.assertEqual(format_file_size(1024*1024*1024), "1.0 GB")
+        self.assertEqual(format_file_size(int(1024*1024*1024*2.5)), "2.5 GB")
+        
+        # Test terabytes
+        self.assertEqual(format_file_size(1024*1024*1024*1024), "1.0 TB")
 
 
 if __name__ == "__main__":
