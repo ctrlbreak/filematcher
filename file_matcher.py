@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""
+File Matcher - Find files with identical content in different directory trees.
+
+This script compares two directory trees and finds files that have identical
+content but potentially different names or locations.
+
+Version: 1.0.0
+"""
 
 import os
 import hashlib
