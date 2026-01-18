@@ -10,12 +10,15 @@ Version: 1.0.0
 
 from __future__ import annotations
 
+import argparse
+import hashlib
+import logging
 import os
 import sys
-import hashlib
-import argparse
 from collections import defaultdict
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def format_file_size(size_bytes: int | float) -> str:
@@ -161,7 +164,7 @@ def index_directory(directory: str | Path, hash_algorithm: str = 'md5', fast_mod
     if verbose:
         total_files = sum(1 for filepath in directory_path.rglob('*') if filepath.is_file())
         processed_files = 0
-        print(f"Found {total_files} files to process in {directory}")
+        logger.debug(f"Found {total_files} files to process in {directory}")
     
     for filepath in directory_path.rglob('*'):
         if filepath.is_file():
@@ -170,18 +173,18 @@ def index_directory(directory: str | Path, hash_algorithm: str = 'md5', fast_mod
                     processed_files += 1
                     file_size = os.path.getsize(filepath)
                     size_str = format_file_size(file_size)
-                    print(f"[{processed_files}/{total_files}] Processing {filepath.name} ({size_str})")
-                
+                    logger.debug(f"[{processed_files}/{total_files}] Processing {filepath.name} ({size_str})")
+
                 file_hash = get_file_hash(filepath, hash_algorithm, fast_mode)
                 # Store full absolute path
                 hash_to_files[file_hash].append(str(filepath.absolute()))
             except (PermissionError, OSError) as e:
-                print(f"Error processing {filepath}: {e}")
+                logger.error(f"Error processing {filepath}: {e}")
                 if verbose:
                     processed_files += 1
-    
+
     if verbose:
-        print(f"Completed indexing {directory}: {len(hash_to_files)} unique file contents found")
+        logger.debug(f"Completed indexing {directory}: {len(hash_to_files)} unique file contents found")
     
     return hash_to_files
 
@@ -204,11 +207,11 @@ def find_matching_files(dir1: str | Path, dir2: str | Path, hash_algorithm: str 
         - unmatched2: List of files in dir2 with no content match in dir1
     """
     if not verbose:
-        print(f"Indexing directory: {dir1}")
+        logger.info(f"Indexing directory: {dir1}")
     hash_to_files1 = index_directory(dir1, hash_algorithm, fast_mode, verbose)
-    
+
     if not verbose:
-        print(f"Indexing directory: {dir2}")
+        logger.info(f"Indexing directory: {dir2}")
     hash_to_files2 = index_directory(dir2, hash_algorithm, fast_mode, verbose)
     
     # Find hashes that exist in both directories
@@ -259,19 +262,26 @@ def main() -> int:
                         help='Show detailed progress for each file being processed')
     
     args = parser.parse_args()
-    
+
+    # Configure logging based on verbosity
+    log_level = logging.DEBUG if args.verbose else logging.INFO
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(logging.Formatter('%(message)s'))
+    logger.handlers = [handler]
+    logger.setLevel(log_level)
+
     if not os.path.isdir(args.dir1) or not os.path.isdir(args.dir2):
-        print("Error: Both arguments must be directories")
+        logger.error("Error: Both arguments must be directories")
         return 1
-    
+
     hash_algo = args.hash
-    print(f"Using {hash_algo.upper()} hashing algorithm")
-    
+    logger.info(f"Using {hash_algo.upper()} hashing algorithm")
+
     if args.fast:
-        print("Fast mode enabled: Using sparse sampling for large files")
-    
+        logger.info("Fast mode enabled: Using sparse sampling for large files")
+
     if args.verbose:
-        print("Verbose mode enabled: Showing progress for each file")
+        logger.info("Verbose mode enabled: Showing progress for each file")
     
     matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2, hash_algo, args.fast, args.verbose)
     
