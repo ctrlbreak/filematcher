@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
-import unittest
 import os
-import sys
+import unittest
 
-# Add parent directory to path so we can import the file_matcher module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from file_matcher import index_directory, find_matching_files, get_file_hash
 
 class TestRealDirectories(unittest.TestCase):

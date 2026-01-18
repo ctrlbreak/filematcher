@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 
 import os
-import sys
 import random
 import shutil
 import unittest
 
-# Add parent directory to path so we can import the file_matcher module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from file_matcher import get_file_hash, format_file_size
 from tests.test_base import BaseFileMatcherTest
 

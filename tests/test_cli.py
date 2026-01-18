@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
+import io
 import os
 import sys
-import io
 import unittest
 from contextlib import redirect_stdout
 
-# Add parent directory to path so we can import the file_matcher module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from file_matcher import main
 from tests.test_base import BaseFileMatcherTest
 
