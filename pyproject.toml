@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "Find files with identical content but different names across directory trees"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = {file = "LICENSE"}
 authors = [
     {name = "Patrick Myles"}
 ]
