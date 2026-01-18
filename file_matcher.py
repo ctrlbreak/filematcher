@@ -8,14 +8,17 @@ content but potentially different names or locations.
 Version: 1.0.0
 """
 
+from __future__ import annotations
+
 import os
+import sys
 import hashlib
 import argparse
 from collections import defaultdict
 from pathlib import Path
 
 
-def format_file_size(size_bytes):
+def format_file_size(size_bytes: int | float) -> str:
     """
     Convert file size in bytes to human-readable format.
     
@@ -40,7 +43,7 @@ def format_file_size(size_bytes):
         return f"{size_bytes:.1f} {size_names[i]}"
 
 
-def get_file_hash(filepath, hash_algorithm='md5', fast_mode=False, size_threshold=100*1024*1024):  # 100MB threshold
+def get_file_hash(filepath: str | Path, hash_algorithm: str = 'md5', fast_mode: bool = False, size_threshold: int = 100*1024*1024) -> str:
     """
     Calculate hash of file content using the specified algorithm.
     
@@ -76,7 +79,7 @@ def get_file_hash(filepath, hash_algorithm='md5', fast_mode=False, size_threshol
         return get_sparse_hash(filepath, hash_algorithm, file_size)
 
 
-def get_sparse_hash(filepath, hash_algorithm='md5', file_size=None, sample_size=1024*1024):
+def get_sparse_hash(filepath: str | Path, hash_algorithm: str = 'md5', file_size: int | None = None, sample_size: int = 1024*1024) -> str:
     """
     Create a hash based on sparse sampling of a large file.
     
@@ -140,7 +143,7 @@ def get_sparse_hash(filepath, hash_algorithm='md5', file_size=None, sample_size=
     return h.hexdigest()
 
 
-def index_directory(directory, hash_algorithm='md5', fast_mode=False, verbose=False):
+def index_directory(directory: str | Path, hash_algorithm: str = 'md5', fast_mode: bool = False, verbose: bool = False) -> dict[str, list[str]]:
     """
     Recursively index all files in a directory and its subdirectories.
     Returns a dict mapping content hashes to lists of file paths.
@@ -183,7 +186,7 @@ def index_directory(directory, hash_algorithm='md5', fast_mode=False, verbose=Fa
     return hash_to_files
 
 
-def find_matching_files(dir1, dir2, hash_algorithm='md5', fast_mode=False, verbose=False):
+def find_matching_files(dir1: str | Path, dir2: str | Path, hash_algorithm: str = 'md5', fast_mode: bool = False, verbose: bool = False) -> tuple[dict[str, tuple[list[str], list[str]]], list[str], list[str]]:
     """
     Find files that have identical content but different names
     across two directory hierarchies.
@@ -239,7 +242,8 @@ def find_matching_files(dir1, dir2, hash_algorithm='md5', fast_mode=False, verbo
     return matches, unmatched1, unmatched2
 
 
-def main():
+def main() -> int:
+    """Main entry point. Returns 0 on success, 1 on error."""
     # Set up argument parser
     parser = argparse.ArgumentParser(description='Find files with identical content but different names across two directories.')
     parser.add_argument('dir1', help='First directory to compare')
@@ -321,6 +325,8 @@ def main():
             else:
                 print(f"\nNo unique files in {args.dir2}")
 
+    return 0
+
 
 if __name__ == "__main__":
-    main() 
+    sys.exit(main()) 
