@@ -115,7 +115,8 @@ def format_duplicate_group(
     action: str | None = None,
     verbose: bool = False,
     file_sizes: dict[str, int] | None = None,
-    cross_fs_files: set[str] | None = None
+    cross_fs_files: set[str] | None = None,
+    preview_mode: bool = True
 ) -> list[str]:
     """
     Format a duplicate group for display.
@@ -127,6 +128,7 @@ def format_duplicate_group(
         verbose: If True, show additional details
         file_sizes: Dict mapping paths to file sizes (for verbose mode)
         cross_fs_files: Set of duplicate paths on different filesystems (for warnings)
+        preview_mode: If True and action is set, use "WOULD X" labels; if False, use "[DUP:action]"
 
     Returns:
         List of formatted lines for this group
@@ -143,20 +145,40 @@ def format_duplicate_group(
         lines.append(f"[MASTER] {master_file}")
 
     # Format duplicate lines (sorted alphabetically, 4-space indent)
-    action_label = action if action else "?"
+    # Determine action label based on preview_mode
+    if action and preview_mode:
+        # Preview mode: use "WOULD X" labels
+        action_labels = {
+            "hardlink": "WOULD HARDLINK",
+            "symlink": "WOULD SYMLINK",
+            "delete": "WOULD DELETE"
+        }
+        action_label = action_labels.get(action, f"WOULD {action.upper()}")
+    elif action:
+        # Execute mode: use "[DUP:action]" format
+        action_label = f"DUP:{action}"
+    else:
+        action_label = "DUP:?"
+
     for dup in sorted(duplicates):
         cross_fs_marker = " [!cross-fs]" if cross_fs_files and dup in cross_fs_files else ""
-        lines.append(f"    [DUP:{action_label}] {dup}{cross_fs_marker}")
+        lines.append(f"    [{action_label}] {dup}{cross_fs_marker}")
 
     return lines
 
 
-DRY_RUN_BANNER = "=== DRY RUN - No changes will be made ==="
+PREVIEW_BANNER = "=== PREVIEW MODE - Use --execute to apply changes ==="
+EXECUTE_BANNER = "=== EXECUTING ==="
 
 
-def format_dry_run_banner() -> str:
-    """Return the dry-run header banner."""
-    return DRY_RUN_BANNER
+def format_preview_banner() -> str:
+    """Return the preview mode header banner."""
+    return PREVIEW_BANNER
+
+
+def format_execute_banner() -> str:
+    """Return the execute mode header banner."""
+    return EXECUTE_BANNER
 
 
 def format_statistics_footer(
@@ -166,10 +188,11 @@ def format_statistics_footer(
     space_savings: int,
     action: str | None = None,
     verbose: bool = False,
-    cross_fs_count: int = 0
+    cross_fs_count: int = 0,
+    preview_mode: bool = True
 ) -> list[str]:
     """
-    Format the statistics footer for dry-run output.
+    Format the statistics footer for preview/execute output.
 
     Args:
         group_count: Number of duplicate groups
@@ -179,6 +202,7 @@ def format_statistics_footer(
         action: Action type for action-specific messaging
         verbose: If True, show exact bytes
         cross_fs_count: Number of files that can't be hardlinked (cross-fs)
+        preview_mode: If True, add hint about using --execute
 
     Returns:
         List of lines for the footer
@@ -206,6 +230,11 @@ def format_statistics_footer(
         lines.append(f"Space to be reclaimed: {space_str}  ({space_savings:,} bytes)")
     else:
         lines.append(f"Space to be reclaimed: {space_str}")
+
+    # Add hint about --execute in preview mode
+    if preview_mode:
+        lines.append("")
+        lines.append("Use --execute to apply changes")
 
     return lines
 
