@@ -109,6 +109,38 @@ def format_master_output(master_file: str, duplicates: list[str]) -> str:
     return f"{master_file} -> {', '.join(duplicates)}"
 
 
+def calculate_space_savings(
+    duplicate_groups: list[tuple[str, list[str], str]]
+) -> tuple[int, int, int]:
+    """
+    Calculate space that would be saved by deduplication.
+
+    Args:
+        duplicate_groups: List of (master_file, duplicates_list, reason) tuples
+                         (matches output from select_master_file)
+
+    Returns:
+        Tuple of (total_bytes_saved, total_duplicate_count, group_count)
+    """
+    if not duplicate_groups:
+        return (0, 0, 0)
+
+    total_bytes = 0
+    total_duplicates = 0
+    groups_with_duplicates = 0
+
+    for master_file, duplicates, _reason in duplicate_groups:
+        if not duplicates:
+            continue
+        # All duplicates have same size as master
+        file_size = os.path.getsize(master_file)
+        total_bytes += file_size * len(duplicates)
+        total_duplicates += len(duplicates)
+        groups_with_duplicates += 1
+
+    return (total_bytes, total_duplicates, groups_with_duplicates)
+
+
 def format_file_size(size_bytes: int | float) -> str:
     """
     Convert file size in bytes to human-readable format.
