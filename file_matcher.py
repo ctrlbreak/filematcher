@@ -109,6 +109,45 @@ def format_master_output(master_file: str, duplicates: list[str]) -> str:
     return f"{master_file} -> {', '.join(duplicates)}"
 
 
+def format_duplicate_group(
+    master_file: str,
+    duplicates: list[str],
+    action: str | None = None,
+    verbose: bool = False,
+    file_sizes: dict[str, int] | None = None
+) -> list[str]:
+    """
+    Format a duplicate group for display.
+
+    Args:
+        master_file: Path to the master file
+        duplicates: List of paths to duplicate files
+        action: Action type (None, "hardlink", "symlink", "delete")
+        verbose: If True, show additional details
+        file_sizes: Dict mapping paths to file sizes (for verbose mode)
+
+    Returns:
+        List of formatted lines for this group
+    """
+    lines = []
+
+    # Format master line
+    if verbose and file_sizes:
+        size = file_sizes.get(master_file, 0)
+        size_str = format_file_size(size)
+        dup_count = len(duplicates)
+        lines.append(f"[MASTER] {master_file} ({dup_count} duplicates, {size_str})")
+    else:
+        lines.append(f"[MASTER] {master_file}")
+
+    # Format duplicate lines (sorted alphabetically, 4-space indent)
+    action_label = action if action else "?"
+    for dup in sorted(duplicates):
+        lines.append(f"    [DUP:{action_label}] {dup}")
+
+    return lines
+
+
 def calculate_space_savings(
     duplicate_groups: list[tuple[str, list[str], str]]
 ) -> tuple[int, int, int]:
