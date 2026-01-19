@@ -72,7 +72,11 @@ Plans:
 
 **Dependencies:** Phase 2 (refactors existing dry-run infrastructure)
 
-**Plans:** TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — Refactor CLI for preview-by-default with --execute flag
+- [ ] 03-02-PLAN.md — Unit tests for safe default behavior (TEST-03)
 
 **Requirements:**
 - SAFE-01: Preview mode is the default when `--action` is specified (no `--dry-run` needed)
@@ -84,7 +88,7 @@ Plans:
 **Success Criteria:**
 1. User can run `filematcher dir1 dir2 --master dir1 --action hardlink` and see a preview (no files modified)
 2. User must add `--execute` to actually perform modifications
-3. Banner clearly indicates "DRY RUN" when `--execute` is not specified
+3. Banner clearly indicates "PREVIEW MODE" when `--execute` is not specified
 4. Statistics footer suggests `--execute` flag to apply changes
 5. All existing dry-run tests updated to reflect new default behavior
 
@@ -129,7 +133,7 @@ Plans:
 |-------|--------|--------------|-----------|
 | 1 - Master Directory Foundation | Complete | 4 | 4 |
 | 2 - Dry-Run Preview & Statistics | Complete | 8 | 8 |
-| 3 - Safe Defaults Refactor | Pending | 5 | 0 |
+| 3 - Safe Defaults Refactor | Planned | 5 | 0 |
 | 4 - Actions & Logging | Pending | 12 | 0 |
 
 **Total:** 29 requirements across 4 phases
@@ -158,3 +162,4 @@ All v1 requirements mapped:
 *Phase 1 completed: 2026-01-19*
 *Phase 2 completed: 2026-01-19*
 *Phase 3 added: 2026-01-19 (safe defaults refactor)*
+*Phase 3 planned: 2026-01-19*
