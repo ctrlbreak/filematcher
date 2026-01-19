@@ -45,6 +45,70 @@ def validate_master_directory(master: str, dir1: str, dir2: str) -> Path:
     raise ValueError("Master must be one of the compared directories")
 
 
+def select_master_file(file_paths: list[str], master_dir: Path | None) -> tuple[str, list[str], str]:
+    """
+    Select which file should be considered the master from a list of duplicates.
+
+    When a master directory is set, files in that directory are preferred.
+    Among files in the master directory (or all files if none in master),
+    the oldest by modification time is selected.
+
+    Args:
+        file_paths: List of file paths with identical content
+        master_dir: Resolved path to the master directory, or None
+
+    Returns:
+        Tuple of (master_file_path, list_of_duplicate_paths, selection_reason)
+    """
+    if not file_paths:
+        raise ValueError("file_paths cannot be empty")
+
+    if len(file_paths) == 1:
+        return file_paths[0], [], "only file"
+
+    if master_dir:
+        master_dir_str = str(master_dir)
+        # Separate files into master directory files and others
+        master_files = [f for f in file_paths if f.startswith(master_dir_str + os.sep) or f.startswith(master_dir_str)]
+        other_files = [f for f in file_paths if f not in master_files]
+
+        if master_files:
+            # Select oldest file in master directory
+            if len(master_files) == 1:
+                return master_files[0], other_files + [], "only file in master directory"
+            else:
+                # Multiple files in master - pick oldest by mtime
+                oldest_master = min(master_files, key=lambda p: os.path.getmtime(p))
+                other_master_files = [f for f in master_files if f != oldest_master]
+                return oldest_master, other_master_files + other_files, "oldest in master directory"
+        else:
+            # No files in master directory - pick oldest overall
+            oldest = min(file_paths, key=lambda p: os.path.getmtime(p))
+            duplicates = [f for f in file_paths if f != oldest]
+            return oldest, duplicates, "oldest file (none in master directory)"
+    else:
+        # No master directory set - pick oldest overall
+        oldest = min(file_paths, key=lambda p: os.path.getmtime(p))
+        duplicates = [f for f in file_paths if f != oldest]
+        return oldest, duplicates, "oldest file"
+
+
+def format_master_output(master_file: str, duplicates: list[str]) -> str:
+    """
+    Format master/duplicate relationship using arrow notation.
+
+    Args:
+        master_file: Path to the master file
+        duplicates: List of paths to duplicate files
+
+    Returns:
+        Formatted string: "master_path -> dup1, dup2, ..."
+    """
+    if not duplicates:
+        return master_file
+    return f"{master_file} -> {', '.join(duplicates)}"
+
+
 def format_file_size(size_bytes: int | float) -> str:
     """
     Convert file size in bytes to human-readable format.
@@ -318,56 +382,130 @@ def main() -> int:
         logger.info("Verbose mode enabled: Showing progress for each file")
     
     matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2, hash_algo, args.fast, args.verbose)
-    
+
     # Count total matched files in each directory
     matched_files1 = sum(len(files) for files, _ in matches.values())
     matched_files2 = sum(len(files) for _, files in matches.values())
-    
-    # Display matching files results
-    if args.summary:
-        print(f"\nMatched files summary:")
-        print(f"  Unique content hashes with matches: {len(matches)}")
-        print(f"  Files in {args.dir1} with matches in {args.dir2}: {matched_files1}")
-        print(f"  Files in {args.dir2} with matches in {args.dir1}: {matched_files2}")
-        
-        if args.show_unmatched:
-            print(f"\nUnmatched files summary:")
-            print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
-            print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
-    else:
-        # Detailed output
-        if not matches:
-            print("No matching files with different names found.")
+
+    # Master-aware output formatting
+    if master_path:
+        # Process matches into master/duplicate pairs
+        master_results = []
+        total_masters = 0
+        total_duplicates = 0
+        warnings = []
+
+        for file_hash, (files1, files2) in matches.items():
+            all_files = files1 + files2
+            master_dir_str = str(master_path)
+
+            # Check for multiple files in master directory (warning case)
+            master_files_in_group = [f for f in all_files
+                                     if f.startswith(master_dir_str + os.sep) or f.startswith(master_dir_str)]
+            if len(master_files_in_group) > 1:
+                warnings.append(f"Warning: Multiple files in master directory have identical content: {', '.join(master_files_in_group)}")
+
+            master_file, duplicates, reason = select_master_file(all_files, master_path)
+            master_results.append((master_file, duplicates, reason))
+            total_masters += 1
+            total_duplicates += len(duplicates)
+
+        # Display results
+        if args.summary:
+            print(f"\nMatched files summary:")
+            print(f"  Unique content hashes with matches: {len(matches)}")
+            print(f"  Master files: {total_masters}")
+            print(f"  Duplicates: {total_duplicates}")
+
+            if args.show_unmatched:
+                print(f"\nUnmatched files summary:")
+                print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
+                print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
         else:
-            print(f"\nFound {len(matches)} hashes with matching files:\n")
-            for file_hash, (files1, files2) in matches.items():
-                print(f"Hash: {file_hash[:10]}...")
-                print(f"  Files in {args.dir1}:")
-                for f in files1:
-                    print(f"    {f}")
-                print(f"  Files in {args.dir2}:")
-                for f in files2:
-                    print(f"    {f}")
-                print()
-    
-        # Optionally display unmatched files (detailed mode)
-        if args.show_unmatched and not args.summary:
-            print("\nFiles with no content matches:")
-            print("==============================")
-            
-            if unmatched1:
-                print(f"\nUnique files in {args.dir1} ({len(unmatched1)}):")
-                for f in sorted(unmatched1):
-                    print(f"  {f}")
+            # Detailed output with master mode
+            if not matches:
+                print("No duplicates found.")
             else:
-                print(f"\nNo unique files in {args.dir1}")
-            
-            if unmatched2:
-                print(f"\nUnique files in {args.dir2} ({len(unmatched2)}):")
-                for f in sorted(unmatched2):
-                    print(f"  {f}")
+                print(f"\nFound {len(matches)} duplicate groups:\n")
+
+                # Print warnings first
+                for warning in warnings:
+                    print(warning)
+                if warnings:
+                    print()
+
+                for master_file, duplicates, reason in master_results:
+                    if args.verbose:
+                        print(f"Selected master: {master_file} ({reason})")
+                        if duplicates:
+                            print(f"  Duplicates: {', '.join(duplicates)}")
+                    else:
+                        print(format_master_output(master_file, duplicates))
+
+            # Optionally display unmatched files (detailed mode)
+            if args.show_unmatched:
+                print("\nFiles with no content matches:")
+                print("==============================")
+
+                if unmatched1:
+                    print(f"\nUnique files in {args.dir1} ({len(unmatched1)}):")
+                    for f in sorted(unmatched1):
+                        print(f"  {f}")
+                else:
+                    print(f"\nNo unique files in {args.dir1}")
+
+                if unmatched2:
+                    print(f"\nUnique files in {args.dir2} ({len(unmatched2)}):")
+                    for f in sorted(unmatched2):
+                        print(f"  {f}")
+                else:
+                    print(f"\nNo unique files in {args.dir2}")
+    else:
+        # Original output format (no master mode)
+        if args.summary:
+            print(f"\nMatched files summary:")
+            print(f"  Unique content hashes with matches: {len(matches)}")
+            print(f"  Files in {args.dir1} with matches in {args.dir2}: {matched_files1}")
+            print(f"  Files in {args.dir2} with matches in {args.dir1}: {matched_files2}")
+
+            if args.show_unmatched:
+                print(f"\nUnmatched files summary:")
+                print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
+                print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
+        else:
+            # Detailed output
+            if not matches:
+                print("No matching files with different names found.")
             else:
-                print(f"\nNo unique files in {args.dir2}")
+                print(f"\nFound {len(matches)} hashes with matching files:\n")
+                for file_hash, (files1, files2) in matches.items():
+                    print(f"Hash: {file_hash[:10]}...")
+                    print(f"  Files in {args.dir1}:")
+                    for f in files1:
+                        print(f"    {f}")
+                    print(f"  Files in {args.dir2}:")
+                    for f in files2:
+                        print(f"    {f}")
+                    print()
+
+            # Optionally display unmatched files (detailed mode)
+            if args.show_unmatched and not args.summary:
+                print("\nFiles with no content matches:")
+                print("==============================")
+
+                if unmatched1:
+                    print(f"\nUnique files in {args.dir1} ({len(unmatched1)}):")
+                    for f in sorted(unmatched1):
+                        print(f"  {f}")
+                else:
+                    print(f"\nNo unique files in {args.dir1}")
+
+                if unmatched2:
+                    print(f"\nUnique files in {args.dir2} ({len(unmatched2)}):")
+                    for f in sorted(unmatched2):
+                        print(f"  {f}")
+                else:
+                    print(f"\nNo unique files in {args.dir2}")
 
     return 0
 
