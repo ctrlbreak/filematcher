@@ -100,7 +100,13 @@ Plans:
 
 **Dependencies:** Phase 3 (requires --execute flag infrastructure)
 
-**Plans:** TBD
+**Plans:** 4 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — Action execution engine (hardlink, symlink, delete)
+- [ ] 04-02-PLAN.md — Audit logging system with --log flag
+- [ ] 04-03-PLAN.md — CLI integration (--fallback-symlink, confirmation, progress)
+- [ ] 04-04-PLAN.md — Unit and integration tests (TEST-04, TEST-05)
 
 **Requirements:**
 - EXEC-01: Support `--action` flag for specifying action type (hardlink, symlink, delete)
@@ -134,7 +140,7 @@ Plans:
 | 1 - Master Directory Foundation | Complete | 4 | 4 |
 | 2 - Dry-Run Preview & Statistics | Complete | 8 | 8 |
 | 3 - Safe Defaults Refactor | Complete | 5 | 5 |
-| 4 - Actions & Logging | Pending | 12 | 0 |
+| 4 - Actions & Logging | Planned | 12 | 0 |
 
 **Total:** 29 requirements across 4 phases
 
@@ -164,3 +170,4 @@ All v1 requirements mapped:
 *Phase 3 added: 2026-01-19 (safe defaults refactor)*
 *Phase 3 planned: 2026-01-19*
 *Phase 3 completed: 2026-01-19*
+*Phase 4 planned: 2026-01-19*
