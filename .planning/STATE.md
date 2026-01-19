@@ -90,6 +90,10 @@ None.
 - [ ] Create Phase 4 plans
 - [ ] Execute Phase 4 plans
 
+### Pending Todos
+
+1 pending todo in `.planning/todos/pending/`
+
 ### Blockers
 
 None.
