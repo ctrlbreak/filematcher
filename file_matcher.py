@@ -180,6 +180,57 @@ def calculate_space_savings(
     return (total_bytes, total_duplicates, groups_with_duplicates)
 
 
+def get_device_id(path: str) -> int:
+    """
+    Get the device ID for a file's filesystem.
+
+    Args:
+        path: Path to the file
+
+    Returns:
+        Device ID (st_dev from os.stat)
+
+    Raises:
+        OSError: If file cannot be accessed
+    """
+    return os.stat(path).st_dev
+
+
+def check_cross_filesystem(master_file: str, duplicates: list[str]) -> set[str]:
+    """
+    Check which duplicates are on different filesystems than master.
+
+    Returns set of duplicate paths that cannot be hardlinked to master
+    (they're on a different filesystem).
+
+    Args:
+        master_file: Path to the master file
+        duplicates: List of paths to check
+
+    Returns:
+        Set of duplicate paths on different filesystems
+    """
+    if not duplicates:
+        return set()
+
+    try:
+        master_device = get_device_id(master_file)
+    except OSError:
+        # If we can't access master, all duplicates are considered cross-filesystem
+        return set(duplicates)
+
+    cross_fs = set()
+    for dup in duplicates:
+        try:
+            if get_device_id(dup) != master_device:
+                cross_fs.add(dup)
+        except OSError:
+            # If we can't access duplicate, treat as cross-filesystem for safety
+            cross_fs.add(dup)
+
+    return cross_fs
+
+
 def format_file_size(size_bytes: int | float) -> str:
     """
     Convert file size in bytes to human-readable format.
@@ -505,13 +556,23 @@ def main() -> int:
                 if warnings:
                     print()
 
-                for master_file, duplicates, reason in master_results:
+                # Sort master_results by master file path (alphabetical)
+                sorted_results = sorted(master_results, key=lambda x: x[0])
+
+                for i, (master_file, duplicates, reason) in enumerate(sorted_results):
+                    # Build file_sizes dict for verbose mode
+                    file_sizes = None
                     if args.verbose:
-                        print(f"Selected master: {master_file} ({reason})")
-                        if duplicates:
-                            print(f"  Duplicates: {', '.join(duplicates)}")
-                    else:
-                        print(format_master_output(master_file, duplicates))
+                        all_paths = [master_file] + duplicates
+                        file_sizes = {p: os.path.getsize(p) for p in all_paths}
+
+                    # Print group using new format
+                    for line in format_duplicate_group(master_file, duplicates, action=None, verbose=args.verbose, file_sizes=file_sizes):
+                        print(line)
+
+                    # Print blank line between groups (but not after the last one)
+                    if i < len(sorted_results) - 1:
+                        print()
 
             # Optionally display unmatched files (detailed mode)
             if args.show_unmatched:
