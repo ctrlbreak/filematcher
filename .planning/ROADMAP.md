@@ -40,6 +40,14 @@ Plans:
 
 **Dependencies:** Phase 1 (requires master directory identification)
 
+**Plans:** 4 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Refactor output to [MASTER]/[DUP] hierarchical format
+- [ ] 02-02-PLAN.md — Add statistics calculation and cross-filesystem detection
+- [ ] 02-03-PLAN.md — Implement --dry-run flag with banner and statistics footer
+- [ ] 02-04-PLAN.md — Unit tests for dry-run output formatting (TEST-02)
+
 **Requirements:**
 - DRY-01: User can preview planned changes with `--dry-run` flag
 - DRY-02: Dry-run shows list of files that would be modified
@@ -93,8 +101,8 @@ Plans:
 
 | Phase | Status | Requirements | Completed |
 |-------|--------|--------------|-----------|
-| 1 - Master Directory Foundation | ✓ Complete | 4 | 4 |
-| 2 - Dry-Run Preview & Statistics | Pending | 8 | 0 |
+| 1 - Master Directory Foundation | Complete | 4 | 4 |
+| 2 - Dry-Run Preview & Statistics | In Progress | 8 | 0 |
 | 3 - Actions & Logging | Pending | 12 | 0 |
 
 **Total:** 24 requirements across 3 phases
@@ -119,3 +127,4 @@ All v1 requirements mapped:
 *Roadmap created: 2026-01-19*
 *Last revised: 2026-01-19*
 *Phase 1 completed: 2026-01-19*
+*Phase 2 planned: 2026-01-19*
