@@ -4,14 +4,14 @@
 
 **Core Value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
 
-**Current Focus:** Phase 2 - Dry-Run Preview & Statistics (infrastructure functions complete)
+**Current Focus:** Phase 2 - Dry-Run Preview & Statistics (output format refactor complete)
 
 ## Current Position
 
 **Phase:** 2 of 3 - Dry-Run Preview & Statistics
 **Plan:** 2 of 4 complete
 **Status:** In progress
-**Last activity:** 2026-01-19 - Completed 02-02-PLAN.md (statistics & cross-filesystem)
+**Last activity:** 2026-01-19 - Completed 02-01-PLAN.md (output format refactor to [MASTER]/[DUP:?])
 
 **Progress:**
 ```
@@ -42,7 +42,7 @@ Overall: [#####-----] 50% (4/6 plans complete)
 | Path.resolve() for path comparison | Handles ./dir, ../dir, symlinks transparently | 01-01 |
 | Exit code 2 for validation errors | Argparse convention via parser.error() | 01-01 |
 | Oldest by mtime for master selection | When multiple files in master dir have same content | 01-01 |
-| Arrow notation for output | master -> dup1, dup2 format as specified | 01-01 |
+| [MASTER]/[DUP:?] format | Hierarchical format supports action labels for dry-run | 02-01 |
 | Path.resolve() in index_directory | Consistent with master validation; fixes symlink issues on macOS | 01-02 |
 | OSError = cross-filesystem | Inaccessible files treated as different filesystem for safety | 02-02 |
 | Space savings = duplicate sizes | Sum of duplicate file sizes (not master sizes) | 02-02 |
@@ -78,17 +78,17 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-01-19
-**Stopped at:** Completed 02-02-PLAN.md
+**Stopped at:** Completed 02-01-PLAN.md
 **Resume file:** None
 
 ### Handoff Notes
 
-Phase 2 infrastructure in progress:
-- `format_duplicate_group()` creates formatted output lines for duplicate groups
-- `calculate_space_savings()` computes (bytes_saved, dup_count, group_count)
-- `get_device_id()` returns st_dev for filesystem identification
-- `check_cross_filesystem()` identifies cross-filesystem duplicates
-- All 35 tests passing
+Phase 2 output format refactor complete:
+- `format_duplicate_group()` creates [MASTER]/[DUP:?] formatted output
+- main() updated to use new format with sorted groups and blank line separators
+- Verbose mode shows duplicate count and file sizes
+- All 35 tests updated and passing
+- Also available: `calculate_space_savings()`, `get_device_id()`, `check_cross_filesystem()`
 
 Requirements delivered: MSTR-01, MSTR-02, MSTR-03, TEST-01, DRY-01 (partial), DRY-02 (partial)
 
