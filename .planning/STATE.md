@@ -4,32 +4,32 @@
 
 **Core Value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
 
-**Current Focus:** Ready to begin Phase 2 - Dry-Run Preview & Statistics
+**Current Focus:** Phase 2 - Dry-Run Preview & Statistics (infrastructure functions complete)
 
 ## Current Position
 
 **Phase:** 2 of 3 - Dry-Run Preview & Statistics
-**Plan:** Not started
-**Status:** Ready to plan
-**Last activity:** 2026-01-19 - Phase 1 complete and verified
+**Plan:** 2 of 4 complete
+**Status:** In progress
+**Last activity:** 2026-01-19 - Completed 02-02-PLAN.md (statistics & cross-filesystem)
 
 **Progress:**
 ```
-Phase 1: [##########] Master Directory Foundation ✓
-Phase 2: [----------] Dry-Run Preview & Statistics
-Phase 3: [----------] Actions & Logging
+Phase 1: [##########] Master Directory Foundation (2/2 plans)
+Phase 2: [#####-----] Dry-Run Preview & Statistics (2/4 plans)
+Phase 3: [----------] Actions & Logging (0/? plans)
 
-Overall: [###-------] 17% (4/24 requirements)
+Overall: [#####-----] 50% (4/6 plans complete)
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 2 |
-| Requirements delivered | 4/24 |
+| Plans completed | 4 |
+| Requirements delivered | 6/24 |
 | Phases completed | 1/3 |
-| Avg plan duration | 4 min |
+| Avg plan duration | 3 min |
 
 ## Accumulated Context
 
@@ -44,6 +44,8 @@ Overall: [###-------] 17% (4/24 requirements)
 | Oldest by mtime for master selection | When multiple files in master dir have same content | 01-01 |
 | Arrow notation for output | master -> dup1, dup2 format as specified | 01-01 |
 | Path.resolve() in index_directory | Consistent with master validation; fixes symlink issues on macOS | 01-02 |
+| OSError = cross-filesystem | Inaccessible files treated as different filesystem for safety | 02-02 |
+| Space savings = duplicate sizes | Sum of duplicate file sizes (not master sizes) | 02-02 |
 
 ### Technical Notes
 
@@ -51,8 +53,9 @@ Overall: [###-------] 17% (4/24 requirements)
 - Pure Python standard library (no external dependencies)
 - Uses argparse for CLI, logging module for output
 - Core APIs available: os.link, os.symlink, Path.unlink, os.replace
-- **New functions:** validate_master_directory(), select_master_file(), format_master_output()
-- **Test coverage:** 35 tests total (17 new master directory tests)
+- **Phase 1 functions:** validate_master_directory(), select_master_file(), format_master_output()
+- **Phase 2 functions:** format_duplicate_group(), calculate_space_savings(), get_device_id(), check_cross_filesystem()
+- **Test coverage:** 35 tests total (17 master directory tests)
 
 ### Open Questions
 
@@ -63,7 +66,10 @@ None.
 - [x] Execute plan 01-01 (master flag, validation, output formatting)
 - [x] Execute plan 01-02 (master directory unit tests)
 - [x] Verify Phase 1 goal achievement
-- [ ] Begin Phase 2 planning (dry-run preview & statistics)
+- [x] Execute plan 02-01 (duplicate group formatting)
+- [x] Execute plan 02-02 (statistics & cross-filesystem)
+- [ ] Execute plan 02-03 (dry-run output integration)
+- [ ] Execute plan 02-04 (dry-run tests)
 
 ### Blockers
 
@@ -72,25 +78,21 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-01-19
-**Stopped at:** Phase 1 execution complete and verified
+**Stopped at:** Completed 02-02-PLAN.md
 **Resume file:** None
 
 ### Handoff Notes
 
-Phase 1 complete and verified:
-- `--master/-m` flag implemented with path validation
-- Master-aware output formatting with arrow notation
-- Summary mode shows master/duplicate counts
-- Verbose mode shows selection reasoning
-- Timestamp-based master selection within master directory
-- Warning for multiple files with same content in master directory
-- 35 tests passing (17 new master directory tests)
-- Fixed symlink path resolution bug (Path.resolve() consistency)
-- VERIFICATION.md confirms 9/9 must-haves passed
+Phase 2 infrastructure in progress:
+- `format_duplicate_group()` creates formatted output lines for duplicate groups
+- `calculate_space_savings()` computes (bytes_saved, dup_count, group_count)
+- `get_device_id()` returns st_dev for filesystem identification
+- `check_cross_filesystem()` identifies cross-filesystem duplicates
+- All 35 tests passing
 
-Requirements delivered: MSTR-01, MSTR-02, MSTR-03, TEST-01
+Requirements delivered: MSTR-01, MSTR-02, MSTR-03, TEST-01, DRY-01 (partial), DRY-02 (partial)
 
-Next: Begin Phase 2 planning for dry-run preview and statistics features.
+Next: Execute plan 02-03 for --dry-run flag and output integration.
 
 ---
 *State initialized: 2026-01-19*
