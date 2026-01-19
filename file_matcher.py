@@ -148,6 +148,65 @@ def format_duplicate_group(
     return lines
 
 
+DRY_RUN_BANNER = "=== DRY RUN - No changes will be made ==="
+
+
+def format_dry_run_banner() -> str:
+    """Return the dry-run header banner."""
+    return DRY_RUN_BANNER
+
+
+def format_statistics_footer(
+    group_count: int,
+    duplicate_count: int,
+    master_count: int,
+    space_savings: int,
+    action: str | None = None,
+    verbose: bool = False,
+    cross_fs_count: int = 0
+) -> list[str]:
+    """
+    Format the statistics footer for dry-run output.
+
+    Args:
+        group_count: Number of duplicate groups
+        duplicate_count: Total number of duplicate files
+        master_count: Number of master files (preserved)
+        space_savings: Bytes that would be saved
+        action: Action type for action-specific messaging
+        verbose: If True, show exact bytes
+        cross_fs_count: Number of files that can't be hardlinked (cross-fs)
+
+    Returns:
+        List of lines for the footer
+    """
+    lines = []
+    lines.append("")  # Blank line before statistics
+    lines.append("--- Statistics ---")
+    lines.append(f"Duplicate groups: {group_count}")
+    lines.append(f"Master files preserved: {master_count}")
+    lines.append(f"Duplicate files: {duplicate_count}")
+
+    # Action-specific messaging
+    if action == 'hardlink':
+        lines.append(f"Files to become hard links: {duplicate_count}")
+        if cross_fs_count > 0:
+            lines.append(f"  Warning: {cross_fs_count} files on different filesystem (cannot hardlink)")
+    elif action == 'symlink':
+        lines.append(f"Files to become symbolic links: {duplicate_count}")
+    elif action == 'delete':
+        lines.append(f"Files to be deleted: {duplicate_count}")
+
+    # Space to be reclaimed
+    space_str = format_file_size(space_savings)
+    if verbose:
+        lines.append(f"Space to be reclaimed: {space_str}  ({space_savings:,} bytes)")
+    else:
+        lines.append(f"Space to be reclaimed: {space_str}")
+
+    return lines
+
+
 def calculate_space_savings(
     duplicate_groups: list[tuple[str, list[str], str]]
 ) -> tuple[int, int, int]:
