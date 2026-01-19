@@ -112,5 +112,141 @@ class TestDryRunBanner(BaseFileMatcherTest):
             self.assertIn("No changes will be made", output)
 
 
+class TestDryRunStatistics(BaseFileMatcherTest):
+    """Tests for dry-run statistics footer."""
+
+    def run_main_with_args(self, args: list[str]) -> str:
+        """Helper to run main() with given args and capture stdout."""
+        f = io.StringIO()
+        with redirect_stdout(f):
+            main()
+        return f.getvalue()
+
+    def test_statistics_footer_displayed(self):
+        """Statistics section should appear at end of output."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run']):
+            output = self.run_main_with_args([])
+            # Verify "Statistics" header
+            self.assertIn("Statistics", output)
+            # Verify "Duplicate groups:" line
+            self.assertIn("Duplicate groups:", output)
+            # Verify "Duplicate files:" line
+            self.assertIn("Duplicate files:", output)
+            # Verify "Space to be reclaimed:" line
+            self.assertIn("Space to be reclaimed:", output)
+
+    def test_statistics_counts_correct(self):
+        """Statistics should show correct counts."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run']):
+            output = self.run_main_with_args([])
+            # The base test setup creates 1 duplicate group with 3 files having same content
+            # (file1.txt, different_name.txt, file3.txt, also_different_name.txt all have "This is file content A\n")
+            # So we should have at least 1 duplicate group
+            self.assertIn("Duplicate groups: 1", output)
+            # Should show master files preserved
+            self.assertIn("Master files preserved:", output)
+
+    def test_verbose_shows_exact_bytes(self):
+        """Verbose mode should show exact byte count."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run', '--verbose']):
+            output = self.run_main_with_args([])
+            # Verify "(X bytes)" format in verbose output
+            self.assertIn("bytes)", output)
+
+    def test_summary_shows_only_statistics(self):
+        """--dry-run --summary should show only stats, no file list."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run', '--summary']):
+            output = self.run_main_with_args([])
+            # Verify stats present
+            self.assertIn("Statistics", output)
+            self.assertIn("Duplicate groups:", output)
+            # Verify no [MASTER]/[DUP] lines
+            self.assertNotIn("[MASTER]", output)
+            self.assertNotIn("[DUP:", output)
+
+
+class TestDryRunActionLabels(BaseFileMatcherTest):
+    """Tests for action labels in dry-run output."""
+
+    def run_main_with_args(self, args: list[str]) -> str:
+        """Helper to run main() with given args and capture stdout."""
+        f = io.StringIO()
+        with redirect_stdout(f):
+            main()
+        return f.getvalue()
+
+    def test_no_action_shows_question_mark(self):
+        """Without --action, duplicates show [DUP:?]."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run']):
+            output = self.run_main_with_args([])
+            # Verify "[DUP:?]" in output
+            self.assertIn("[DUP:?]", output)
+
+    def test_hardlink_action_label(self):
+        """With --action hardlink, duplicates show [DUP:hardlink]."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run', '--action', 'hardlink']):
+            output = self.run_main_with_args([])
+            self.assertIn("[DUP:hardlink]", output)
+
+    def test_symlink_action_label(self):
+        """With --action symlink, duplicates show [DUP:symlink]."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run', '--action', 'symlink']):
+            output = self.run_main_with_args([])
+            self.assertIn("[DUP:symlink]", output)
+
+    def test_delete_action_label(self):
+        """With --action delete, duplicates show [DUP:delete]."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run', '--action', 'delete']):
+            output = self.run_main_with_args([])
+            self.assertIn("[DUP:delete]", output)
+
+
+class TestDryRunCrossFilesystem(BaseFileMatcherTest):
+    """Tests for cross-filesystem warnings."""
+
+    def run_main_with_args(self, args: list[str]) -> str:
+        """Helper to run main() with given args and capture stdout."""
+        f = io.StringIO()
+        with redirect_stdout(f):
+            main()
+        return f.getvalue()
+
+    def test_cross_fs_warning_in_output(self):
+        """Cross-filesystem files should show [!cross-fs] warning."""
+        # Mock check_cross_filesystem to return a known set of "cross-filesystem" files
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run', '--action', 'hardlink']):
+            # Get the duplicate file paths that would normally be checked
+            # We'll mock check_cross_filesystem to return all duplicates as cross-fs
+            with patch('file_matcher.check_cross_filesystem') as mock_check:
+                # Return all duplicates as cross-filesystem
+                def mock_cross_fs(master_file, duplicates):
+                    return set(duplicates)
+                mock_check.side_effect = mock_cross_fs
+                output = self.run_main_with_args([])
+                # Should show [!cross-fs] marker
+                self.assertIn("[!cross-fs]", output)
+
+    def test_cross_fs_count_in_statistics(self):
+        """Statistics should show count of cross-fs files when present."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run', '--action', 'hardlink']):
+            with patch('file_matcher.check_cross_filesystem') as mock_check:
+                # Return all duplicates as cross-filesystem
+                def mock_cross_fs(master_file, duplicates):
+                    return set(duplicates)
+                mock_check.side_effect = mock_cross_fs
+                output = self.run_main_with_args([])
+                # Should show warning in statistics
+                self.assertIn("Warning:", output)
+                self.assertIn("cannot hardlink", output)
+
+    def test_no_cross_fs_warning_without_hardlink(self):
+        """Cross-filesystem warning should not appear for symlink/delete actions."""
+        for action in ['symlink', 'delete']:
+            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--dry-run', '--action', action]):
+                output = self.run_main_with_args([])
+                # Should NOT show [!cross-fs] marker for non-hardlink actions
+                self.assertNotIn("[!cross-fs]", output)
+
+
 if __name__ == "__main__":
     unittest.main()
