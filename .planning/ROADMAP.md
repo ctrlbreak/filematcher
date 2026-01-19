@@ -15,6 +15,12 @@ This roadmap delivers deduplication capabilities in three phases: foundation (ma
 
 **Dependencies:** None (builds on existing file matching capability)
 
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Add --master flag, validation, and master-aware output formatting
+- [ ] 01-02-PLAN.md — Unit tests for master directory validation (TEST-01)
+
 **Requirements:**
 - MSTR-01: User can designate one directory as "master" via `--master` flag
 - MSTR-02: Files in master directory are never modified or deleted
@@ -87,7 +93,7 @@ This roadmap delivers deduplication capabilities in three phases: foundation (ma
 
 | Phase | Status | Requirements | Completed |
 |-------|--------|--------------|-----------|
-| 1 - Master Directory Foundation | Pending | 4 | 0 |
+| 1 - Master Directory Foundation | Planned | 4 | 0 |
 | 2 - Dry-Run Preview & Statistics | Pending | 8 | 0 |
 | 3 - Actions & Logging | Pending | 12 | 0 |
 
