@@ -1,0 +1,8 @@
+{
+  "mode": "interactive",
+  "depth": "standard",
+  "parallelization": true,
+  "notes": {
+    "testing": "Include unit tests with each feature to maintain comprehensive coverage"
+  }
+}
