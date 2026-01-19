@@ -15,10 +15,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Dry-Run Preview
 
-- [ ] **DRY-01**: User can preview planned changes with `--dry-run` flag
-- [ ] **DRY-02**: Dry-run shows list of files that would be modified
-- [ ] **DRY-03**: Dry-run shows what action would be taken on each file
-- [ ] **DRY-04**: Dry-run shows estimated space savings before execution
+- [x] **DRY-01**: User can preview planned changes with `--dry-run` flag
+- [x] **DRY-02**: Dry-run shows list of files that would be modified
+- [x] **DRY-03**: Dry-run shows what action would be taken on each file
+- [x] **DRY-04**: Dry-run shows estimated space savings before execution
 
 ### Change Logging
 
@@ -28,9 +28,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Summary Statistics
 
-- [ ] **STAT-01**: Display count of duplicate groups found
-- [ ] **STAT-02**: Display count of files that would be affected
-- [ ] **STAT-03**: Display total space that would be saved/reclaimed
+- [x] **STAT-01**: Display count of duplicate groups found
+- [x] **STAT-02**: Display count of files that would be affected
+- [x] **STAT-03**: Display total space that would be saved/reclaimed
 
 ### Execution Infrastructure
 
@@ -48,7 +48,7 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Testing
 
 - [x] **TEST-01**: Unit tests for master directory validation
-- [ ] **TEST-02**: Unit tests for dry-run output formatting
+- [x] **TEST-02**: Unit tests for dry-run output formatting
 - [ ] **TEST-03**: Unit tests for change logging
 - [ ] **TEST-04**: Integration tests for CLI flag combinations
 
@@ -89,14 +89,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MSTR-02 | Phase 1 | Complete |
 | MSTR-03 | Phase 1 | Complete |
 | TEST-01 | Phase 1 | Complete |
-| DRY-01 | Phase 2 | Pending |
-| DRY-02 | Phase 2 | Pending |
-| DRY-03 | Phase 2 | Pending |
-| DRY-04 | Phase 2 | Pending |
-| STAT-01 | Phase 2 | Pending |
-| STAT-02 | Phase 2 | Pending |
-| STAT-03 | Phase 2 | Pending |
-| TEST-02 | Phase 2 | Pending |
+| DRY-01 | Phase 2 | Complete |
+| DRY-02 | Phase 2 | Complete |
+| DRY-03 | Phase 2 | Complete |
+| DRY-04 | Phase 2 | Complete |
+| STAT-01 | Phase 2 | Complete |
+| STAT-02 | Phase 2 | Complete |
+| STAT-03 | Phase 2 | Complete |
+| TEST-02 | Phase 2 | Complete |
 | EXEC-01 | Phase 3 | Pending |
 | EXEC-02 | Phase 3 | Pending |
 | EXEC-03 | Phase 3 | Pending |
@@ -117,4 +117,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-19*
-*Last updated: 2026-01-19 (Phase 1 complete)*
+*Last updated: 2026-01-19 (Phase 2 complete)*
