@@ -271,5 +271,127 @@ class TestCrossFilesystemWarnings(BaseFileMatcherTest):
                 self.assertNotIn("[!cross-fs]", output)
 
 
+class TestExecuteMode(BaseFileMatcherTest):
+    """Tests for --execute flag behavior."""
+
+    def run_main_with_args(self, args: list[str]) -> str:
+        """Helper to run main() with given args and capture stdout."""
+        f = io.StringIO()
+        with redirect_stdout(f):
+            main()
+        return f.getvalue()
+
+    def test_execute_shows_preview_then_banner(self):
+        """--execute should show preview output then EXECUTING banner."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('builtins.input', return_value='n'):
+                    output = self.run_main_with_args([])
+                    self.assertIn("PREVIEW MODE", output)
+                    self.assertIn("EXECUTING", output)
+
+    def test_execute_prompts_for_confirmation(self):
+        """--execute should prompt user before proceeding."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('builtins.input', return_value='n') as mock_input:
+                    self.run_main_with_args([])
+                    mock_input.assert_called_once()
+                    # Verify prompt text
+                    call_args = mock_input.call_args[0][0] if mock_input.call_args[0] else ""
+                    self.assertIn("[y/N]", call_args)
+
+    def test_execute_abort_shows_message(self):
+        """Declining confirmation should show abort message."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('builtins.input', return_value='n'):
+                    output = self.run_main_with_args([])
+                    self.assertIn("Aborted", output)
+                    self.assertIn("No changes made", output)
+
+    def test_execute_abort_exit_code_zero(self):
+        """Aborting should exit with code 0 (not an error)."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('builtins.input', return_value='n'):
+                    f = io.StringIO()
+                    with redirect_stdout(f):
+                        result = main()
+                    self.assertEqual(result, 0)
+
+    def test_yes_flag_skips_confirmation(self):
+        """--yes should skip the confirmation prompt entirely."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute', '--yes']):
+            with patch('builtins.input') as mock_input:
+                self.run_main_with_args([])
+                mock_input.assert_not_called()
+
+    def test_confirmation_accepts_y(self):
+        """User typing 'y' should proceed."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('builtins.input', return_value='y'):
+                    output = self.run_main_with_args([])
+                    # Should NOT show abort message
+                    self.assertNotIn("Aborted", output)
+
+    def test_confirmation_accepts_yes(self):
+        """User typing 'yes' should proceed."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('builtins.input', return_value='yes'):
+                    output = self.run_main_with_args([])
+                    self.assertNotIn("Aborted", output)
+
+    def test_confirmation_case_insensitive(self):
+        """Confirmation should accept 'Y' and 'YES' (case insensitive)."""
+        for response in ['Y', 'YES', 'Yes']:
+            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                       '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                with patch('sys.stdin.isatty', return_value=True):
+                    with patch('builtins.input', return_value=response):
+                        output = self.run_main_with_args([])
+                        self.assertNotIn("Aborted", output)
+
+
+class TestNonInteractiveMode(BaseFileMatcherTest):
+    """Tests for non-interactive (piped/scripted) mode."""
+
+    def test_non_tty_defaults_to_abort(self):
+        """Non-interactive mode should default to abort without --yes."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+            with patch('sys.stdin.isatty', return_value=False):
+                stderr_capture = io.StringIO()
+                stdout_capture = io.StringIO()
+                with redirect_stderr(stderr_capture):
+                    with redirect_stdout(stdout_capture):
+                        result = main()
+                # Should show message about non-interactive mode
+                self.assertIn("Non-interactive", stderr_capture.getvalue())
+                # Should return 0 (not an error)
+                self.assertEqual(result, 0)
+
+    def test_non_tty_with_yes_proceeds(self):
+        """Non-interactive mode with --yes should proceed without prompt."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--master', self.test_dir1, '--action', 'hardlink', '--execute', '--yes']):
+            with patch('sys.stdin.isatty', return_value=False):
+                f = io.StringIO()
+                with redirect_stdout(f):
+                    main()
+                output = f.getvalue()
+                # Should NOT show abort message
+                self.assertNotIn("Aborted", output)
+
+
 if __name__ == "__main__":
     unittest.main()
