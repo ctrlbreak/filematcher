@@ -109,23 +109,23 @@ class TestMasterDirectoryOutput(BaseFileMatcherTest):
             main()
         return f.getvalue()
 
-    def test_master_output_arrow_notation(self):
-        """Test that output contains -> when --master set."""
+    def test_master_output_format(self):
+        """Test that output uses [MASTER]/[DUP:?] format when --master set."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
             output = self.run_main_with_args([])
-            # Arrow notation should appear in output when there are duplicates
-            self.assertIn("->", output)
+            # New format should have [MASTER] and [DUP:?] prefixes
+            self.assertIn("[MASTER]", output)
+            self.assertIn("[DUP:?]", output)
 
     def test_master_output_master_first(self):
-        """Test that master file appears before arrow."""
+        """Test that [MASTER] lines contain files from master directory."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
             output = self.run_main_with_args([])
-            # Find lines with arrows - master should be in test_dir1
-            lines_with_arrow = [line for line in output.split('\n') if '->' in line]
-            for line in lines_with_arrow:
-                # Master file (before ->) should be from test_dir1
-                master_part = line.split('->')[0].strip()
-                self.assertIn('test_dir1', master_part)
+            # Find lines with [MASTER] - should be from test_dir1
+            master_lines = [line for line in output.split('\n') if '[MASTER]' in line]
+            for line in master_lines:
+                # Master file should be from test_dir1
+                self.assertIn('test_dir1', line)
 
     def test_no_master_preserves_old_format(self):
         """Test that without --master, output has Hash: format."""
@@ -140,11 +140,14 @@ class TestMasterDirectoryOutput(BaseFileMatcherTest):
             self.assertIn("Master files:", output)
             self.assertIn("Duplicates:", output)
 
-    def test_master_verbose_shows_reasoning(self):
-        """Test that --verbose shows Selected master: text."""
+    def test_master_verbose_shows_details(self):
+        """Test that --verbose shows duplicate count and file size."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--verbose']):
             output = self.run_main_with_args([])
-            self.assertIn("Selected master:", output)
+            # Verbose mode should show duplicate count and size in [MASTER] line
+            self.assertIn("duplicates", output.lower())
+            # Should still have the [MASTER] format
+            self.assertIn("[MASTER]", output)
 
 
 class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
@@ -182,22 +185,33 @@ class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
 
     def test_oldest_file_becomes_master(self):
         """Verify oldest file in master dir is selected as master."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--verbose']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
             output = self.run_main_with_args([])
             # The older file (dup_a.txt) should be selected as master
-            # Look for the line that shows master selection for our duplicate content
-            lines = output.split('\n')
-            for line in lines:
-                if 'dup_a.txt' in line and 'Selected master:' in line:
-                    self.assertIn('oldest', line.lower())
-                    break
+            # It should appear in a [MASTER] line, with dup_b.txt as [DUP:?]
+            master_lines = [line for line in output.split('\n') if '[MASTER]' in line and 'dup_' in line]
+            self.assertTrue(any('dup_a.txt' in line for line in master_lines),
+                            "dup_a.txt (oldest) should be selected as master")
+            # dup_b.txt should be a duplicate
+            dup_lines = [line for line in output.split('\n') if '[DUP:?]' in line and 'dup_b.txt' in line]
+            self.assertTrue(len(dup_lines) > 0, "dup_b.txt should appear as a duplicate")
 
-    def test_timestamp_selection_in_verbose(self):
-        """Verify verbose output explains timestamp selection."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--verbose']):
+    def test_duplicate_group_has_correct_structure(self):
+        """Verify duplicate groups have [MASTER] followed by indented [DUP:?] lines."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
             output = self.run_main_with_args([])
-            # Should mention "oldest" in the selection reasoning
-            self.assertIn("oldest", output.lower())
+            lines = output.split('\n')
+            # Find groups - [MASTER] should be followed by indented [DUP:?] lines
+            for i, line in enumerate(lines):
+                if '[MASTER]' in line:
+                    # Check that next non-empty lines are indented [DUP:?] lines
+                    j = i + 1
+                    while j < len(lines) and lines[j].strip() and '[MASTER]' not in lines[j]:
+                        if lines[j].strip():
+                            self.assertTrue(lines[j].startswith('    '),
+                                            f"DUP lines should be indented: {lines[j]}")
+                            self.assertIn('[DUP:?]', lines[j])
+                        j += 1
 
     def test_warning_multiple_masters(self):
         """Verify warning printed when multiple files in master have same content."""
@@ -224,14 +238,15 @@ class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
 
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
             output = self.run_main_with_args([])
-            # Find the line with the newer_master.txt or very_old.txt duplicate pair
-            lines_with_arrow = [line for line in output.split('\n') if '->' in line and ('newer_master.txt' in line or 'very_old.txt' in line)]
-            # The file from master dir (test_dir1) should be the master, appearing before ->
-            for line in lines_with_arrow:
-                if 'newer_master.txt' in line or 'very_old.txt' in line:
-                    master_part = line.split('->')[0]
-                    # Master should be from test_dir1
-                    self.assertIn('test_dir1', master_part)
+            # Find the [MASTER] line with newer_master.txt - it should be from test_dir1
+            master_lines = [line for line in output.split('\n') if '[MASTER]' in line and 'newer_master.txt' in line]
+            self.assertTrue(len(master_lines) > 0, "newer_master.txt should be a [MASTER]")
+            for line in master_lines:
+                # Master should be from test_dir1
+                self.assertIn('test_dir1', line)
+            # very_old.txt should be a [DUP:?]
+            dup_lines = [line for line in output.split('\n') if '[DUP:?]' in line and 'very_old.txt' in line]
+            self.assertTrue(len(dup_lines) > 0, "very_old.txt should appear as [DUP:?]")
 
 
 if __name__ == "__main__":
