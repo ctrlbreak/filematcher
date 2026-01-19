@@ -18,8 +18,8 @@ This roadmap delivers deduplication capabilities in three phases: foundation (ma
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Add --master flag, validation, and master-aware output formatting
-- [ ] 01-02-PLAN.md — Unit tests for master directory validation (TEST-01)
+- [x] 01-01-PLAN.md — Add --master flag, validation, and master-aware output formatting
+- [x] 01-02-PLAN.md — Unit tests for master directory validation (TEST-01)
 
 **Requirements:**
 - MSTR-01: User can designate one directory as "master" via `--master` flag
@@ -93,7 +93,7 @@ Plans:
 
 | Phase | Status | Requirements | Completed |
 |-------|--------|--------------|-----------|
-| 1 - Master Directory Foundation | Planned | 4 | 0 |
+| 1 - Master Directory Foundation | ✓ Complete | 4 | 4 |
 | 2 - Dry-Run Preview & Statistics | Pending | 8 | 0 |
 | 3 - Actions & Logging | Pending | 12 | 0 |
 
@@ -118,3 +118,4 @@ All v1 requirements mapped:
 ---
 *Roadmap created: 2026-01-19*
 *Last revised: 2026-01-19*
+*Phase 1 completed: 2026-01-19*

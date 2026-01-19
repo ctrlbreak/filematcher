@@ -9,9 +9,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Master Directory
 
-- [ ] **MSTR-01**: User can designate one directory as "master" via `--master` flag
-- [ ] **MSTR-02**: Files in master directory are never modified or deleted
-- [ ] **MSTR-03**: Tool validates master directory is one of the compared directories
+- [x] **MSTR-01**: User can designate one directory as "master" via `--master` flag
+- [x] **MSTR-02**: Files in master directory are never modified or deleted
+- [x] **MSTR-03**: Tool validates master directory is one of the compared directories
 
 ### Dry-Run Preview
 
@@ -47,7 +47,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Testing
 
-- [ ] **TEST-01**: Unit tests for master directory validation
+- [x] **TEST-01**: Unit tests for master directory validation
 - [ ] **TEST-02**: Unit tests for dry-run output formatting
 - [ ] **TEST-03**: Unit tests for change logging
 - [ ] **TEST-04**: Integration tests for CLI flag combinations
@@ -85,10 +85,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| MSTR-01 | Phase 1 | Pending |
-| MSTR-02 | Phase 1 | Pending |
-| MSTR-03 | Phase 1 | Pending |
-| TEST-01 | Phase 1 | Pending |
+| MSTR-01 | Phase 1 | Complete |
+| MSTR-02 | Phase 1 | Complete |
+| MSTR-03 | Phase 1 | Complete |
+| TEST-01 | Phase 1 | Complete |
 | DRY-01 | Phase 2 | Pending |
 | DRY-02 | Phase 2 | Pending |
 | DRY-03 | Phase 2 | Pending |
@@ -117,4 +117,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-19*
-*Last updated: 2026-01-19 after roadmap revision*
+*Last updated: 2026-01-19 (Phase 1 complete)*
