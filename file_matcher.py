@@ -21,6 +21,30 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
+def validate_master_directory(master: str, dir1: str, dir2: str) -> Path:
+    """
+    Validate that master directory is one of the compared directories.
+
+    Args:
+        master: Path to the master directory
+        dir1: First directory being compared
+        dir2: Second directory being compared
+
+    Returns:
+        Resolved Path to the master directory
+
+    Raises:
+        ValueError: If master is not one of the compared directories
+    """
+    master_resolved = Path(master).resolve()
+    dir1_resolved = Path(dir1).resolve()
+    dir2_resolved = Path(dir2).resolve()
+
+    if master_resolved == dir1_resolved or master_resolved == dir2_resolved:
+        return master_resolved
+    raise ValueError("Master must be one of the compared directories")
+
+
 def format_file_size(size_bytes: int | float) -> str:
     """
     Convert file size in bytes to human-readable format.
@@ -260,8 +284,18 @@ def main() -> int:
                         help='Use fast mode for large files (uses file size + partial content sampling)')
     parser.add_argument('--verbose', '-v', action='store_true',
                         help='Show detailed progress for each file being processed')
-    
+    parser.add_argument('--master', '-m',
+                        help='Designate one directory as master (files in master are never modified)')
+
     args = parser.parse_args()
+
+    # Validate master directory if specified
+    master_path = None
+    if args.master:
+        try:
+            master_path = validate_master_directory(args.master, args.dir1, args.dir2)
+        except ValueError as e:
+            parser.error(str(e))
 
     # Configure logging based on verbosity
     log_level = logging.DEBUG if args.verbose else logging.INFO
