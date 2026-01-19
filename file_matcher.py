@@ -264,8 +264,8 @@ def index_directory(directory: str | Path, hash_algorithm: str = 'md5', fast_mod
                     logger.debug(f"[{processed_files}/{total_files}] Processing {filepath.name} ({size_str})")
 
                 file_hash = get_file_hash(filepath, hash_algorithm, fast_mode)
-                # Store full absolute path
-                hash_to_files[file_hash].append(str(filepath.absolute()))
+                # Store full resolved path (resolve() handles symlinks for consistent comparison)
+                hash_to_files[file_hash].append(str(filepath.resolve()))
             except (PermissionError, OSError) as e:
                 logger.error(f"Error processing {filepath}: {e}")
                 if verbose:
