@@ -4,32 +4,32 @@
 
 **Core Value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
 
-**Current Focus:** Phase 2 - Dry-Run Preview & Statistics (output format refactor complete)
+**Current Focus:** Phase 2 - Dry-Run Preview & Statistics (dry-run output integration complete)
 
 ## Current Position
 
 **Phase:** 2 of 3 - Dry-Run Preview & Statistics
-**Plan:** 2 of 4 complete
+**Plan:** 3 of 4 complete
 **Status:** In progress
-**Last activity:** 2026-01-19 - Completed 02-01-PLAN.md (output format refactor to [MASTER]/[DUP:?])
+**Last activity:** 2026-01-19 - Completed 02-03-PLAN.md (dry-run output integration)
 
 **Progress:**
 ```
 Phase 1: [##########] Master Directory Foundation (2/2 plans)
-Phase 2: [#####-----] Dry-Run Preview & Statistics (2/4 plans)
+Phase 2: [########--] Dry-Run Preview & Statistics (3/4 plans)
 Phase 3: [----------] Actions & Logging (0/? plans)
 
-Overall: [#####-----] 50% (4/6 plans complete)
+Overall: [######----] 60% (5/6 plans complete)
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 4 |
-| Requirements delivered | 6/24 |
+| Plans completed | 5 |
+| Requirements delivered | 13/24 |
 | Phases completed | 1/3 |
-| Avg plan duration | 3 min |
+| Avg plan duration | 2 min |
 
 ## Accumulated Context
 
@@ -46,6 +46,9 @@ Overall: [#####-----] 50% (4/6 plans complete)
 | Path.resolve() in index_directory | Consistent with master validation; fixes symlink issues on macOS | 01-02 |
 | OSError = cross-filesystem | Inaccessible files treated as different filesystem for safety | 02-02 |
 | Space savings = duplicate sizes | Sum of duplicate file sizes (not master sizes) | 02-02 |
+| --dry-run requires --master | Validation enforced via parser.error() - consistent with argparse convention | 02-03 |
+| --action without --dry-run is valid | Allows Phase 3 to use --action flag for actual execution | 02-03 |
+| Cross-filesystem markers inline | [!cross-fs] appended to duplicate paths for clarity | 02-03 |
 
 ### Technical Notes
 
@@ -54,7 +57,7 @@ Overall: [#####-----] 50% (4/6 plans complete)
 - Uses argparse for CLI, logging module for output
 - Core APIs available: os.link, os.symlink, Path.unlink, os.replace
 - **Phase 1 functions:** validate_master_directory(), select_master_file(), format_master_output()
-- **Phase 2 functions:** format_duplicate_group(), calculate_space_savings(), get_device_id(), check_cross_filesystem()
+- **Phase 2 functions:** format_duplicate_group(), calculate_space_savings(), get_device_id(), check_cross_filesystem(), format_dry_run_banner(), format_statistics_footer()
 - **Test coverage:** 35 tests total (17 master directory tests)
 
 ### Open Questions
@@ -68,7 +71,7 @@ None.
 - [x] Verify Phase 1 goal achievement
 - [x] Execute plan 02-01 (duplicate group formatting)
 - [x] Execute plan 02-02 (statistics & cross-filesystem)
-- [ ] Execute plan 02-03 (dry-run output integration)
+- [x] Execute plan 02-03 (dry-run output integration)
 - [ ] Execute plan 02-04 (dry-run tests)
 
 ### Blockers
@@ -78,21 +81,22 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-01-19
-**Stopped at:** Completed 02-01-PLAN.md
+**Stopped at:** Completed 02-03-PLAN.md
 **Resume file:** None
 
 ### Handoff Notes
 
-Phase 2 output format refactor complete:
-- `format_duplicate_group()` creates [MASTER]/[DUP:?] formatted output
-- main() updated to use new format with sorted groups and blank line separators
-- Verbose mode shows duplicate count and file sizes
-- All 35 tests updated and passing
-- Also available: `calculate_space_savings()`, `get_device_id()`, `check_cross_filesystem()`
+Phase 2 dry-run output integration complete:
+- `--dry-run/-n` flag for preview mode (requires --master)
+- `--action/-a` flag with hardlink/symlink/delete choices
+- Banner "=== DRY RUN - No changes will be made ===" at top
+- Statistics footer with group/file counts and space savings
+- Cross-filesystem warnings for hardlink action ([!cross-fs] markers)
+- All 35 tests still passing
 
-Requirements delivered: MSTR-01, MSTR-02, MSTR-03, TEST-01, DRY-01 (partial), DRY-02 (partial)
+Requirements delivered: MSTR-01, MSTR-02, MSTR-03, TEST-01, DRY-01, DRY-02, DRY-03, DRY-04, STAT-01, STAT-02, STAT-03, XDEV-01, XDEV-02
 
-Next: Execute plan 02-03 for --dry-run flag and output integration.
+Next: Execute plan 02-04 for dry-run tests.
 
 ---
 *State initialized: 2026-01-19*
