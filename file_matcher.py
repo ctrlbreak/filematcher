@@ -534,16 +534,18 @@ def main() -> int:
                         help='Show detailed progress for each file being processed')
     parser.add_argument('--master', '-m',
                         help='Designate one directory as master (files in master are never modified)')
-    parser.add_argument('--dry-run', '-n', action='store_true',
-                        help='Preview changes without executing them')
     parser.add_argument('--action', '-a', choices=['hardlink', 'symlink', 'delete'],
-                        help='Action to take on duplicates (used with --dry-run or --master)')
+                        help='Action to take on duplicates (requires --master)')
+    parser.add_argument('--execute', action='store_true',
+                        help='Execute the action (without this flag, only preview)')
+    parser.add_argument('--yes', '-y', action='store_true',
+                        help='Skip confirmation prompt')
 
     args = parser.parse_args()
 
-    # Validate --dry-run requires --master
-    if args.dry_run and not args.master:
-        parser.error("--dry-run requires --master to be specified")
+    # Validate --execute requires --master and --action
+    if args.execute and not (args.master and args.action):
+        parser.error("--execute requires --master and --action")
 
     # Validate master directory if specified
     master_path = None
