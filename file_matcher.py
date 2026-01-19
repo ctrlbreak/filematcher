@@ -114,7 +114,8 @@ def format_duplicate_group(
     duplicates: list[str],
     action: str | None = None,
     verbose: bool = False,
-    file_sizes: dict[str, int] | None = None
+    file_sizes: dict[str, int] | None = None,
+    cross_fs_files: set[str] | None = None
 ) -> list[str]:
     """
     Format a duplicate group for display.
@@ -125,6 +126,7 @@ def format_duplicate_group(
         action: Action type (None, "hardlink", "symlink", "delete")
         verbose: If True, show additional details
         file_sizes: Dict mapping paths to file sizes (for verbose mode)
+        cross_fs_files: Set of duplicate paths on different filesystems (for warnings)
 
     Returns:
         List of formatted lines for this group
@@ -143,7 +145,8 @@ def format_duplicate_group(
     # Format duplicate lines (sorted alphabetically, 4-space indent)
     action_label = action if action else "?"
     for dup in sorted(duplicates):
-        lines.append(f"    [DUP:{action_label}] {dup}")
+        cross_fs_marker = " [!cross-fs]" if cross_fs_files and dup in cross_fs_files else ""
+        lines.append(f"    [DUP:{action_label}] {dup}{cross_fs_marker}")
 
     return lines
 
@@ -599,8 +602,34 @@ def main() -> int:
             total_masters += 1
             total_duplicates += len(duplicates)
 
+        # Check cross-filesystem for hardlink action
+        cross_fs_files = set()
+        if args.action == 'hardlink':
+            for master_file, duplicates, reason in master_results:
+                cross_fs_files.update(check_cross_filesystem(master_file, duplicates))
+
+        # Dry-run mode: print banner first
+        if args.dry_run:
+            print(format_dry_run_banner())
+            print()
+
         # Display results
-        if args.summary:
+        if args.dry_run and args.summary:
+            # Dry-run with summary: show only banner and statistics (no file listing)
+            bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
+            cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+            footer_lines = format_statistics_footer(
+                group_count=grp_count,
+                duplicate_count=dup_count,
+                master_count=len(master_results),
+                space_savings=bytes_saved,
+                action=args.action,
+                verbose=args.verbose,
+                cross_fs_count=cross_fs_count
+            )
+            for line in footer_lines:
+                print(line)
+        elif args.summary:
             print(f"\nMatched files summary:")
             print(f"  Unique content hashes with matches: {len(matches)}")
             print(f"  Master files: {total_masters}")
@@ -615,7 +644,8 @@ def main() -> int:
             if not matches:
                 print("No duplicates found.")
             else:
-                print(f"\nFound {len(matches)} duplicate groups:\n")
+                if not args.dry_run:
+                    print(f"\nFound {len(matches)} duplicate groups:\n")
 
                 # Print warnings first
                 for warning in warnings:
@@ -633,16 +663,34 @@ def main() -> int:
                         all_paths = [master_file] + duplicates
                         file_sizes = {p: os.path.getsize(p) for p in all_paths}
 
-                    # Print group using new format
-                    for line in format_duplicate_group(master_file, duplicates, action=None, verbose=args.verbose, file_sizes=file_sizes):
+                    # Print group using new format (with action and cross-fs info for dry-run)
+                    action_to_show = args.action if args.dry_run else None
+                    cross_fs_to_show = cross_fs_files if args.dry_run and args.action == 'hardlink' else None
+                    for line in format_duplicate_group(master_file, duplicates, action=action_to_show, verbose=args.verbose, file_sizes=file_sizes, cross_fs_files=cross_fs_to_show):
                         print(line)
 
                     # Print blank line between groups (but not after the last one)
                     if i < len(sorted_results) - 1:
                         print()
 
-            # Optionally display unmatched files (detailed mode)
-            if args.show_unmatched:
+                # Print statistics footer for dry-run mode
+                if args.dry_run:
+                    bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
+                    cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+                    footer_lines = format_statistics_footer(
+                        group_count=grp_count,
+                        duplicate_count=dup_count,
+                        master_count=len(master_results),
+                        space_savings=bytes_saved,
+                        action=args.action,
+                        verbose=args.verbose,
+                        cross_fs_count=cross_fs_count
+                    )
+                    for line in footer_lines:
+                        print(line)
+
+            # Optionally display unmatched files (detailed mode, not in dry-run)
+            if args.show_unmatched and not args.dry_run:
                 print("\nFiles with no content matches:")
                 print("==============================")
 
