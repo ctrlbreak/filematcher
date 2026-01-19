@@ -32,11 +32,18 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **STAT-02**: Display count of files that would be affected
 - [x] **STAT-03**: Display total space that would be saved/reclaimed
 
+### Safe Defaults
+
+- [ ] **SAFE-01**: Preview mode is the default when `--action` is specified
+- [ ] **SAFE-02**: `--execute` flag enables actual file modifications
+- [ ] **SAFE-03**: `--dry-run` flag removed (preview is always default without `--execute`)
+- [ ] **SAFE-04**: Clear messaging when preview mode is active ("use --execute to apply changes")
+
 ### Execution Infrastructure
 
 - [ ] **EXEC-01**: Support `--action` flag for specifying action type (hardlink, symlink, delete)
-- [ ] **EXEC-02**: Auto execution mode runs without prompts when action specified
-- [ ] **EXEC-03**: Action requires both `--master` and `--action` flags to be set
+- [ ] **EXEC-02**: Execution mode runs when `--execute` flag is specified with `--action`
+- [ ] **EXEC-03**: Execution requires `--master`, `--action`, and `--execute` flags
 
 ### Actions
 
@@ -49,8 +56,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **TEST-01**: Unit tests for master directory validation
 - [x] **TEST-02**: Unit tests for dry-run output formatting
-- [ ] **TEST-03**: Unit tests for change logging
-- [ ] **TEST-04**: Integration tests for CLI flag combinations
+- [ ] **TEST-03**: Unit tests for safe default behavior and --execute flag
+- [ ] **TEST-04**: Unit tests for change logging
+- [ ] **TEST-05**: Integration tests for CLI flag combinations
 
 ## v2 Requirements
 
@@ -97,24 +105,29 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STAT-02 | Phase 2 | Complete |
 | STAT-03 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Complete |
-| EXEC-01 | Phase 3 | Pending |
-| EXEC-02 | Phase 3 | Pending |
-| EXEC-03 | Phase 3 | Pending |
-| LOG-01 | Phase 3 | Pending |
-| LOG-02 | Phase 3 | Pending |
-| LOG-03 | Phase 3 | Pending |
+| SAFE-01 | Phase 3 | Pending |
+| SAFE-02 | Phase 3 | Pending |
+| SAFE-03 | Phase 3 | Pending |
+| SAFE-04 | Phase 3 | Pending |
 | TEST-03 | Phase 3 | Pending |
-| TEST-04 | Phase 3 | Pending |
-| ACT-01 | Phase 3 | Pending |
-| ACT-02 | Phase 3 | Pending |
-| ACT-03 | Phase 3 | Pending |
-| ACT-04 | Phase 3 | Pending |
+| EXEC-01 | Phase 4 | Pending |
+| EXEC-02 | Phase 4 | Pending |
+| EXEC-03 | Phase 4 | Pending |
+| ACT-01 | Phase 4 | Pending |
+| ACT-02 | Phase 4 | Pending |
+| ACT-03 | Phase 4 | Pending |
+| ACT-04 | Phase 4 | Pending |
+| LOG-01 | Phase 4 | Pending |
+| LOG-02 | Phase 4 | Pending |
+| LOG-03 | Phase 4 | Pending |
+| TEST-04 | Phase 4 | Pending |
+| TEST-05 | Phase 4 | Pending |
 
 **Coverage:**
-- v1 requirements: 24 total
-- Mapped to phases: 24
+- v1 requirements: 29 total
+- Mapped to phases: 29
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-19*
-*Last updated: 2026-01-19 (Phase 2 complete)*
+*Last updated: 2026-01-19 (Phase 3 added - safe defaults refactor)*

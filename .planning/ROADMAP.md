@@ -5,7 +5,7 @@
 
 ## Overview
 
-This roadmap delivers deduplication capabilities in three phases: foundation (master directory concept), preview (dry-run and statistics), and actions (execution with logging). Each phase builds incrementally - Phase 1 establishes master/duplicate identification, Phase 2 adds preview capabilities, and Phase 3 enables actual modifications with audit trails.
+This roadmap delivers deduplication capabilities in four phases: foundation (master directory concept), preview (dry-run and statistics), safe defaults refactor, and actions (execution with logging). Each phase builds incrementally - Phase 1 establishes master/duplicate identification, Phase 2 adds preview capabilities, Phase 3 makes preview the safe default, and Phase 4 enables actual modifications with audit trails.
 
 ## Phases
 
@@ -66,32 +66,58 @@ Plans:
 
 ---
 
-### Phase 3: Actions & Logging
+### Phase 3: Safe Defaults Refactor
+
+**Goal:** Preview mode becomes the default behavior; actual modifications require explicit `--execute` flag for safety.
+
+**Dependencies:** Phase 2 (refactors existing dry-run infrastructure)
+
+**Plans:** TBD
+
+**Requirements:**
+- SAFE-01: Preview mode is the default when `--action` is specified (no `--dry-run` needed)
+- SAFE-02: `--execute` flag enables actual file modifications
+- SAFE-03: `--dry-run` flag removed (preview is always default without `--execute`)
+- SAFE-04: Clear messaging when preview mode is active ("use --execute to apply changes")
+- TEST-03: Unit tests for safe default behavior and --execute flag
+
+**Success Criteria:**
+1. User can run `filematcher dir1 dir2 --master dir1 --action hardlink` and see a preview (no files modified)
+2. User must add `--execute` to actually perform modifications
+3. Banner clearly indicates "DRY RUN" when `--execute` is not specified
+4. Statistics footer suggests `--execute` flag to apply changes
+5. All existing dry-run tests updated to reflect new default behavior
+
+---
+
+### Phase 4: Actions & Logging
 
 **Goal:** Users can execute deduplication actions with a complete audit trail of all changes.
 
-**Dependencies:** Phase 2 (requires dry-run planning infrastructure)
+**Dependencies:** Phase 3 (requires --execute flag infrastructure)
+
+**Plans:** TBD
 
 **Requirements:**
 - EXEC-01: Support `--action` flag for specifying action type (hardlink, symlink, delete)
-- EXEC-02: Auto execution mode runs without prompts when action specified
-- EXEC-03: Action requires both `--master` and `--action` flags to be set
+- EXEC-02: Execution mode runs when `--execute` flag is specified with `--action`
+- EXEC-03: Execution requires `--master`, `--action`, and `--execute` flags
 - ACT-01: Replace duplicate files with hard links to master
 - ACT-02: Replace duplicate files with symbolic links to master
 - ACT-03: Delete duplicate files (keeping master only)
 - ACT-04: Links preserve original filename (pointing to master file)
-- LOG-01: All planned changes are logged with timestamp
+- LOG-01: All changes are logged with timestamp
 - LOG-02: Log includes: action type, source file path, target file path
 - LOG-03: Log file path configurable via `--log` flag
-- TEST-03: Unit tests for change logging
-- TEST-04: Integration tests for CLI flag combinations
+- TEST-04: Unit tests for change logging
+- TEST-05: Integration tests for CLI flag combinations
 
 **Success Criteria:**
-1. User can run `filematcher dir1 dir2 --master dir1 --action hardlink` and duplicate files are replaced with hard links to their master copies
-2. User can run with `--action symlink` and duplicate files are replaced with symbolic links
-3. User can run with `--action delete` and duplicate files are deleted (master preserved)
+1. User can run `filematcher dir1 dir2 --master dir1 --action hardlink --execute` and duplicate files are replaced with hard links
+2. User can run with `--action symlink --execute` and duplicate files are replaced with symbolic links
+3. User can run with `--action delete --execute` and duplicate files are deleted (master preserved)
 4. Links preserve the original filename at the duplicate location (pointing to master)
-5. User cannot run an action without specifying `--master` flag (clear error message)
+5. User cannot execute without all three flags: `--master`, `--action`, and `--execute`
 6. User can run with `--log changes.log` and find timestamped entries for every modification
 7. Log entries contain: timestamp, action type, duplicate file path, master file path
 
@@ -103,9 +129,10 @@ Plans:
 |-------|--------|--------------|-----------|
 | 1 - Master Directory Foundation | Complete | 4 | 4 |
 | 2 - Dry-Run Preview & Statistics | Complete | 8 | 8 |
-| 3 - Actions & Logging | Pending | 12 | 0 |
+| 3 - Safe Defaults Refactor | Pending | 5 | 0 |
+| 4 - Actions & Logging | Pending | 12 | 0 |
 
-**Total:** 24 requirements across 3 phases
+**Total:** 29 requirements across 4 phases
 
 ## Coverage
 
@@ -118,13 +145,16 @@ All v1 requirements mapped:
 | Dry-Run Preview | DRY-01, DRY-02, DRY-03, DRY-04 | Phase 2 |
 | Summary Statistics | STAT-01, STAT-02, STAT-03 | Phase 2 |
 | Testing | TEST-02 | Phase 2 |
-| Execution Infrastructure | EXEC-01, EXEC-02, EXEC-03 | Phase 3 |
-| Actions | ACT-01, ACT-02, ACT-03, ACT-04 | Phase 3 |
-| Change Logging | LOG-01, LOG-02, LOG-03 | Phase 3 |
-| Testing | TEST-03, TEST-04 | Phase 3 |
+| Safe Defaults | SAFE-01, SAFE-02, SAFE-03, SAFE-04 | Phase 3 |
+| Testing | TEST-03 | Phase 3 |
+| Execution Infrastructure | EXEC-01, EXEC-02, EXEC-03 | Phase 4 |
+| Actions | ACT-01, ACT-02, ACT-03, ACT-04 | Phase 4 |
+| Change Logging | LOG-01, LOG-02, LOG-03 | Phase 4 |
+| Testing | TEST-04, TEST-05 | Phase 4 |
 
 ---
 *Roadmap created: 2026-01-19*
 *Last revised: 2026-01-19*
 *Phase 1 completed: 2026-01-19*
 *Phase 2 completed: 2026-01-19*
+*Phase 3 added: 2026-01-19 (safe defaults refactor)*
