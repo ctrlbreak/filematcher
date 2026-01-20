@@ -736,12 +736,18 @@ def main() -> int:
                         help='Execute the action (without this flag, only preview)')
     parser.add_argument('--yes', '-y', action='store_true',
                         help='Skip confirmation prompt')
+    parser.add_argument('--log', '-l', type=str, metavar='PATH',
+                        help='Path for audit log file (default: filematcher_YYYYMMDD_HHMMSS.log)')
 
     args = parser.parse_args()
 
     # Validate --execute requires --master and --action
     if args.execute and not (args.master and args.action):
         parser.error("--execute requires --master and --action")
+
+    # Validate --log requires --execute
+    if args.log and not args.execute:
+        parser.error("--log requires --execute")
 
     # Validate master directory if specified
     master_path = None
