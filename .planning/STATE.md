@@ -50,6 +50,7 @@ None.
 ### Pending Todos
 
 1. **Remove master flag, first directory is implicit master** (cli) - `.planning/todos/pending/2026-01-20-remove-master-flag-first-dir-implicit.md`
+2. **Rationalise output from compare mode and action mode** (cli) - `.planning/todos/pending/2026-01-20-rationalise-compare-action-mode-output.md`
 
 ### Blockers
 
