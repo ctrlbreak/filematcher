@@ -16,6 +16,7 @@ import logging
 import os
 import sys
 from collections import defaultdict
+from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -344,26 +345,173 @@ def check_cross_filesystem(master_file: str, duplicates: list[str]) -> set[str]:
 def format_file_size(size_bytes: int | float) -> str:
     """
     Convert file size in bytes to human-readable format.
-    
+
     Args:
         size_bytes: Size in bytes
-        
+
     Returns:
         Formatted string with appropriate unit
     """
     if size_bytes == 0:
         return "0 B"
-    
+
     size_names = ["B", "KB", "MB", "GB", "TB"]
     i = 0
     while size_bytes >= 1024.0 and i < len(size_names) - 1:
         size_bytes /= 1024.0
         i += 1
-    
+
     if i == 0:
         return f"{int(size_bytes)} {size_names[i]}"
     else:
         return f"{size_bytes:.1f} {size_names[i]}"
+
+
+def create_audit_logger(log_path: Path | None = None) -> tuple[logging.Logger, Path]:
+    """
+    Create a separate logger for audit logging to file.
+
+    Args:
+        log_path: Path for the log file. If None, generates default name
+                  in current directory: filematcher_YYYYMMDD_HHMMSS.log
+
+    Returns:
+        Tuple of (logger, actual_log_path)
+    """
+    if log_path is None:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        log_path = Path(f"filematcher_{timestamp}.log")
+
+    # Create a new logger separate from the main logger
+    audit_logger = logging.getLogger('filematcher.audit')
+    audit_logger.setLevel(logging.INFO)
+
+    # Remove any existing handlers to avoid duplicates
+    audit_logger.handlers = []
+
+    # Create file handler with utf-8 encoding
+    file_handler = logging.FileHandler(log_path, encoding='utf-8')
+    file_handler.setFormatter(logging.Formatter('%(message)s'))
+    audit_logger.addHandler(file_handler)
+
+    # Prevent propagation to root logger
+    audit_logger.propagate = False
+
+    return audit_logger, log_path
+
+
+def write_log_header(
+    audit_logger: logging.Logger,
+    dir1: str,
+    dir2: str,
+    master: str,
+    action: str,
+    flags: list[str]
+) -> None:
+    """
+    Write header block to audit log with run information.
+
+    Args:
+        audit_logger: The audit logger instance
+        dir1: First directory path
+        dir2: Second directory path
+        master: Master directory path
+        action: Action type (hardlink, symlink, delete)
+        flags: List of CLI flags used
+    """
+    timestamp = datetime.now().isoformat()
+    flags_str = ', '.join(flags) if flags else 'none'
+
+    audit_logger.info("=" * 80)
+    audit_logger.info("File Matcher Execution Log")
+    audit_logger.info("=" * 80)
+    audit_logger.info(f"Timestamp: {timestamp}")
+    audit_logger.info(f"Directories: {dir1}, {dir2}")
+    audit_logger.info(f"Master: {master}")
+    audit_logger.info(f"Action: {action}")
+    audit_logger.info(f"Flags: {flags_str}")
+    audit_logger.info("=" * 80)
+    audit_logger.info("")
+
+
+def log_operation(
+    audit_logger: logging.Logger,
+    action: str,
+    duplicate: str,
+    master: str,
+    file_size: int,
+    file_hash: str,
+    success: bool,
+    error: str = ""
+) -> None:
+    """
+    Write a single operation line to the audit log.
+
+    Args:
+        audit_logger: The audit logger instance
+        action: Action type (hardlink, symlink, delete)
+        duplicate: Path to the duplicate file
+        master: Path to the master file
+        file_size: Size of the file in bytes
+        file_hash: Content hash of the file
+        success: Whether the operation succeeded
+        error: Error message if operation failed
+    """
+    timestamp = datetime.now().isoformat()
+    action_upper = action.upper()
+    size_str = format_file_size(file_size)
+    hash_prefix = file_hash[:8] if len(file_hash) >= 8 else file_hash
+
+    if success:
+        result = "SUCCESS"
+    else:
+        result = f"FAILED: {error}" if error else "FAILED"
+
+    if action.lower() == 'delete':
+        audit_logger.info(f"[{timestamp}] {action_upper} {duplicate} ({size_str}) [{hash_prefix}...] {result}")
+    else:
+        audit_logger.info(f"[{timestamp}] {action_upper} {duplicate} -> {master} ({size_str}) [{hash_prefix}...] {result}")
+
+
+def write_log_footer(
+    audit_logger: logging.Logger,
+    success_count: int,
+    failure_count: int,
+    skipped_count: int,
+    space_saved: int,
+    failed_list: list[tuple[str, str]]
+) -> None:
+    """
+    Write footer block to audit log with summary statistics.
+
+    Args:
+        audit_logger: The audit logger instance
+        success_count: Number of successful operations
+        failure_count: Number of failed operations
+        skipped_count: Number of skipped operations
+        space_saved: Total bytes saved
+        failed_list: List of (path, error) tuples for failed operations
+    """
+    total = success_count + failure_count + skipped_count
+    space_str = format_file_size(space_saved)
+
+    audit_logger.info("")
+    audit_logger.info("=" * 80)
+    audit_logger.info("Summary")
+    audit_logger.info("=" * 80)
+    audit_logger.info(f"Total files processed: {total}")
+    audit_logger.info(f"Successful: {success_count}")
+    audit_logger.info(f"Failed: {failure_count}")
+    audit_logger.info(f"Skipped: {skipped_count}")
+    audit_logger.info(f"Space saved: {space_str}")
+
+    if failed_list:
+        audit_logger.info("")
+        audit_logger.info("Failed files:")
+        for path, err in failed_list:
+            audit_logger.info(f"  - {path}: {err}")
+
+    audit_logger.info("=" * 80)
 
 
 def get_file_hash(filepath: str | Path, hash_algorithm: str = 'md5', fast_mode: bool = False, size_threshold: int = 100*1024*1024) -> str:
@@ -874,4 +1022,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    sys.exit(main()) 
+    sys.exit(main())
