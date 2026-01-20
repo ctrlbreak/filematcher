@@ -22,9 +22,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Change Logging
 
-- [ ] **LOG-01**: All planned changes are logged with timestamp
-- [ ] **LOG-02**: Log includes: action type, source file path, target file path
-- [ ] **LOG-03**: Log file path configurable via `--log` flag
+- [x] **LOG-01**: All planned changes are logged with timestamp
+- [x] **LOG-02**: Log includes: action type, source file path, target file path
+- [x] **LOG-03**: Log file path configurable via `--log` flag
 
 ### Summary Statistics
 
@@ -34,31 +34,31 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Safe Defaults
 
-- [ ] **SAFE-01**: Preview mode is the default when `--action` is specified
-- [ ] **SAFE-02**: `--execute` flag enables actual file modifications
-- [ ] **SAFE-03**: `--dry-run` flag removed (preview is always default without `--execute`)
-- [ ] **SAFE-04**: Clear messaging when preview mode is active ("use --execute to apply changes")
+- [x] **SAFE-01**: Preview mode is the default when `--action` is specified
+- [x] **SAFE-02**: `--execute` flag enables actual file modifications
+- [x] **SAFE-03**: `--dry-run` flag removed (preview is always default without `--execute`)
+- [x] **SAFE-04**: Clear messaging when preview mode is active ("use --execute to apply changes")
 
 ### Execution Infrastructure
 
-- [ ] **EXEC-01**: Support `--action` flag for specifying action type (hardlink, symlink, delete)
-- [ ] **EXEC-02**: Execution mode runs when `--execute` flag is specified with `--action`
-- [ ] **EXEC-03**: Execution requires `--master`, `--action`, and `--execute` flags
+- [x] **EXEC-01**: Support `--action` flag for specifying action type (hardlink, symlink, delete)
+- [x] **EXEC-02**: Execution mode runs when `--execute` flag is specified with `--action`
+- [x] **EXEC-03**: Execution requires `--master`, `--action`, and `--execute` flags
 
 ### Actions
 
-- [ ] **ACT-01**: Replace duplicate files with hard links to master
-- [ ] **ACT-02**: Replace duplicate files with symbolic links to master
-- [ ] **ACT-03**: Delete duplicate files (keeping master only)
-- [ ] **ACT-04**: Links preserve original filename (pointing to master file)
+- [x] **ACT-01**: Replace duplicate files with hard links to master
+- [x] **ACT-02**: Replace duplicate files with symbolic links to master
+- [x] **ACT-03**: Delete duplicate files (keeping master only)
+- [x] **ACT-04**: Links preserve original filename (pointing to master file)
 
 ### Testing
 
 - [x] **TEST-01**: Unit tests for master directory validation
 - [x] **TEST-02**: Unit tests for dry-run output formatting
-- [ ] **TEST-03**: Unit tests for safe default behavior and --execute flag
-- [ ] **TEST-04**: Unit tests for change logging
-- [ ] **TEST-05**: Integration tests for CLI flag combinations
+- [x] **TEST-03**: Unit tests for safe default behavior and --execute flag
+- [x] **TEST-04**: Unit tests for change logging
+- [x] **TEST-05**: Integration tests for CLI flag combinations
 
 ## v2 Requirements
 
@@ -105,23 +105,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | STAT-02 | Phase 2 | Complete |
 | STAT-03 | Phase 2 | Complete |
 | TEST-02 | Phase 2 | Complete |
-| SAFE-01 | Phase 3 | Pending |
-| SAFE-02 | Phase 3 | Pending |
-| SAFE-03 | Phase 3 | Pending |
-| SAFE-04 | Phase 3 | Pending |
-| TEST-03 | Phase 3 | Pending |
-| EXEC-01 | Phase 4 | Pending |
-| EXEC-02 | Phase 4 | Pending |
-| EXEC-03 | Phase 4 | Pending |
-| ACT-01 | Phase 4 | Pending |
-| ACT-02 | Phase 4 | Pending |
-| ACT-03 | Phase 4 | Pending |
-| ACT-04 | Phase 4 | Pending |
-| LOG-01 | Phase 4 | Pending |
-| LOG-02 | Phase 4 | Pending |
-| LOG-03 | Phase 4 | Pending |
-| TEST-04 | Phase 4 | Pending |
-| TEST-05 | Phase 4 | Pending |
+| SAFE-01 | Phase 3 | Complete |
+| SAFE-02 | Phase 3 | Complete |
+| SAFE-03 | Phase 3 | Complete |
+| SAFE-04 | Phase 3 | Complete |
+| TEST-03 | Phase 3 | Complete |
+| EXEC-01 | Phase 4 | Complete |
+| EXEC-02 | Phase 4 | Complete |
+| EXEC-03 | Phase 4 | Complete |
+| ACT-01 | Phase 4 | Complete |
+| ACT-02 | Phase 4 | Complete |
+| ACT-03 | Phase 4 | Complete |
+| ACT-04 | Phase 4 | Complete |
+| LOG-01 | Phase 4 | Complete |
+| LOG-02 | Phase 4 | Complete |
+| LOG-03 | Phase 4 | Complete |
+| TEST-04 | Phase 4 | Complete |
+| TEST-05 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 29 total
@@ -130,4 +130,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-19*
-*Last updated: 2026-01-19 (Phase 3 added - safe defaults refactor)*
+*Last updated: 2026-01-20 (All requirements complete)*
