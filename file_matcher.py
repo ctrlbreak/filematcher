@@ -114,22 +114,6 @@ def select_master_file(file_paths: list[str], master_dir: Path | None) -> tuple[
         return oldest, duplicates, "oldest file"
 
 
-def format_master_output(master_file: str, duplicates: list[str]) -> str:
-    """
-    Format master/duplicate relationship using arrow notation.
-
-    Args:
-        master_file: Path to the master file
-        duplicates: List of paths to duplicate files
-
-    Returns:
-        Formatted string: "master_path -> dup1, dup2, ..."
-    """
-    if not duplicates:
-        return master_file
-    return f"{master_file} -> {', '.join(duplicates)}"
-
-
 def format_duplicate_group(
     master_file: str,
     duplicates: list[str],

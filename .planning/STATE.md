@@ -108,7 +108,7 @@ None.
 
 ### Pending Todos
 
-1 pending todo in `.planning/todos/pending/`
+None.
 
 ### Blockers
 
