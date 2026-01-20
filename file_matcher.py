@@ -476,6 +476,101 @@ def execute_action(
         return (False, f"Unknown action: {action}", action)
 
 
+def determine_exit_code(success_count: int, failure_count: int) -> int:
+    """
+    Determine the appropriate exit code based on operation results.
+
+    Exit codes per CONTEXT.md:
+    - 0: Full success (all operations completed)
+    - 1: Total failure (no operations succeeded)
+    - 3: Partial completion (some succeeded, some failed)
+    Note: Exit code 2 is reserved for validation errors (argparse convention)
+
+    Args:
+        success_count: Number of successful operations
+        failure_count: Number of failed operations
+
+    Returns:
+        Exit code (0, 1, or 3)
+    """
+    if failure_count == 0:
+        return 0  # Full success
+    elif success_count == 0 and failure_count > 0:
+        return 1  # Total failure
+    else:
+        return 3  # Partial completion
+
+
+def execute_all_actions(
+    duplicate_groups: list[tuple[str, list[str], str]],
+    action: str,
+    fallback_symlink: bool = False,
+    verbose: bool = False
+) -> tuple[int, int, int, list[tuple[str, str]]]:
+    """
+    Process all duplicate groups and execute the specified action.
+
+    Implements continue-on-error behavior: individual failures don't halt
+    processing of remaining files.
+
+    Args:
+        duplicate_groups: List of (master_file, duplicates_list, reason) tuples
+        action: Action type ("hardlink", "symlink", or "delete")
+        fallback_symlink: If True, fall back to symlink for cross-device hardlink
+        verbose: If True, print progress to stderr
+
+    Returns:
+        Tuple of (success_count, failure_count, skipped_count, failed_list)
+        - success_count: Number of operations that succeeded
+        - failure_count: Number of operations that failed
+        - skipped_count: Duplicates that no longer exist + already-linked files
+        - failed_list: List of (duplicate_path, error_message) for failed ops
+    """
+    success_count = 0
+    failure_count = 0
+    skipped_count = 0
+    failed_list: list[tuple[str, str]] = []
+
+    # Count total duplicates for progress tracking
+    total_duplicates = sum(len(dups) for _, dups, _ in duplicate_groups)
+    processed = 0
+
+    for master_file, duplicates, _reason in duplicate_groups:
+        # Check if master file exists
+        if not os.path.exists(master_file):
+            logger.warning(f"Master file missing, skipping group: {master_file}")
+            # Don't count as failure per CONTEXT.md - skip entire group
+            continue
+
+        for dup in duplicates:
+            processed += 1
+
+            if verbose:
+                print(f"Processing {processed}/{total_duplicates}...", file=sys.stderr)
+
+            # Check if duplicate exists
+            if not os.path.exists(dup):
+                logger.info(f"Duplicate no longer exists: {dup}")
+                skipped_count += 1
+                continue
+
+            # Execute the action
+            success, error, actual_action = execute_action(
+                dup, master_file, action, fallback_symlink
+            )
+
+            if actual_action == "skipped":
+                # Already linked
+                skipped_count += 1
+            elif success:
+                success_count += 1
+            else:
+                failure_count += 1
+                failed_list.append((dup, error))
+
+    return (success_count, failure_count, skipped_count, failed_list)
+
+
 def format_file_size(size_bytes: int | float) -> str:
     """
     Convert file size in bytes to human-readable format.
