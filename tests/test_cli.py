@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import io
+import os
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
+from pathlib import Path
 from unittest.mock import patch
 
-from file_matcher import main
+from file_matcher import main, execute_action, already_hardlinked
 from tests.test_base import BaseFileMatcherTest
 
 
@@ -110,6 +112,189 @@ class TestCLI(BaseFileMatcherTest):
             self.assertIn("Verbose mode enabled", output)
             self.assertIn("Processing", output)
             self.assertIn("Matched files summary:", output)
+
+
+class TestActionExecution(BaseFileMatcherTest):
+    """Integration tests for action execution CLI (TEST-05)."""
+
+    def run_main_capture_output(self) -> tuple[str, int]:
+        """Helper to run main() and capture stdout, return (output, exit_code)."""
+        f = io.StringIO()
+        with redirect_stdout(f):
+            exit_code = main()
+        return f.getvalue(), exit_code
+
+    def test_execute_hardlink_modifies_files(self):
+        """--execute with hardlink actually creates hard links."""
+        # Get the paths to files with matching content
+        master_file = os.path.join(self.test_dir1, "file1.txt")
+        dup_file = os.path.join(self.test_dir2, "different_name.txt")
+
+        # Verify they're not already hardlinked
+        self.assertFalse(already_hardlinked(master_file, dup_file))
+
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'hardlink',
+                                '--execute', '--yes']):
+            with patch('sys.stdin.isatty', return_value=False):
+                output, exit_code = self.run_main_capture_output()
+
+        self.assertEqual(exit_code, 0)
+        # Verify files are now hardlinked (check inode numbers match)
+        self.assertTrue(already_hardlinked(master_file, dup_file))
+
+    def test_execute_symlink_creates_links(self):
+        """--execute with symlink creates symbolic links."""
+        # Get the paths to files with matching content
+        dup_file = Path(self.test_dir2) / "different_name.txt"
+
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'symlink',
+                                '--execute', '--yes']):
+            with patch('sys.stdin.isatty', return_value=False):
+                output, exit_code = self.run_main_capture_output()
+
+        self.assertEqual(exit_code, 0)
+        # Verify symlinks created
+        self.assertTrue(dup_file.is_symlink())
+
+    def test_execute_delete_removes_duplicates(self):
+        """--execute with delete removes duplicate files."""
+        # Get the path to a duplicate file
+        dup_file = Path(self.test_dir2) / "different_name.txt"
+
+        # Verify file exists before deletion
+        self.assertTrue(dup_file.exists())
+
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'delete',
+                                '--execute', '--yes']):
+            with patch('sys.stdin.isatty', return_value=False):
+                output, exit_code = self.run_main_capture_output()
+
+        self.assertEqual(exit_code, 0)
+        # Verify duplicates no longer exist
+        self.assertFalse(dup_file.exists())
+
+    def test_log_flag_creates_file(self):
+        """--log flag creates log file at specified path."""
+        log_path = Path(self.test_dir1) / "test_execution.log"
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'hardlink',
+                                '--execute', '--yes',
+                                '--log', str(log_path)]):
+            with patch('sys.stdin.isatty', return_value=False):
+                output, exit_code = self.run_main_capture_output()
+
+        self.assertTrue(log_path.exists())
+        # Check log has expected content
+        log_content = log_path.read_text()
+        self.assertIn("File Matcher Execution Log", log_content)
+
+    def test_fallback_symlink_flag_accepted(self):
+        """--fallback-symlink flag is accepted with hardlink action."""
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'hardlink',
+                                '--fallback-symlink']):
+            with patch('sys.stdin.isatty', return_value=False):
+                output, exit_code = self.run_main_capture_output()
+
+        # Preview mode - should succeed
+        self.assertEqual(exit_code, 0)
+
+    def test_fallback_symlink_requires_hardlink_action(self):
+        """--fallback-symlink should only work with --action hardlink."""
+        stderr_capture = io.StringIO()
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'symlink',
+                                '--fallback-symlink']):
+            with redirect_stderr(stderr_capture):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+            self.assertEqual(cm.exception.code, 2)
+        error_output = stderr_capture.getvalue()
+        self.assertIn("--fallback-symlink only applies to --action hardlink", error_output)
+
+    def test_partial_failure_returns_exit_code_3(self):
+        """Partial failures return exit code 3."""
+        # Create test files where some will succeed and some will fail
+        # Mock execute_action to fail for specific files
+        call_count = [0]
+
+        def mock_execute_action(duplicate, master, action, fallback_symlink=False):
+            call_count[0] += 1
+            # Fail every other file
+            if call_count[0] % 2 == 0:
+                return (False, "Mocked permission denied", action)
+            return (True, "", action)
+
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'hardlink',
+                                '--execute', '--yes']):
+            with patch('sys.stdin.isatty', return_value=False):
+                with patch('file_matcher.execute_action', side_effect=mock_execute_action):
+                    output, exit_code = self.run_main_capture_output()
+
+        # Should return 3 for partial failure (some succeeded, some failed)
+        # Note: If no duplicates exist, this may return 0. With our test setup:
+        # - file1.txt, file3.txt match different_name.txt, also_different_name.txt
+        # So we should have duplicates to process
+        self.assertEqual(exit_code, 3)  # Partial failure
+
+    def test_all_flags_together(self):
+        """All flags can be combined correctly."""
+        log_path = Path(self.test_dir1) / "combined.log"
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'hardlink',
+                                '--execute', '--yes',
+                                '--log', str(log_path),
+                                '--fallback-symlink',
+                                '--verbose']):
+            with patch('sys.stdin.isatty', return_value=False):
+                output, exit_code = self.run_main_capture_output()
+
+        self.assertEqual(exit_code, 0)
+        self.assertTrue(log_path.exists())
+
+    def test_execute_shows_summary(self):
+        """--execute shows execution summary with counts."""
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'hardlink',
+                                '--execute', '--yes']):
+            with patch('sys.stdin.isatty', return_value=False):
+                output, exit_code = self.run_main_capture_output()
+
+        # Should show execution summary
+        self.assertIn("Execution complete:", output)
+        self.assertIn("Successful:", output)
+        self.assertIn("Failed:", output)
+        self.assertIn("Skipped:", output)
+        self.assertIn("Space saved:", output)
+        self.assertIn("Log file:", output)
+
+    def test_log_requires_execute(self):
+        """--log requires --execute flag."""
+        log_path = Path(self.test_dir1) / "test.log"
+        stderr_capture = io.StringIO()
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--master', self.test_dir1,
+                                '--action', 'hardlink',
+                                '--log', str(log_path)]):
+            with redirect_stderr(stderr_capture):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+            self.assertEqual(cm.exception.code, 2)
+        error_output = stderr_capture.getvalue()
+        self.assertIn("--log requires --execute", error_output)
 
 
 if __name__ == "__main__":
