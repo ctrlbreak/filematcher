@@ -34,6 +34,8 @@ def create_release_package(version="1.1.0"):
         "file_matcher.py",
         "README.md",
         "CHANGELOG.md",
+        f"RELEASE_NOTES_v{version}.md",
+        "LICENSE",
         "requirements.txt",
         "run_tests.py"
     ]
@@ -68,7 +70,7 @@ def create_release_package(version="1.1.0"):
 ## Quick Start
 
 1. **No installation required** - this is a standalone Python script
-2. **Requirements**: Python 3.6 or higher
+2. **Requirements**: Python 3.9 or higher
 3. **Usage**: python3 file_matcher.py <dir1> <dir2> [options]
 
 ## Running Tests
@@ -80,27 +82,46 @@ python3 run_tests.py
 
 ## Examples
 
-Compare two directories:
+### Finding Duplicate Files
+
 ```bash
+# Basic comparison
 python3 file_matcher.py test_dir1 test_dir2
-```
 
-Use fast mode for large files:
-```bash
+# Show files with no matches
+python3 file_matcher.py test_dir1 test_dir2 --show-unmatched
+
+# Fast mode for large files
 python3 file_matcher.py test_dir1 test_dir2 --fast
+
+# Summary counts only
+python3 file_matcher.py test_dir1 test_dir2 --summary
 ```
 
-Get summary only:
+### Deduplicating Files
+
 ```bash
-python3 file_matcher.py test_dir1 test_dir2 --summary
+# Preview hard link deduplication (safe - no changes made)
+python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink
+
+# Execute deduplication with confirmation
+python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink --execute
+
+# Execute without prompt (for scripts)
+python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink --execute --yes
+
+# With custom log file
+python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink --execute --log changes.log
 ```
 
 ## Features
 
-- File matching using content hashing (MD5/SHA-256)
-- Fast mode for large files (>100MB)
-- Summary and detailed output modes
-- Cross-platform compatibility
+- Find files with identical content across directories
+- Compare using MD5 or SHA-256 content hashing
+- Fast mode with sparse sampling for large files (>100MB)
+- **Deduplicate** with hard links, symbolic links, or deletion
+- Safe by default: preview changes before executing
+- Audit logging of all modifications
 - No external dependencies
 
 For more information, see README.md
@@ -115,25 +136,27 @@ For more information, see README.md
 
 Version: {version}
 Release Date: {datetime.now().strftime('%Y-%m-%d')}
-Python Version: 3.6+
+Python Version: 3.9+
 Dependencies: None (standard library only)
 
 ## What's New in {version}
 
-This is the first stable release of File Matcher, featuring:
+Full file deduplication capability:
 
-- Complete file matching functionality
-- Fast mode for large files
-- Comprehensive test suite
-- Cross-platform compatibility
-- No external dependencies
+- Master directory designation with validation (--master flag)
+- Preview-by-default with safe execution model (--execute required)
+- Three deduplication actions: hardlink, symlink, delete
+- Cross-filesystem detection with automatic symlink fallback
+- Comprehensive audit logging with timestamps
+- 114 unit tests covering all functionality
 
 ## File Structure
 
-- file_matcher.py - Main script
+- file_matcher.py - Main script (1,374 lines)
 - README.md - Complete documentation
 - CHANGELOG.md - Version history
-- tests/ - Unit test suite
+- LICENSE - MIT license
+- tests/ - Unit test suite (114 tests)
 - test_dir1/, test_dir2/ - Example test directories
 - complex_test/ - Advanced test scenarios
 """

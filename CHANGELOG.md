@@ -2,6 +2,32 @@
 
 All notable changes to the File Matcher project will be documented in this file.
 
+## [1.1.0] - 2026-01-20
+
+### Added
+- **Master Directory Support**: Designate one directory as master with `--master` flag
+- **Deduplication Actions**: Replace duplicates with hard links, symbolic links, or delete them
+- **Preview-by-Default**: Safe execution model requires `--execute` flag to modify files
+- **Confirmation Prompt**: Interactive Y/N confirmation before execution
+- **Audit Logging**: Comprehensive logging with timestamps via `--log` flag
+- **Cross-Filesystem Detection**: Automatic detection with `--fallback-symlink` option
+- **Non-Interactive Mode**: `--yes` flag for scripted execution
+
+### Features
+- **`--master`**: Protect files in master directory from modification
+- **`--action`**: Choose deduplication method (hardlink, symlink, delete)
+- **`--execute`**: Enable actual file modifications (preview-only by default)
+- **`--yes`**: Skip confirmation prompt for automation
+- **`--log`**: Custom audit log path with ISO 8601 timestamps
+- **`--fallback-symlink`**: Use symlinks when hardlinks fail (cross-filesystem)
+
+### Technical Details
+- Atomic file operations using temp-rename pattern for safety
+- Rollback on failure prevents data loss
+- Exit codes: 0 (success), 1 (all failed), 2 (validation error), 3 (partial success)
+- 114 unit tests covering all functionality
+- 1,374 lines of Python with comprehensive error handling
+
 ## [1.0.0] - 2025-08-20
 
 ### Added
