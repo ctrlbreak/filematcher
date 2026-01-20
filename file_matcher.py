@@ -550,8 +550,10 @@ def execute_all_actions(
     duplicate_groups: list[tuple[str, list[str], str]],
     action: str,
     fallback_symlink: bool = False,
-    verbose: bool = False
-) -> tuple[int, int, int, list[tuple[str, str]]]:
+    verbose: bool = False,
+    audit_logger: logging.Logger | None = None,
+    file_hashes: dict[str, str] | None = None
+) -> tuple[int, int, int, int, list[tuple[str, str]]]:
     """
     Process all duplicate groups and execute the specified action.
 
@@ -563,17 +565,21 @@ def execute_all_actions(
         action: Action type ("hardlink", "symlink", or "delete")
         fallback_symlink: If True, fall back to symlink for cross-device hardlink
         verbose: If True, print progress to stderr
+        audit_logger: Optional logger for audit trail
+        file_hashes: Optional dict mapping file paths to their content hashes
 
     Returns:
-        Tuple of (success_count, failure_count, skipped_count, failed_list)
+        Tuple of (success_count, failure_count, skipped_count, space_saved, failed_list)
         - success_count: Number of operations that succeeded
         - failure_count: Number of operations that failed
         - skipped_count: Duplicates that no longer exist + already-linked files
+        - space_saved: Total bytes saved by successful operations
         - failed_list: List of (duplicate_path, error_message) for failed ops
     """
     success_count = 0
     failure_count = 0
     skipped_count = 0
+    space_saved = 0
     failed_list: list[tuple[str, str]] = []
 
     # Count total duplicates for progress tracking
@@ -587,6 +593,12 @@ def execute_all_actions(
             # Don't count as failure per CONTEXT.md - skip entire group
             continue
 
+        # Get master file size for logging and space calculations
+        try:
+            master_size = os.path.getsize(master_file)
+        except OSError:
+            master_size = 0
+
         for dup in duplicates:
             processed += 1
 
@@ -599,21 +611,33 @@ def execute_all_actions(
                 skipped_count += 1
                 continue
 
+            # Get file size before operation (for space tracking and logging)
+            try:
+                file_size = os.path.getsize(dup)
+            except OSError:
+                file_size = master_size  # Fall back to master size
+
             # Execute the action
             success, error, actual_action = execute_action(
                 dup, master_file, action, fallback_symlink
             )
+
+            # Log the operation if audit logger is provided
+            if audit_logger:
+                file_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
+                log_operation(audit_logger, actual_action, dup, master_file, file_size, file_hash, success, error)
 
             if actual_action == "skipped":
                 # Already linked
                 skipped_count += 1
             elif success:
                 success_count += 1
+                space_saved += file_size
             else:
                 failure_count += 1
                 failed_list.append((dup, error))
 
-    return (success_count, failure_count, skipped_count, failed_list)
+    return (success_count, failure_count, skipped_count, space_saved, failed_list)
 
 
 def format_file_size(size_bytes: int | float) -> str:
@@ -1183,12 +1207,68 @@ def main() -> int:
 
             # Then show execute banner and prompt for confirmation
             print(format_execute_banner())
-            if not confirm_execution(skip_confirm=args.yes):
+
+            # Calculate space savings for confirmation prompt
+            bytes_saved, dup_count, _ = calculate_space_savings(master_results)
+            cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+            prompt = format_confirmation_prompt(dup_count, args.action, bytes_saved, cross_fs_count if args.fallback_symlink else 0)
+            if not confirm_execution(skip_confirm=args.yes, prompt=prompt):
                 print("Aborted. No changes made.")
                 return 0
 
-            # Placeholder for actual execution (Phase 4)
-            print("Execution not yet implemented.")
+            # Create audit logger
+            log_path = Path(args.log) if args.log else None
+            audit_logger, actual_log_path = create_audit_logger(log_path)
+
+            # Build flags list for log header
+            flags = ['--execute']
+            if args.verbose:
+                flags.append('--verbose')
+            if args.yes:
+                flags.append('--yes')
+            if args.fallback_symlink:
+                flags.append('--fallback-symlink')
+            if args.log:
+                flags.append(f'--log {args.log}')
+
+            # Write log header
+            write_log_header(audit_logger, args.dir1, args.dir2, args.master, args.action, flags)
+
+            # Build hash lookup for logging
+            file_hash_lookup: dict[str, str] = {}
+            for file_hash, (files1, files2) in matches.items():
+                for f in files1 + files2:
+                    file_hash_lookup[f] = file_hash
+
+            # Execute actions with logging
+            success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
+                master_results,
+                args.action,
+                fallback_symlink=args.fallback_symlink,
+                verbose=args.verbose,
+                audit_logger=audit_logger,
+                file_hashes=file_hash_lookup
+            )
+
+            # Write log footer
+            write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
+
+            # Print execution summary
+            print()
+            print(f"Execution complete:")
+            print(f"  Successful: {success_count}")
+            print(f"  Failed: {failure_count}")
+            print(f"  Skipped: {skipped_count}")
+            print(f"  Space saved: {format_file_size(space_saved)}")
+            print(f"  Log file: {actual_log_path}")
+            if failed_list:
+                print()
+                print("Failed files:")
+                for path, error in failed_list:
+                    print(f"  - {path}: {error}")
+
+            # Return appropriate exit code
+            return determine_exit_code(success_count, failure_count)
 
         # Standard master mode (no action specified)
         elif args.summary:
