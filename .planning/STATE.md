@@ -11,26 +11,26 @@
 **Phase:** 4 of 4 - Actions & Logging
 **Plan:** 3 of 4 complete
 **Status:** In progress
-**Last activity:** 2026-01-20 - Completed 04-01-PLAN.md (action execution)
+**Last activity:** 2026-01-20 - Completed 04-03-PLAN.md (execution integration)
 
 **Progress:**
 ```
 Phase 1: [##########] Master Directory Foundation
 Phase 2: [##########] Dry-Run Preview & Statistics
 Phase 3: [##########] Safe Defaults Refactor
-Phase 4: [#######---] Actions & Logging
+Phase 4: [########--] Actions & Logging
 
-Overall: [########--] 83% (10/12 plans)
+Overall: [#########-] 92% (11/12 plans)
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 10 |
-| Requirements delivered | 21/29 |
+| Plans completed | 11 |
+| Requirements delivered | 25/29 |
 | Phases completed | 3/4 |
-| Avg plan duration | 2.8 min |
+| Avg plan duration | 2.9 min |
 
 ## Accumulated Context
 
@@ -63,6 +63,8 @@ Overall: [########--] 83% (10/12 plans)
 | Symlinks use absolute paths | master.resolve() per CONTEXT.md decision | 04-01 |
 | Exit code 3 for partial completion | Some success, some failure per CONTEXT.md | 04-01 |
 | Missing duplicate = skipped | Not counted as failure per CONTEXT.md | 04-01 |
+| --fallback-symlink hardlink-only | Flag only valid with --action hardlink | 04-03 |
+| Delete warning in confirmation | Irreversibility warning prefix for delete actions | 04-03 |
 
 ### Technical Notes
 
@@ -76,7 +78,8 @@ Overall: [########--] 83% (10/12 plans)
 - **Phase 3 constants:** PREVIEW_BANNER, EXECUTE_BANNER (replaced DRY_RUN_BANNER)
 - **Phase 4 functions (logging):** create_audit_logger(), write_log_header(), log_operation(), write_log_footer()
 - **Phase 4 functions (actions):** already_hardlinked(), safe_replace_with_link(), execute_action(), determine_exit_code(), execute_all_actions()
-- **Test coverage:** 64 tests passing (all modules)
+- **Phase 4 functions (integration):** format_confirmation_prompt()
+- **Test coverage:** 104 tests passing (all modules)
 
 ### Open Questions
 
@@ -99,7 +102,7 @@ None.
 - [x] Create Phase 4 plans
 - [x] Execute plan 04-02 (audit logging)
 - [x] Execute plan 04-01 (file action functions)
-- [ ] Execute plan 04-03 (integration)
+- [x] Execute plan 04-03 (integration)
 - [ ] Execute plan 04-04 (action tests)
 
 ### Pending Todos
@@ -113,24 +116,28 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-01-20
-**Stopped at:** Completed 04-01-PLAN.md (action execution functions)
+**Stopped at:** Completed 04-03-PLAN.md (execution integration)
 **Resume file:** None
 
 ### Handoff Notes
 
-Phase 4 Plan 01 (Action Execution) complete:
-- already_hardlinked() detects same-inode files to skip redundant ops
-- safe_replace_with_link() implements temp-rename safety pattern
-- execute_action() dispatches to hardlink/symlink/delete with fallback
-- determine_exit_code() returns 0/1/3 per CONTEXT.md spec
-- execute_all_actions() processes all groups with continue-on-error
+Phase 4 Plan 03 (Execution Integration) complete:
+- --fallback-symlink flag added with hardlink-only validation
+- format_confirmation_prompt() provides action-specific prompts with space savings
+- confirm_execution() accepts custom prompt parameter
+- execute_all_actions() enhanced with audit_logger and file_hashes params
+- Returns 5-tuple including space_saved
+- main() execute branch fully wired with logging integration
+- Execution summary printed after completion
+- Correct exit codes returned via determine_exit_code()
 
-Phase 4 deliverables so far:
-- Audit logging functions ready for integration (04-02)
-- Action execution functions ready for integration (04-01)
-- --log CLI flag parsed (not yet connected to execution)
+Tool is now fully functional for file deduplication:
+- `filematcher dir1 dir2 --master dir1 --action hardlink --execute` creates hard links
+- `filematcher dir1 dir2 --master dir1 --action symlink --execute` creates symbolic links
+- `filematcher dir1 dir2 --master dir1 --action delete --execute` deletes duplicates
+- Audit log contains complete trail of operations
 
-Next: Plan 04-03 (Integration) - Wire execute_all_actions() into main() --execute flow
+Next: Plan 04-04 (Action Tests) - Add unit tests for new integration functions
 
 ---
 *State initialized: 2026-01-19*
