@@ -9,28 +9,28 @@
 ## Current Position
 
 **Phase:** 4 of 4 - Actions & Logging
-**Plan:** 2 of 4 complete
+**Plan:** 3 of 4 complete
 **Status:** In progress
-**Last activity:** 2026-01-20 - Completed 04-02-PLAN.md (audit logging)
+**Last activity:** 2026-01-20 - Completed 04-01-PLAN.md (action execution)
 
 **Progress:**
 ```
 Phase 1: [##########] Master Directory Foundation
 Phase 2: [##########] Dry-Run Preview & Statistics
 Phase 3: [##########] Safe Defaults Refactor
-Phase 4: [#####-----] Actions & Logging
+Phase 4: [#######---] Actions & Logging
 
-Overall: [#######---] 75% (9/12 plans)
+Overall: [########--] 83% (10/12 plans)
 ```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Plans completed | 9 |
-| Requirements delivered | 19/29 |
+| Plans completed | 10 |
+| Requirements delivered | 21/29 |
 | Phases completed | 3/4 |
-| Avg plan duration | 2.6 min |
+| Avg plan duration | 2.8 min |
 
 ## Accumulated Context
 
@@ -59,6 +59,10 @@ Overall: [#######---] 75% (9/12 plans)
 | Separate audit logger 'filematcher.audit' | Avoid mixing audit logs with console output | 04-02 |
 | ISO 8601 timestamps for logs | Consistent, parseable timestamps | 04-02 |
 | Delete action simplified format | No arrow notation since file is deleted, not linked | 04-02 |
+| Temp suffix .filematcher_tmp | Avoid collisions with files ending in .tmp | 04-01 |
+| Symlinks use absolute paths | master.resolve() per CONTEXT.md decision | 04-01 |
+| Exit code 3 for partial completion | Some success, some failure per CONTEXT.md | 04-01 |
+| Missing duplicate = skipped | Not counted as failure per CONTEXT.md | 04-01 |
 
 ### Technical Notes
 
@@ -70,7 +74,8 @@ Overall: [#######---] 75% (9/12 plans)
 - **Phase 2 functions:** format_duplicate_group(), calculate_space_savings(), get_device_id(), check_cross_filesystem()
 - **Phase 3 functions:** confirm_execution(), format_preview_banner(), format_execute_banner()
 - **Phase 3 constants:** PREVIEW_BANNER, EXECUTE_BANNER (replaced DRY_RUN_BANNER)
-- **Phase 4 functions:** create_audit_logger(), write_log_header(), log_operation(), write_log_footer()
+- **Phase 4 functions (logging):** create_audit_logger(), write_log_header(), log_operation(), write_log_footer()
+- **Phase 4 functions (actions):** already_hardlinked(), safe_replace_with_link(), execute_action(), determine_exit_code(), execute_all_actions()
 - **Test coverage:** 64 tests passing (all modules)
 
 ### Open Questions
@@ -93,7 +98,7 @@ None.
 - [x] Research Phase 4 requirements
 - [x] Create Phase 4 plans
 - [x] Execute plan 04-02 (audit logging)
-- [ ] Execute plan 04-01 (file action functions)
+- [x] Execute plan 04-01 (file action functions)
 - [ ] Execute plan 04-03 (integration)
 - [ ] Execute plan 04-04 (action tests)
 
@@ -108,23 +113,24 @@ None.
 ## Session Continuity
 
 **Last session:** 2026-01-20
-**Stopped at:** Completed 04-02-PLAN.md (audit logging)
+**Stopped at:** Completed 04-01-PLAN.md (action execution functions)
 **Resume file:** None
 
 ### Handoff Notes
 
-Phase 4 Plan 02 (Audit Logging) complete:
-- create_audit_logger() creates separate file logger with default naming
-- write_log_header() writes run information (timestamp, dirs, action, flags)
-- log_operation() logs each operation with timestamp, paths, size, hash, result
-- write_log_footer() outputs summary with totals and failed files list
-- --log flag accepts custom path and validates --execute requirement
+Phase 4 Plan 01 (Action Execution) complete:
+- already_hardlinked() detects same-inode files to skip redundant ops
+- safe_replace_with_link() implements temp-rename safety pattern
+- execute_action() dispatches to hardlink/symlink/delete with fallback
+- determine_exit_code() returns 0/1/3 per CONTEXT.md spec
+- execute_all_actions() processes all groups with continue-on-error
 
 Phase 4 deliverables so far:
-- Audit logging functions ready for integration
+- Audit logging functions ready for integration (04-02)
+- Action execution functions ready for integration (04-01)
 - --log CLI flag parsed (not yet connected to execution)
 
-Next: Plan 04-01 (File action functions) or 04-03 (Integration)
+Next: Plan 04-03 (Integration) - Wire execute_all_actions() into main() --execute flow
 
 ---
 *State initialized: 2026-01-19*
