@@ -49,7 +49,7 @@ None.
 
 ### Pending Todos
 
-None.
+1. **Remove master flag, first directory is implicit master** (cli) - `.planning/todos/pending/2026-01-20-remove-master-flag-first-dir-implicit.md`
 
 ### Blockers
 
