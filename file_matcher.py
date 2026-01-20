@@ -22,12 +22,13 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 
-def confirm_execution(skip_confirm: bool = False) -> bool:
+def confirm_execution(skip_confirm: bool = False, prompt: str = "Proceed? [y/N] ") -> bool:
     """
     Prompt user for Y/N confirmation before executing changes.
 
     Args:
         skip_confirm: If True, skip prompt and return True (for --yes flag)
+        prompt: Custom prompt string to display
 
     Returns:
         True if user confirms, False otherwise
@@ -37,7 +38,7 @@ def confirm_execution(skip_confirm: bool = False) -> bool:
     if not sys.stdin.isatty():
         print("Non-interactive mode detected. Use --yes to skip confirmation.", file=sys.stderr)
         return False
-    response = input("Proceed? [y/N] ").strip().lower()
+    response = input(prompt).strip().lower()
     return response in ('y', 'yes')
 
 
@@ -199,6 +200,50 @@ def format_preview_banner() -> str:
 def format_execute_banner() -> str:
     """Return the execute mode header banner."""
     return EXECUTE_BANNER
+
+
+def format_confirmation_prompt(
+    duplicate_count: int,
+    action: str,
+    space_savings: int,
+    cross_fs_count: int = 0
+) -> str:
+    """
+    Format confirmation prompt showing action summary.
+
+    Args:
+        duplicate_count: Number of duplicate files to process
+        action: Action type (hardlink, symlink, delete)
+        space_savings: Estimated bytes to be saved
+        cross_fs_count: Number of cross-filesystem files (for hardlink with fallback)
+
+    Returns:
+        Formatted confirmation prompt string
+    """
+    action_verbs = {
+        "hardlink": "replaced with hard links",
+        "symlink": "replaced with symbolic links",
+        "delete": "permanently deleted"
+    }
+    action_verb = action_verbs.get(action, f"processed with {action}")
+    space_str = format_file_size(space_savings)
+
+    prompt_parts = []
+
+    # Add irreversibility warning for delete action
+    if action == 'delete':
+        prompt_parts.append("WARNING: This action is IRREVERSIBLE.")
+
+    # Main prompt line
+    prompt_parts.append(f"{duplicate_count} files will be {action_verb}. ~{space_str} will be saved.")
+
+    # Add fallback note for cross-fs hardlinks
+    if cross_fs_count > 0 and action == 'hardlink':
+        prompt_parts.append(f"Note: {cross_fs_count} files on different filesystem will use symlink fallback.")
+
+    prompt_parts.append("Proceed? [y/N] ")
+
+    return "\n".join(prompt_parts)
 
 
 def format_statistics_footer(
@@ -967,6 +1012,8 @@ def main() -> int:
                         help='Skip confirmation prompt')
     parser.add_argument('--log', '-l', type=str, metavar='PATH',
                         help='Path for audit log file (default: filematcher_YYYYMMDD_HHMMSS.log)')
+    parser.add_argument('--fallback-symlink', action='store_true',
+                        help='Use symlink instead of hardlink for cross-filesystem duplicates')
 
     args = parser.parse_args()
 
@@ -977,6 +1024,10 @@ def main() -> int:
     # Validate --log requires --execute
     if args.log and not args.execute:
         parser.error("--log requires --execute")
+
+    # Validate --fallback-symlink only applies to hardlink action
+    if args.fallback_symlink and args.action != 'hardlink':
+        parser.error("--fallback-symlink only applies to --action hardlink")
 
     # Validate master directory if specified
     master_path = None
