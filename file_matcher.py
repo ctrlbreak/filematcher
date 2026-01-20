@@ -342,6 +342,140 @@ def check_cross_filesystem(master_file: str, duplicates: list[str]) -> set[str]:
     return cross_fs
 
 
+def already_hardlinked(file1: str, file2: str) -> bool:
+    """
+    Check if two files are already hard links to the same data.
+
+    Args:
+        file1: Path to first file
+        file2: Path to second file
+
+    Returns:
+        True if both files share the same inode and device (already linked),
+        False otherwise or if either file cannot be accessed
+    """
+    try:
+        stat1 = os.stat(file1)
+        stat2 = os.stat(file2)
+        return stat1.st_ino == stat2.st_ino and stat1.st_dev == stat2.st_dev
+    except OSError:
+        return False
+
+
+def safe_replace_with_link(duplicate: Path, master: Path, action: str) -> tuple[bool, str]:
+    """
+    Safely replace duplicate file with a link to master using temp-rename pattern.
+
+    The temp-rename pattern ensures the original file can be recovered if link
+    creation fails:
+    1. Rename duplicate to temp location
+    2. Create link at original duplicate location
+    3. Delete temp file on success
+    4. On failure, restore temp to original location
+
+    Args:
+        duplicate: Path to the duplicate file to replace
+        master: Path to the master file to link to
+        action: Action type ("hardlink", "symlink", or "delete")
+
+    Returns:
+        Tuple of (success: bool, error_message: str)
+        error_message is empty string on success
+    """
+    # Create temp path with unique suffix to avoid collisions
+    temp_path = duplicate.with_suffix(duplicate.suffix + '.filematcher_tmp')
+
+    try:
+        # Step 1: Rename duplicate to temp location
+        duplicate.rename(temp_path)
+    except OSError as e:
+        return (False, f"Failed to rename to temp: {e}")
+
+    try:
+        # Step 2: Create link at original duplicate location (or skip for delete)
+        if action == 'hardlink':
+            duplicate.hardlink_to(master)
+        elif action == 'symlink':
+            # Use absolute path for symlink per CONTEXT.md
+            duplicate.symlink_to(master.resolve())
+        elif action == 'delete':
+            # For delete, no link creation - just proceed to delete temp
+            pass
+        else:
+            # Unknown action - restore and fail
+            temp_path.rename(duplicate)
+            return (False, f"Unknown action: {action}")
+
+        # Step 3: Delete temp file on success
+        temp_path.unlink()
+        return (True, "")
+
+    except OSError as e:
+        # Rollback: restore temp to original location (best effort)
+        try:
+            temp_path.rename(duplicate)
+        except OSError:
+            pass  # Best effort rollback
+        return (False, f"Failed to create {action}: {e}")
+
+
+def execute_action(
+    duplicate: str,
+    master: str,
+    action: str,
+    fallback_symlink: bool = False
+) -> tuple[bool, str, str]:
+    """
+    Execute an action on a duplicate file.
+
+    Main dispatch function that handles hardlink, symlink, and delete actions
+    with optional symlink fallback for cross-device hardlink failures.
+
+    Args:
+        duplicate: Path to the duplicate file
+        master: Path to the master file
+        action: Action type ("hardlink", "symlink", or "delete")
+        fallback_symlink: If True, fall back to symlink when hardlink fails
+                         due to cross-device error
+
+    Returns:
+        Tuple of (success: bool, error_message: str, actual_action_used: str)
+        actual_action_used can be: "hardlink", "symlink", "symlink (fallback)",
+        "delete", or "skipped"
+    """
+    dup_path = Path(duplicate)
+    master_path = Path(master)
+
+    # Check if already hardlinked (skip if so)
+    if action == 'hardlink' and already_hardlinked(duplicate, master):
+        return (True, "already linked", "skipped")
+
+    # Execute the action
+    if action == 'hardlink':
+        success, error = safe_replace_with_link(dup_path, master_path, 'hardlink')
+        if not success and fallback_symlink:
+            # Check for cross-device error indicators
+            error_lower = error.lower()
+            if 'cross-device' in error_lower or 'invalid cross-device link' in error_lower or 'errno 18' in error_lower:
+                # Fallback to symlink
+                success, error = safe_replace_with_link(dup_path, master_path, 'symlink')
+                if success:
+                    return (True, "", "symlink (fallback)")
+                return (False, error, "symlink (fallback)")
+        return (success, error, "hardlink")
+
+    elif action == 'symlink':
+        success, error = safe_replace_with_link(dup_path, master_path, 'symlink')
+        return (success, error, "symlink")
+
+    elif action == 'delete':
+        success, error = safe_replace_with_link(dup_path, master_path, 'delete')
+        return (success, error, "delete")
+
+    else:
+        return (False, f"Unknown action: {action}", action)
+
+
 def format_file_size(size_bytes: int | float) -> str:
     """
     Convert file size in bytes to human-readable format.
