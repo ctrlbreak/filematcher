@@ -20,7 +20,7 @@ import tarfile
 from datetime import datetime
 from pathlib import Path
 
-def create_release_package(version="1.0.0"):
+def create_release_package(version="1.1.0"):
     """Create a release package for the specified version."""
     
     # Create release directory
@@ -178,7 +178,7 @@ This is the first stable release of File Matcher, featuring:
 if __name__ == "__main__":
     import sys
     
-    version = "1.0.0"
+    version = "1.1.0"
     if len(sys.argv) > 1:
         version = sys.argv[1]
     
