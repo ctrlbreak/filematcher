@@ -263,6 +263,137 @@ class TextCompareFormatter(CompareFormatter):
         pass
 
 
+class TextActionFormatter(ActionFormatter):
+    """Text output formatter for action mode (preview/execute).
+
+    Delegates to existing format_* functions to ensure byte-identical output.
+    These functions are already battle-tested and produce the expected format.
+    """
+
+    def format_banner(self) -> None:
+        """Format and output the mode banner (PREVIEW or EXECUTE)."""
+        if self.preview_mode:
+            print(format_preview_banner())
+        else:
+            print(format_execute_banner())
+        print()
+
+    def format_warnings(self, warnings: list[str]) -> None:
+        """Format and output warnings.
+
+        Args:
+            warnings: List of warning messages
+        """
+        for warning in warnings:
+            print(warning)
+        if warnings:
+            print()
+
+    def format_duplicate_group(
+        self,
+        master_file: str,
+        duplicates: list[str],
+        action: str,
+        file_sizes: dict[str, int] | None = None,
+        cross_fs_files: set[str] | None = None
+    ) -> None:
+        """Format and output a duplicate group.
+
+        Delegates to existing format_duplicate_group function.
+
+        Args:
+            master_file: Path to the master file (preserved)
+            duplicates: List of duplicate file paths
+            action: Action type (hardlink, symlink, delete)
+            file_sizes: Optional dict mapping paths to file sizes (for verbose mode)
+            cross_fs_files: Optional set of duplicates on different filesystem
+        """
+        # DELEGATE to existing format_duplicate_group function
+        # Note: format_duplicate_group already sorts duplicates (line 144: sorted(duplicates))
+        lines = format_duplicate_group(
+            master_file=master_file,
+            duplicates=duplicates,
+            action=action,
+            verbose=self.verbose,
+            file_sizes=file_sizes,
+            cross_fs_files=cross_fs_files,
+            preview_mode=self.preview_mode
+        )
+        for line in lines:
+            print(line)
+
+    def format_statistics(
+        self,
+        group_count: int,
+        duplicate_count: int,
+        master_count: int,
+        space_savings: int,
+        action: str,
+        cross_fs_count: int = 0
+    ) -> None:
+        """Format and output statistics footer.
+
+        Delegates to existing format_statistics_footer function.
+
+        Args:
+            group_count: Number of duplicate groups
+            duplicate_count: Total number of duplicate files
+            master_count: Number of master files (preserved)
+            space_savings: Bytes that would be saved
+            action: Action type for action-specific messaging
+            cross_fs_count: Number of files that can't be hardlinked (cross-fs)
+        """
+        # DELEGATE to existing format_statistics_footer function
+        lines = format_statistics_footer(
+            group_count=group_count,
+            duplicate_count=duplicate_count,
+            master_count=master_count,
+            space_savings=space_savings,
+            action=action,
+            verbose=self.verbose,
+            cross_fs_count=cross_fs_count,
+            preview_mode=self.preview_mode
+        )
+        for line in lines:
+            print(line)
+
+    def format_execution_summary(
+        self,
+        success_count: int,
+        failure_count: int,
+        skipped_count: int,
+        space_saved: int,
+        log_path: str,
+        failed_list: list[tuple[str, str]]
+    ) -> None:
+        """Format and output execution summary.
+
+        Args:
+            success_count: Number of successful operations
+            failure_count: Number of failed operations
+            skipped_count: Number of skipped operations
+            space_saved: Total bytes saved
+            log_path: Path to the audit log file
+            failed_list: List of (file_path, error_message) tuples for failures
+        """
+        print()
+        print(f"Execution complete:")
+        print(f"  Successful: {success_count}")
+        print(f"  Failed: {failure_count}")
+        print(f"  Skipped: {skipped_count}")
+        print(f"  Space saved: {format_file_size(space_saved)}")
+        print(f"  Log file: {log_path}")
+        if failed_list:
+            print()
+            print("Failed files:")
+            for path, error in sorted(failed_list):  # Sorted for determinism (OUT-04)
+                print(f"  - {path}: {error}")
+
+    def finalize(self) -> None:
+        """Finalize output. Text output is immediate, so nothing to do."""
+        pass
+
+
 def confirm_execution(skip_confirm: bool = False, prompt: str = "Proceed? [y/N] ") -> bool:
     """
     Prompt user for Y/N confirmation before executing changes.
