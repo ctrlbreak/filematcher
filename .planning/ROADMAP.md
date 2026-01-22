@@ -55,7 +55,7 @@ Plans:
 #### Phase 5: Formatter Abstraction
 **Goal**: Create unified output abstraction layer without changing user-visible behavior
 **Depends on**: Phase 4
-**Requirements**: OUT-03, OUT-04
+**Requirements**: OUT-04
 **Success Criteria** (what must be TRUE):
   1. OutputFormatter ABC hierarchy exists (CompareFormatter, ActionFormatter)
   2. TextFormatter implementations wrap existing format functions and produce identical output
@@ -87,7 +87,7 @@ Plans:
 #### Phase 7: Output Unification
 **Goal**: Consistent output structure across compare and action modes with statistics in all modes
 **Depends on**: Phase 6
-**Requirements**: OUT-01, OUT-02
+**Requirements**: OUT-01, OUT-02, OUT-03
 **Success Criteria** (what must be TRUE):
   1. Compare mode and action mode use identical output structure (same sections, same ordering)
   2. Statistics footer appears in all modes (compare, action preview, action execute)
@@ -131,4 +131,4 @@ Plans:
 | 8. Color Enhancement | v1.2 | 0/? | Not started | - |
 
 ---
-*Last updated: 2026-01-22 - Phase 5 planned (3 plans in 2 waves)*
+*Last updated: 2026-01-22 - OUT-03 moved to Phase 7, Phase 5 now covers OUT-04 only*

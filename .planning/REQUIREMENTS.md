@@ -62,7 +62,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | OUT-01 | Phase 7 | Pending |
 | OUT-02 | Phase 7 | Pending |
-| OUT-03 | Phase 5 | Pending |
+| OUT-03 | Phase 7 | Pending |
 | OUT-04 | Phase 5 | Pending |
 | JSON-01 | Phase 6 | Pending |
 | JSON-02 | Phase 6 | Pending |
@@ -79,11 +79,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Unmapped: 0
 
 **Phase Distribution:**
-- Phase 5 (Formatter Abstraction): 2 requirements (OUT-03, OUT-04)
+- Phase 5 (Formatter Abstraction): 1 requirement (OUT-04)
 - Phase 6 (JSON Output): 5 requirements (JSON-01, JSON-02, JSON-03, JSON-04, NULL-01)
-- Phase 7 (Output Unification): 2 requirements (OUT-01, OUT-02)
+- Phase 7 (Output Unification): 3 requirements (OUT-01, OUT-02, OUT-03)
 - Phase 8 (Color Enhancement): 3 requirements (UX-01, UX-02, UX-03)
+
+**Notes:**
+- OUT-03 (stderr/stdout separation) deferred from Phase 5 to Phase 7: The formatter abstraction (Phase 5) creates the infrastructure, but actual stream routing requires output unification work. Implementing OUT-03 during Phase 7 ensures all output paths are unified before splitting streams.
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-22 after roadmap creation (100% coverage)*
+*Last updated: 2026-01-22 - OUT-03 moved from Phase 5 to Phase 7*
