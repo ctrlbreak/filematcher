@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 ## Current Position
 
 Phase: 5 of 8 (Formatter Abstraction)
-Plan: Ready to plan
-Status: Ready to plan
-Last activity: 2026-01-22 — v1.2 roadmap created, starting Phase 5
+Plan: 1 of TBD
+Status: In progress
+Last activity: 2026-01-22 — Completed 05-01-PLAN.md (Formatter ABC Foundation)
 
-Progress: [████░░░░░░] 40% (v1.1 complete: 4/8 phases)
+Progress: [████░░░░░░] 41% (v1.1: 4 phases, v1.2: 1 plan complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 12 (v1.1)
-- Average duration: Not tracked in v1.1
-- Total execution time: 2 days for v1.1 (2026-01-19 → 2026-01-20)
+- Total plans completed: 13 (v1.1: 12, v1.2: 1)
+- Average duration: 6 min (v1.2 only)
+- Total execution time: v1.1: 2 days, v1.2: 6 min (so far)
 
 **By Phase:**
 
@@ -31,16 +31,13 @@ Progress: [████░░░░░░] 40% (v1.1 complete: 4/8 phases)
 | 2. Preview Mode | 3 | Complete (v1.1) |
 | 3. Deduplication | 4 | Complete (v1.1) |
 | 4. Audit Logging | 2 | Complete (v1.1) |
-| 5. Formatter Abstraction | TBD | Ready to plan |
+| 5. Formatter Abstraction | 1/TBD | In progress |
 | 6. JSON Output | TBD | Not started |
 | 7. Output Unification | TBD | Not started |
 | 8. Color Enhancement | TBD | Not started |
 
 **Recent Trend:**
-- v1.1 completed: 12 plans across 4 phases in 2 days
-- v1.2 starting fresh
-
-*Metrics will update after Phase 5 planning and execution*
+- 05-01 completed: 6 min (3 tasks, 1 file modified)
 
 ## Accumulated Context
 
@@ -52,6 +49,16 @@ Recent decisions from PROJECT.md affecting v1.2:
 - **Preview-by-default with --execute**: Safety-first design prevents accidental modifications (v1.1)
 - **Single-file implementation**: Maintain single-file pattern for v1.2 output formatting (v1.2)
 - **Zero dependencies**: Pure Python standard library only for v1.2 (v1.2)
+
+Phase 5-01 decisions:
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| ABC vs typing.Protocol | Explicit inheritance with runtime checks, more familiar | 05-01 |
+| Separate CompareFormatter and ActionFormatter ABCs | Distinct output structures between compare and action modes | 05-01 |
+| TextCompareFormatter inline implementation | No existing format_* functions to delegate to | 05-01 |
+| TextActionFormatter delegates to existing functions | Preserves byte-identical output, leverages battle-tested code | 05-01 |
+| All file lists sorted for deterministic output | OUT-04 requirement for consistency | 05-01 |
 
 ### Critical Research Insights
 
@@ -67,9 +74,11 @@ From research/SUMMARY.md:
 
 ### Blockers/Concerns
 
-**Phase 5 considerations:**
-- Need to identify all output branches in lines 1045-1340 of file_matcher.py
-- TextFormatter must produce byte-identical output to avoid breaking existing users
+**Phase 5 status (05-01 complete):**
+- ✅ ABC hierarchy defined (CompareFormatter, ActionFormatter)
+- ✅ Text implementations done (TextCompareFormatter, TextActionFormatter)
+- ✅ All 106 tests pass (byte-identical output confirmed)
+- Next: Wire formatters into main() (05-02 or later)
 
 **Phase 6 considerations:**
 - JSON schema design needs careful thought for jq usability
@@ -80,9 +89,9 @@ From research/SUMMARY.md:
 
 ## Session Continuity
 
-Last session: 2026-01-22 (roadmap creation)
-Stopped at: ROADMAP.md and STATE.md created, ready to begin Phase 5 planning
+Last session: 2026-01-22 (plan execution)
+Stopped at: Completed 05-01-PLAN.md (Formatter ABC Foundation)
 Resume file: None
 
 ---
-*Last updated: 2026-01-22 after v1.2 roadmap creation*
+*Last updated: 2026-01-22 after 05-01 completion*
