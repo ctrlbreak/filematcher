@@ -33,13 +33,17 @@ class CompareFormatter(ABC):
     Compare mode shows files with matching content across two directories.
     """
 
-    def __init__(self, verbose: bool = False):
+    def __init__(self, verbose: bool = False, dir1_name: str = "dir1", dir2_name: str = "dir2"):
         """Initialize the formatter with configuration.
 
         Args:
             verbose: If True, show additional details in output
+            dir1_name: Label for first directory (default: "dir1")
+            dir2_name: Label for second directory (default: "dir2")
         """
         self.verbose = verbose
+        self.dir1_name = dir1_name
+        self.dir2_name = dir2_name
 
     @abstractmethod
     def format_header(self, dir1: str, dir2: str, hash_algo: str) -> None:
@@ -221,10 +225,10 @@ class TextCompareFormatter(CompareFormatter):
         """
         # Inline implementation matching current output format (lines 1314-1321)
         print(f"Hash: {file_hash[:10]}...")
-        print(f"  Files in dir1:")  # Will be replaced with actual dir names by caller
+        print(f"  Files in {self.dir1_name}:")
         for f in sorted(files_dir1):  # Sorted for determinism (OUT-04)
             print(f"    {f}")
-        print(f"  Files in dir2:")
+        print(f"  Files in {self.dir2_name}:")
         for f in sorted(files_dir2):  # Sorted for determinism (OUT-04)
             print(f"    {f}")
         print()
@@ -255,8 +259,8 @@ class TextCompareFormatter(CompareFormatter):
         """
         print(f"\nMatched files summary:")
         print(f"  Unique content hashes with matches: {match_count}")
-        print(f"  Files in dir1 with matches: {matched_files1}")
-        print(f"  Files in dir2 with matches: {matched_files2}")
+        print(f"  Files in {self.dir1_name} with matches in {self.dir2_name}: {matched_files1}")
+        print(f"  Files in {self.dir2_name} with matches in {self.dir1_name}: {matched_files2}")
 
     def finalize(self) -> None:
         """Finalize output. Text output is immediate, so nothing to do."""
@@ -1447,8 +1451,11 @@ def main() -> int:
         preview_mode = args.action and not args.execute
         execute_mode = args.action and args.execute
 
+        # Create formatter for action mode
+        action_formatter = TextActionFormatter(verbose=args.verbose, preview_mode=not args.execute)
+
         # Helper function to print preview output
-        def print_preview_output(show_banner: bool = True) -> None:
+        def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
             if show_banner:
                 print(format_preview_banner())
                 print()
