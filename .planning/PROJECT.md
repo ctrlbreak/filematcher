@@ -34,7 +34,18 @@ Safely deduplicate files across directories while preserving the master copy and
 
 <!-- Current scope. Building toward these. -->
 
-(None — next milestone not yet defined)
+- [ ] Unified output format across compare and action modes
+- [ ] Statistics shown in all modes
+- [ ] JSON output format for scripting (`--json` flag)
+
+## Current Milestone: v1.2 Output Rationalisation
+
+**Goal:** Unify output formatting across modes and add machine-readable JSON output.
+
+**Target features:**
+- Consistent output structure between compare mode and action mode
+- Statistics footer in all modes (not just action mode)
+- JSON output option for scripting and pipelines
 
 ### Out of Scope
 
@@ -49,7 +60,7 @@ Safely deduplicate files across directories while preserving the master copy and
 
 ## Context
 
-**Current state:** v1.1 shipped with full deduplication capability.
+**Current state:** v1.1 shipped with full deduplication capability. Starting v1.2 for output rationalisation.
 
 - 1,374 lines Python (file_matcher.py)
 - 1,996 lines tests (114 tests, all passing)
@@ -83,4 +94,4 @@ Safely deduplicate files across directories while preserving the master copy and
 | Exit codes 0/1/2/3 | Clear signal for success/all-fail/validation/partial | ✓ Good |
 
 ---
-*Last updated: 2026-01-20 after v1.1 milestone*
+*Last updated: 2026-01-22 after v1.2 milestone start*

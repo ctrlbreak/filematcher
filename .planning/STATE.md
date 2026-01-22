@@ -2,33 +2,24 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-01-20)
+See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
 
-**Current focus:** v1.1 Shipped — Planning next milestone
+**Current focus:** v1.2 Output Rationalisation
 
 ## Current Position
 
-**Phase:** v1.1 Complete
-**Status:** MILESTONE SHIPPED
-**Last activity:** 2026-01-20 — v1.1 milestone complete
+**Phase:** Not started (defining requirements)
+**Status:** Defining requirements
+**Last activity:** 2026-01-22 — Milestone v1.2 started
 
 **Progress:**
 ```
-v1.1 Deduplication: [##########] SHIPPED
+v1.2 Output Rationalisation: [░░░░░░░░░░] 0%
 
-Overall: 4 phases, 12 plans — 100% complete
+Overall: Defining requirements
 ```
-
-## Performance Metrics
-
-| Metric | Value |
-|--------|-------|
-| Plans completed | 12 |
-| Requirements delivered | 29/29 |
-| Phases completed | 4/4 |
-| Tests | 114 (all passing) |
 
 ## Accumulated Context
 
@@ -38,8 +29,8 @@ See PROJECT.md Key Decisions table for full list with outcomes.
 
 ### Technical Notes
 
-- Codebase: single-file `file_matcher.py` (1,374 lines)
-- Test suite: 1,996 lines across 8 test modules
+- Codebase: single-file `file_matcher.py` (~1,350 lines after --master removal)
+- Test suite: ~2,000 lines across 8 test modules (106 tests, all passing)
 - Pure Python standard library (no external dependencies)
 - Python 3.9+ compatible
 
@@ -49,8 +40,7 @@ None.
 
 ### Pending Todos
 
-1. **Remove master flag, first directory is implicit master** (cli) - `.planning/todos/pending/2026-01-20-remove-master-flag-first-dir-implicit.md`
-2. **Rationalise output from compare mode and action mode** (cli) - `.planning/todos/pending/2026-01-20-rationalise-compare-action-mode-output.md`
+1. **Rationalise output from compare mode and action mode** (cli) - `.planning/todos/pending/2026-01-20-rationalise-compare-action-mode-output.md` — Being addressed in v1.2
 
 ### Blockers
 
@@ -58,39 +48,21 @@ None.
 
 ## Session Continuity
 
-**Last session:** 2026-01-20
-**Stopped at:** v1.1 SHIPPED
+**Last session:** 2026-01-22
+**Stopped at:** Starting v1.2 milestone
 **Resume file:** None
 
 ### Handoff Notes
 
-v1.1 Deduplication milestone shipped with full capability:
+v1.2 Output Rationalisation milestone started.
 
-**Features:**
-- First directory is implicit master (files never modified)
-- `--action` flag with hardlink/symlink/delete choices
-- `--execute` flag for actual modifications (preview-by-default)
-- `--log` flag for custom audit log path
-- `--fallback-symlink` for cross-filesystem handling
-- `--yes` flag for scripted execution
+**Goals:**
+- Unify output format between compare mode and action mode
+- Add statistics to all modes
+- Add JSON output option (`--json`) for scripting
 
-**Usage:**
-```bash
-# Preview deduplication
-filematcher dir1 dir2 --action hardlink
-
-# Execute with confirmation
-filematcher dir1 dir2 --action hardlink --execute
-
-# Execute in script (no prompt)
-filematcher dir1 dir2 --action hardlink --execute --yes
-```
-
-**Next milestone ideas (v1.2/v2.0):**
-- Interactive mode (per-file prompts)
-- JSON output format
-- Relative symlinks option
+**Previous milestone (v1.1):** Shipped with full deduplication capability.
 
 ---
 *State initialized: 2026-01-19*
-*Last updated: 2026-01-20 (v1.1 shipped)*
+*Last updated: 2026-01-22 (v1.2 milestone started)*
