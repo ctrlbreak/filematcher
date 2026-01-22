@@ -75,6 +75,7 @@ From research/SUMMARY.md:
 ### Pending Todos
 
 1. **Rationalise output from compare mode and action mode** (cli) - Being addressed in v1.2 Phases 5-7
+2. **Check and refine behaviour if matched files are hardlinks or symlinks** (cli) - Edge case handling
 
 ### Blockers/Concerns
 
