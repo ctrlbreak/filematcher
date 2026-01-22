@@ -10,6 +10,7 @@ Version: 1.0.0
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 import argparse
 import hashlib
 import logging
@@ -20,6 +21,175 @@ from datetime import datetime
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# Output Formatter ABCs
+# ============================================================================
+
+class CompareFormatter(ABC):
+    """Abstract base class for formatting compare mode output (no action specified).
+
+    Compare mode shows files with matching content across two directories.
+    """
+
+    def __init__(self, verbose: bool = False):
+        """Initialize the formatter with configuration.
+
+        Args:
+            verbose: If True, show additional details in output
+        """
+        self.verbose = verbose
+
+    @abstractmethod
+    def format_header(self, dir1: str, dir2: str, hash_algo: str) -> None:
+        """Format and output the comparison header.
+
+        Args:
+            dir1: First directory path
+            dir2: Second directory path
+            hash_algo: Hash algorithm used (md5, sha256)
+        """
+        pass
+
+    @abstractmethod
+    def format_match_group(self, file_hash: str, files_dir1: list[str], files_dir2: list[str]) -> None:
+        """Format and output a group of files with matching content.
+
+        Args:
+            file_hash: Content hash for this group
+            files_dir1: List of file paths from first directory
+            files_dir2: List of file paths from second directory
+        """
+        pass
+
+    @abstractmethod
+    def format_unmatched(self, dir_label: str, files: list[str]) -> None:
+        """Format and output unmatched files for a directory.
+
+        Args:
+            dir_label: Label for the directory
+            files: List of file paths with no matches
+        """
+        pass
+
+    @abstractmethod
+    def format_summary(self, match_count: int, matched_files1: int, matched_files2: int, unmatched1: int, unmatched2: int) -> None:
+        """Format and output the comparison summary.
+
+        Args:
+            match_count: Number of unique content hashes with matches
+            matched_files1: Number of files in dir1 with matches
+            matched_files2: Number of files in dir2 with matches
+            unmatched1: Number of unmatched files in dir1
+            unmatched2: Number of unmatched files in dir2
+        """
+        pass
+
+    @abstractmethod
+    def finalize(self) -> None:
+        """Finalize output (e.g., flush buffers, close files)."""
+        pass
+
+
+class ActionFormatter(ABC):
+    """Abstract base class for formatting action mode output (preview/execute).
+
+    Action mode shows master/duplicate relationships and actions to be taken.
+    """
+
+    def __init__(self, verbose: bool = False, preview_mode: bool = True):
+        """Initialize the formatter with configuration.
+
+        Args:
+            verbose: If True, show additional details in output
+            preview_mode: If True, format for preview; if False, format for execution
+        """
+        self.verbose = verbose
+        self.preview_mode = preview_mode
+
+    @abstractmethod
+    def format_banner(self) -> None:
+        """Format and output the mode banner (PREVIEW or EXECUTE)."""
+        pass
+
+    @abstractmethod
+    def format_warnings(self, warnings: list[str]) -> None:
+        """Format and output warnings.
+
+        Args:
+            warnings: List of warning messages
+        """
+        pass
+
+    @abstractmethod
+    def format_duplicate_group(
+        self,
+        master_file: str,
+        duplicates: list[str],
+        action: str,
+        file_sizes: dict[str, int] | None = None,
+        cross_fs_files: set[str] | None = None
+    ) -> None:
+        """Format and output a duplicate group showing master and duplicates.
+
+        Args:
+            master_file: Path to the master file (preserved)
+            duplicates: List of duplicate file paths
+            action: Action type (hardlink, symlink, delete)
+            file_sizes: Optional dict mapping paths to file sizes (for verbose mode)
+            cross_fs_files: Optional set of duplicates on different filesystem
+        """
+        pass
+
+    @abstractmethod
+    def format_statistics(
+        self,
+        group_count: int,
+        duplicate_count: int,
+        master_count: int,
+        space_savings: int,
+        action: str,
+        cross_fs_count: int = 0
+    ) -> None:
+        """Format and output statistics footer.
+
+        Args:
+            group_count: Number of duplicate groups
+            duplicate_count: Total number of duplicate files
+            master_count: Number of master files (preserved)
+            space_savings: Bytes that would be saved
+            action: Action type for action-specific messaging
+            cross_fs_count: Number of files that can't be hardlinked (cross-fs)
+        """
+        pass
+
+    @abstractmethod
+    def format_execution_summary(
+        self,
+        success_count: int,
+        failure_count: int,
+        skipped_count: int,
+        space_saved: int,
+        log_path: str,
+        failed_list: list[tuple[str, str]]
+    ) -> None:
+        """Format and output execution summary after actions complete.
+
+        Args:
+            success_count: Number of successful operations
+            failure_count: Number of failed operations
+            skipped_count: Number of skipped operations
+            space_saved: Total bytes saved
+            log_path: Path to the audit log file
+            failed_list: List of (file_path, error_message) tuples for failures
+        """
+        pass
+
+    @abstractmethod
+    def finalize(self) -> None:
+        """Finalize output (e.g., flush buffers, close files)."""
+        pass
 
 
 def confirm_execution(skip_confirm: bool = False, prompt: str = "Proceed? [y/N] ") -> bool:
