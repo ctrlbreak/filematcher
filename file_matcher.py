@@ -192,6 +192,77 @@ class ActionFormatter(ABC):
         pass
 
 
+# ============================================================================
+# Text Formatter Implementations
+# ============================================================================
+
+class TextCompareFormatter(CompareFormatter):
+    """Text output formatter for compare mode (no action specified).
+
+    Implements formatting inline - there are no existing format_* functions
+    for compare mode to delegate to. Matches current output format exactly.
+    """
+
+    def format_header(self, dir1: str, dir2: str, hash_algo: str) -> None:
+        """Format comparison header.
+
+        Note: Header is printed by logger in main(), not by formatter.
+        This method exists for interface completeness.
+        """
+        pass
+
+    def format_match_group(self, file_hash: str, files_dir1: list[str], files_dir2: list[str]) -> None:
+        """Format a group of matching files.
+
+        Args:
+            file_hash: Content hash for this group
+            files_dir1: List of file paths from first directory (sorted for determinism)
+            files_dir2: List of file paths from second directory (sorted for determinism)
+        """
+        # Inline implementation matching current output format (lines 1314-1321)
+        print(f"Hash: {file_hash[:10]}...")
+        print(f"  Files in dir1:")  # Will be replaced with actual dir names by caller
+        for f in sorted(files_dir1):  # Sorted for determinism (OUT-04)
+            print(f"    {f}")
+        print(f"  Files in dir2:")
+        for f in sorted(files_dir2):  # Sorted for determinism (OUT-04)
+            print(f"    {f}")
+        print()
+
+    def format_unmatched(self, dir_label: str, files: list[str]) -> None:
+        """Format unmatched files for a directory.
+
+        Args:
+            dir_label: Label for the directory
+            files: List of file paths with no matches (sorted for determinism)
+        """
+        if files:
+            print(f"\nUnique files in {dir_label} ({len(files)}):")
+            for f in sorted(files):  # Sorted for determinism (OUT-04)
+                print(f"  {f}")
+        else:
+            print(f"\nNo unique files in {dir_label}")
+
+    def format_summary(self, match_count: int, matched_files1: int, matched_files2: int, unmatched1: int, unmatched2: int) -> None:
+        """Format comparison summary.
+
+        Args:
+            match_count: Number of unique content hashes with matches
+            matched_files1: Number of files in dir1 with matches
+            matched_files2: Number of files in dir2 with matches
+            unmatched1: Number of unmatched files in dir1 (unused in summary)
+            unmatched2: Number of unmatched files in dir2 (unused in summary)
+        """
+        print(f"\nMatched files summary:")
+        print(f"  Unique content hashes with matches: {match_count}")
+        print(f"  Files in dir1 with matches: {matched_files1}")
+        print(f"  Files in dir2 with matches: {matched_files2}")
+
+    def finalize(self) -> None:
+        """Finalize output. Text output is immediate, so nothing to do."""
+        pass
+
+
 def confirm_execution(skip_confirm: bool = False, prompt: str = "Proceed? [y/N] ") -> bool:
     """
     Prompt user for Y/N confirmation before executing changes.
