@@ -60,24 +60,30 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OUT-01 | TBD | Pending |
-| OUT-02 | TBD | Pending |
-| OUT-03 | TBD | Pending |
-| OUT-04 | TBD | Pending |
-| JSON-01 | TBD | Pending |
-| JSON-02 | TBD | Pending |
-| JSON-03 | TBD | Pending |
-| JSON-04 | TBD | Pending |
-| NULL-01 | TBD | Pending |
-| UX-01 | TBD | Pending |
-| UX-02 | TBD | Pending |
-| UX-03 | TBD | Pending |
+| OUT-01 | Phase 7 | Pending |
+| OUT-02 | Phase 7 | Pending |
+| OUT-03 | Phase 5 | Pending |
+| OUT-04 | Phase 5 | Pending |
+| JSON-01 | Phase 6 | Pending |
+| JSON-02 | Phase 6 | Pending |
+| JSON-03 | Phase 6 | Pending |
+| JSON-04 | Phase 6 | Pending |
+| NULL-01 | Phase 6 | Pending |
+| UX-01 | Phase 8 | Pending |
+| UX-02 | Phase 8 | Pending |
+| UX-03 | Phase 8 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12 (pending roadmap)
+- Mapped to phases: 12
+- Unmapped: 0
+
+**Phase Distribution:**
+- Phase 5 (Formatter Abstraction): 2 requirements (OUT-03, OUT-04)
+- Phase 6 (JSON Output): 5 requirements (JSON-01, JSON-02, JSON-03, JSON-04, NULL-01)
+- Phase 7 (Output Unification): 2 requirements (OUT-01, OUT-02)
+- Phase 8 (Color Enhancement): 3 requirements (UX-01, UX-02, UX-03)
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-22 after initial definition*
+*Last updated: 2026-01-22 after roadmap creation (100% coverage)*
