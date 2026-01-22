@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 ## Current Position
 
 Phase: 5 of 8 (Formatter Abstraction)
-Plan: 3 of TBD
+Plan: 2 of TBD (out of sequence - 05-03 was completed first)
 Status: In progress
-Last activity: 2026-01-22 — Completed 05-03-PLAN.md (Wire Compare Formatter)
+Last activity: 2026-01-22 — Completed 05-02-PLAN.md (Action Mode Formatter Integration)
 
 Progress: [████░░░░░░] 43% (v1.1: 4 phases, v1.2: 3 plans complete)
 
@@ -38,7 +38,7 @@ Progress: [████░░░░░░] 43% (v1.1: 4 phases, v1.2: 3 plans co
 
 **Recent Trend:**
 - 05-01 completed: 6 min (3 tasks, 1 file modified)
-- 05-02 completed: 3 min (3 tasks, 1 file modified) [Note: 05-02 was skipped, went to 05-03]
+- 05-02 completed: 3 min (2 tasks, 1 file modified) [Completed out of sequence after 05-03]
 - 05-03 completed: 3 min (3 tasks, 2 files modified)
 
 ## Accumulated Context
@@ -61,6 +61,9 @@ Phase 5 decisions:
 | TextCompareFormatter inline implementation | No existing format_* functions to delegate to | 05-01 |
 | TextActionFormatter delegates to existing functions | Preserves byte-identical output, leverages battle-tested code | 05-01 |
 | All file lists sorted for deterministic output | OUT-04 requirement for consistency | 05-01 |
+| action_formatter always preview_mode=True for print_preview_output() | Function always shows preview output, even in execute mode | 05-02 |
+| Separate action_formatter_exec for execution summary | Execution summary needs preview_mode=False | 05-02 |
+| Preserve direct print() for edge cases | Minimize refactoring scope for "No duplicates" and blank lines | 05-02 |
 | Sort matches.keys() for deterministic hash iteration | Dictionary iteration order must be deterministic | 05-03 |
 | Test determinism with 5 runs | More runs increase confidence in catching non-deterministic behavior | 05-03 |
 
@@ -96,8 +99,8 @@ From research/SUMMARY.md:
 ## Session Continuity
 
 Last session: 2026-01-22 (plan execution)
-Stopped at: Completed 05-03-PLAN.md (Wire Compare Formatter)
+Stopped at: Completed 05-02-PLAN.md (Action Mode Formatter Integration)
 Resume file: None
 
 ---
-*Last updated: 2026-01-22 after 05-03 completion*
+*Last updated: 2026-01-22 after 05-02 completion*
