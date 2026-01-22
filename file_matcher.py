@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """
-File Matcher - Find files with identical content in different directory trees.
+File Matcher - Find files with identical content across two directory trees.
 
 This script compares two directory trees and finds files that have identical
-content but potentially different names or locations.
+content. By default, it reports all content matches regardless of filename.
+Use --different-names-only to filter to only files with different names.
 
 Version: 1.0.0
 """
@@ -1291,18 +1292,18 @@ def index_directory(directory: str | Path, hash_algorithm: str = 'md5', fast_mod
     return hash_to_files
 
 
-def find_matching_files(dir1: str | Path, dir2: str | Path, hash_algorithm: str = 'md5', fast_mode: bool = False, verbose: bool = False) -> tuple[dict[str, tuple[list[str], list[str]]], list[str], list[str]]:
+def find_matching_files(dir1: str | Path, dir2: str | Path, hash_algorithm: str = 'md5', fast_mode: bool = False, verbose: bool = False, different_names_only: bool = False) -> tuple[dict[str, tuple[list[str], list[str]]], list[str], list[str]]:
     """
-    Find files that have identical content but different names
-    across two directory hierarchies.
-    
+    Find files that have identical content across two directory hierarchies.
+
     Args:
         dir1: First directory to scan
         dir2: Second directory to scan
         hash_algorithm: Hashing algorithm to use
         fast_mode: If True, use faster hashing for large files
         verbose: If True, show progress for each file being processed
-        
+        different_names_only: If True, only include matches where filenames differ
+
     Returns:
         - matches: Dict where keys are content hashes and values are tuples of (files_from_dir1, files_from_dir2)
         - unmatched1: List of files in dir1 with no content match in dir2
@@ -1326,14 +1327,18 @@ def find_matching_files(dir1: str | Path, dir2: str | Path, hash_algorithm: str 
     # Create the result data structure for matches
     matches = {}
     for file_hash in common_hashes:
-        # Only include if we've found files with different names
         files1 = hash_to_files1[file_hash]
         files2 = hash_to_files2[file_hash]
-        
-        # Filter out files with exactly the same name
-        # (We're looking for identical content with different names)
-        if not all(f1 == f2 for f1 in files1 for f2 in files2):
-            matches[file_hash] = (files1, files2)
+
+        if different_names_only:
+            # Filter to only include groups where at least one pair has different basenames
+            names1 = {os.path.basename(f) for f in files1}
+            names2 = {os.path.basename(f) for f in files2}
+            # Skip if all files have the same name (e.g., both dirs have only "file.txt")
+            if names1 == names2 and len(names1) == 1:
+                continue
+
+        matches[file_hash] = (files1, files2)
     
     # Create lists of unmatched files
     unmatched1 = []
@@ -1350,7 +1355,7 @@ def find_matching_files(dir1: str | Path, dir2: str | Path, hash_algorithm: str 
 def main() -> int:
     """Main entry point. Returns 0 on success, 1 on error."""
     # Set up argument parser
-    parser = argparse.ArgumentParser(description='Find files with identical content but different names across two directories.')
+    parser = argparse.ArgumentParser(description='Find files with identical content across two directories.')
     parser.add_argument('dir1', help='First directory to compare')
     parser.add_argument('dir2', help='Second directory to compare')
     parser.add_argument('--show-unmatched', '-u', action='store_true', help='Display files with no content match')
@@ -1372,6 +1377,8 @@ def main() -> int:
                         help='Path for audit log file (default: filematcher_YYYYMMDD_HHMMSS.log)')
     parser.add_argument('--fallback-symlink', action='store_true',
                         help='Use symlink instead of hardlink for cross-filesystem duplicates')
+    parser.add_argument('--different-names-only', '-d', action='store_true',
+                        help='Only report files with identical content but different names (exclude same-name matches)')
 
     args = parser.parse_args()
 
@@ -1412,7 +1419,7 @@ def main() -> int:
     if args.verbose:
         logger.info("Verbose mode enabled: Showing progress for each file")
     
-    matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2, hash_algo, args.fast, args.verbose)
+    matches, unmatched1, unmatched2 = find_matching_files(args.dir1, args.dir2, hash_algo, args.fast, args.verbose, args.different_names_only)
 
     # Count total matched files in each directory
     matched_files1 = sum(len(files) for files, _ in matches.values())
@@ -1610,7 +1617,7 @@ def main() -> int:
         else:
             # Detailed output
             if not matches:
-                print("No matching files with different names found.")
+                print("No matching files found.")
             else:
                 print(f"\nFound {len(matches)} hashes with matching files:\n")
                 # Sort hash keys for deterministic output (OUT-04)

@@ -75,5 +75,63 @@ class TestDirectoryOperations(BaseFileMatcherTest):
             self.skipTest("Test directories not found")
 
 
+class TestDifferentNamesOnly(unittest.TestCase):
+    """Tests for the --different-names-only flag."""
+
+    def setUp(self):
+        """Set up test directories with same-name and different-name duplicates."""
+        import tempfile
+        import shutil
+        self.temp_dir = tempfile.mkdtemp()
+
+        self.dir1 = os.path.join(self.temp_dir, "dir1")
+        self.dir2 = os.path.join(self.temp_dir, "dir2")
+        os.makedirs(self.dir1)
+        os.makedirs(self.dir2)
+
+        # Same content, SAME name in both dirs
+        with open(os.path.join(self.dir1, "same_name.txt"), "w") as f:
+            f.write("identical content A\n")
+        with open(os.path.join(self.dir2, "same_name.txt"), "w") as f:
+            f.write("identical content A\n")
+
+        # Same content, DIFFERENT names
+        with open(os.path.join(self.dir1, "original.txt"), "w") as f:
+            f.write("identical content B\n")
+        with open(os.path.join(self.dir2, "renamed.txt"), "w") as f:
+            f.write("identical content B\n")
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.temp_dir)
+
+    def test_default_includes_same_name_matches(self):
+        """By default, find_matching_files includes same-name content matches."""
+        matches, _, _ = find_matching_files(self.dir1, self.dir2)
+        # Should find 2 groups: same_name.txt match AND original.txt/renamed.txt match
+        self.assertEqual(len(matches), 2)
+
+    def test_different_names_only_excludes_same_name_matches(self):
+        """With different_names_only=True, same-name matches are excluded."""
+        matches, _, _ = find_matching_files(self.dir1, self.dir2, different_names_only=True)
+        # Should only find 1 group: original.txt/renamed.txt
+        self.assertEqual(len(matches), 1)
+        # Verify the remaining match is the different-named pair
+        file_hash = list(matches.keys())[0]
+        files1, files2 = matches[file_hash]
+        self.assertTrue(any("original.txt" in f for f in files1))
+        self.assertTrue(any("renamed.txt" in f for f in files2))
+
+    def test_different_names_only_with_mixed_group(self):
+        """Test a group with both same-name and different-name files."""
+        # Add another file with the same content as same_name.txt but different name
+        with open(os.path.join(self.dir2, "also_same_content.txt"), "w") as f:
+            f.write("identical content A\n")
+
+        matches, _, _ = find_matching_files(self.dir1, self.dir2, different_names_only=True)
+        # Now the "identical content A" group has different names, so it should be included
+        self.assertEqual(len(matches), 2)
+
+
 if __name__ == "__main__":
     unittest.main() 

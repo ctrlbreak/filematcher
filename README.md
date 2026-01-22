@@ -38,8 +38,11 @@ filematcher dir1 dir2 --action hardlink --execute
 ### Finding Duplicate Files
 
 ```bash
-# Basic comparison
+# Basic comparison (finds all files with identical content)
 filematcher dir1 dir2
+
+# Only show files with identical content but different names
+filematcher dir1 dir2 --different-names-only
 
 # Show files with no matches
 filematcher dir1 dir2 --show-unmatched
@@ -102,6 +105,7 @@ filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
 | `--summary` | `-s` | Show counts instead of file lists |
 | `--fast` | `-f` | Fast mode for large files (>100MB) |
 | `--verbose` | `-v` | Show per-file progress |
+| `--different-names-only` | `-d` | Only report files with identical content but different names |
 | `--action` | `-a` | Action: `hardlink`, `symlink`, or `delete` (first directory is master) |
 | `--execute` | | Execute changes (default: preview only) |
 | `--yes` | `-y` | Skip confirmation prompt |

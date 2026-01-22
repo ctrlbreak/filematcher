@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-File Matcher is a Python CLI utility that finds files with identical content but different names across two directory hierarchies. It uses content hashing (MD5 or SHA-256) to identify matches and supports a "fast mode" for large files using sparse sampling.
+File Matcher is a Python CLI utility that finds files with identical content across two directory hierarchies. It uses content hashing (MD5 or SHA-256) to identify matches and supports a "fast mode" for large files using sparse sampling. Use `--different-names-only/-d` to filter results to only files with different names.
 
 ## Development Setup
 
@@ -21,7 +21,7 @@ python file_matcher.py <directory1> <directory2> [options]
 filematcher <directory1> <directory2> [options]
 ```
 
-Options: `--show-unmatched/-u`, `--hash/-H md5|sha256`, `--summary/-s`, `--fast/-f`, `--verbose/-v`
+Options: `--show-unmatched/-u`, `--hash/-H md5|sha256`, `--summary/-s`, `--fast/-f`, `--verbose/-v`, `--different-names-only/-d`
 
 ### Running tests
 ```bash
