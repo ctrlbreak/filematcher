@@ -52,7 +52,7 @@ Plans:
 
 **Milestone Goal:** Unify output formatting across modes and add machine-readable JSON output for scripting and automation.
 
-#### Phase 5: Formatter Abstraction
+#### Phase 5: Formatter Abstraction ✓
 **Goal**: Create unified output abstraction layer without changing user-visible behavior
 **Depends on**: Phase 4
 **Requirements**: OUT-04
@@ -62,23 +62,23 @@ Plans:
   3. All existing tests pass without modification
   4. Output is deterministic across multiple runs with same input
 **Plans**: 3 plans
+**Completed**: 2026-01-22
 
 Plans:
-- [ ] 05-01-PLAN.md — Define ABC hierarchy (CompareFormatter, ActionFormatter) and TextFormatter implementations
-- [ ] 05-02-PLAN.md — Wire TextActionFormatter into main() action mode branches
-- [ ] 05-03-PLAN.md — Wire TextCompareFormatter into main() compare mode branches
+- [x] 05-01-PLAN.md — Define ABC hierarchy (CompareFormatter, ActionFormatter) and TextFormatter implementations
+- [x] 05-02-PLAN.md — Wire TextActionFormatter into main() action mode branches
+- [x] 05-03-PLAN.md — Wire TextCompareFormatter into main() compare mode branches
 
 #### Phase 6: JSON Output
 **Goal**: Expose JSON output through CLI with stable schema and comprehensive metadata
 **Depends on**: Phase 5
-**Requirements**: JSON-01, JSON-02, JSON-03, JSON-04, NULL-01
+**Requirements**: JSON-01, JSON-02, JSON-03, JSON-04
 **Success Criteria** (what must be TRUE):
   1. User can run `filematcher dir1 dir2 --json` and receive valid JSON output
   2. JSON schema is documented with version field and examples
   3. JSON includes rich metadata (file sizes, hashes, timestamps, action types)
   4. `--json` works correctly with all existing flags (--summary, --verbose, --action, --execute)
-  5. `-0` / `--null` flag outputs null-separated file paths for safe shell piping
-  6. Text output remains unchanged (no breaking changes to default format)
+  5. Text output remains unchanged (no breaking changes to default format)
 **Plans**: TBD
 
 Plans:
@@ -125,10 +125,10 @@ Plans:
 | 2. Preview Mode | v1.1 | 3/3 | Complete | 2026-01-20 |
 | 3. Deduplication | v1.1 | 4/4 | Complete | 2026-01-20 |
 | 4. Audit Logging | v1.1 | 2/2 | Complete | 2026-01-20 |
-| 5. Formatter Abstraction | v1.2 | 0/3 | Planned | - |
+| 5. Formatter Abstraction | v1.2 | 3/3 | Complete | 2026-01-22 |
 | 6. JSON Output | v1.2 | 0/? | Not started | - |
 | 7. Output Unification | v1.2 | 0/? | Not started | - |
 | 8. Color Enhancement | v1.2 | 0/? | Not started | - |
 
 ---
-*Last updated: 2026-01-22 - OUT-03 moved to Phase 7, Phase 5 now covers OUT-04 only*
+*Last updated: 2026-01-22 - Phase 5 complete*

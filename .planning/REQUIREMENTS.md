@@ -12,7 +12,7 @@ Requirements for output rationalisation milestone. Each maps to roadmap phases.
 - [ ] **OUT-01**: Output structure is consistent between compare mode and action mode
 - [ ] **OUT-02**: Statistics footer appears in all modes (duplicate groups, file counts, space calculations)
 - [ ] **OUT-03**: Progress and status messages go to stderr, data output goes to stdout
-- [ ] **OUT-04**: Output is deterministic (same input produces same output ordering)
+- [x] **OUT-04**: Output is deterministic (same input produces same output ordering)
 
 ### Machine-Readable Output
 
@@ -20,7 +20,6 @@ Requirements for output rationalisation milestone. Each maps to roadmap phases.
 - [ ] **JSON-02**: JSON schema is documented and stable
 - [ ] **JSON-03**: JSON includes rich metadata (file sizes, hashes, timestamps)
 - [ ] **JSON-04**: `--json` works with all existing flags (--summary, --verbose, --action, etc.)
-- [ ] **NULL-01**: `-0` / `--null` flag outputs null-separated file paths for safe shell piping
 
 ### Enhanced UX
 
@@ -31,6 +30,10 @@ Requirements for output rationalisation milestone. Each maps to roadmap phases.
 ## Future Requirements
 
 Deferred to later milestones. Tracked but not in current roadmap.
+
+### Null-Separated Output
+
+- **NULL-01**: `-0` / `--null` flag outputs null-separated file paths for safe shell piping
 
 ### Streaming Output
 
@@ -63,24 +66,23 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OUT-01 | Phase 7 | Pending |
 | OUT-02 | Phase 7 | Pending |
 | OUT-03 | Phase 7 | Pending |
-| OUT-04 | Phase 5 | Pending |
+| OUT-04 | Phase 5 | Complete |
 | JSON-01 | Phase 6 | Pending |
 | JSON-02 | Phase 6 | Pending |
 | JSON-03 | Phase 6 | Pending |
 | JSON-04 | Phase 6 | Pending |
-| NULL-01 | Phase 6 | Pending |
 | UX-01 | Phase 8 | Pending |
 | UX-02 | Phase 8 | Pending |
 | UX-03 | Phase 8 | Pending |
 
 **Coverage:**
-- v1.2 requirements: 12 total
-- Mapped to phases: 12
+- v1.2 requirements: 11 total
+- Mapped to phases: 11
 - Unmapped: 0
 
 **Phase Distribution:**
 - Phase 5 (Formatter Abstraction): 1 requirement (OUT-04)
-- Phase 6 (JSON Output): 5 requirements (JSON-01, JSON-02, JSON-03, JSON-04, NULL-01)
+- Phase 6 (JSON Output): 4 requirements (JSON-01, JSON-02, JSON-03, JSON-04)
 - Phase 7 (Output Unification): 3 requirements (OUT-01, OUT-02, OUT-03)
 - Phase 8 (Color Enhancement): 3 requirements (UX-01, UX-02, UX-03)
 
@@ -89,4 +91,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-22 - OUT-03 moved from Phase 5 to Phase 7*
+*Last updated: 2026-01-22 - OUT-04 complete (Phase 5)*

@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** Phase 5 - Formatter Abstraction
+**Current focus:** Phase 6 - JSON Output
 
 ## Current Position
 
-Phase: 5 of 8 (Formatter Abstraction)
-Plan: 2 of TBD (out of sequence - 05-03 was completed first)
-Status: In progress
-Last activity: 2026-01-22 — Completed 05-02-PLAN.md (Action Mode Formatter Integration)
+Phase: 5 of 8 (Formatter Abstraction) — COMPLETE
+Next: Phase 6 (JSON Output)
+Status: Ready to plan Phase 6
+Last activity: 2026-01-22 — Phase 5 complete (3 plans executed, 67 lines dead code removed)
 
-Progress: [████░░░░░░] 43% (v1.1: 4 phases, v1.2: 3 plans complete)
+Progress: [█████░░░░░] 50% (v1.1 complete: 4 phases, v1.2: 1/4 phases)
 
 ## Performance Metrics
 
 **Velocity:**
 - Total plans completed: 15 (v1.1: 12, v1.2: 3)
-- Average duration: 4 min (v1.2 only)
-- Total execution time: v1.1: 2 days, v1.2: 12 min (so far)
+- Phase 5 duration: ~15 min (3 plans)
+- Total execution time: v1.1: 2 days, v1.2: 15 min (so far)
 
 **By Phase:**
 
@@ -31,15 +31,16 @@ Progress: [████░░░░░░] 43% (v1.1: 4 phases, v1.2: 3 plans co
 | 2. Preview Mode | 3 | Complete (v1.1) |
 | 3. Deduplication | 4 | Complete (v1.1) |
 | 4. Audit Logging | 2 | Complete (v1.1) |
-| 5. Formatter Abstraction | 3/TBD | In progress |
-| 6. JSON Output | TBD | Not started |
+| 5. Formatter Abstraction | 3 | Complete (v1.2) |
+| 6. JSON Output | TBD | Ready to plan |
 | 7. Output Unification | TBD | Not started |
 | 8. Color Enhancement | TBD | Not started |
 
 **Recent Trend:**
-- 05-01 completed: 6 min (3 tasks, 1 file modified)
-- 05-02 completed: 3 min (2 tasks, 1 file modified) [Completed out of sequence after 05-03]
-- 05-03 completed: 3 min (3 tasks, 2 files modified)
+- 05-01 completed: 6 min (3 tasks, ABC definitions)
+- 05-02 completed: 3 min (2 tasks, action mode wiring)
+- 05-03 completed: 3 min (3 tasks, compare mode wiring + determinism tests)
+- Dead code cleanup: 67 lines removed (unreachable master compare mode)
 
 ## Accumulated Context
 
@@ -61,11 +62,7 @@ Phase 5 decisions:
 | TextCompareFormatter inline implementation | No existing format_* functions to delegate to | 05-01 |
 | TextActionFormatter delegates to existing functions | Preserves byte-identical output, leverages battle-tested code | 05-01 |
 | All file lists sorted for deterministic output | OUT-04 requirement for consistency | 05-01 |
-| action_formatter always preview_mode=True for print_preview_output() | Function always shows preview output, even in execute mode | 05-02 |
-| Separate action_formatter_exec for execution summary | Execution summary needs preview_mode=False | 05-02 |
-| Preserve direct print() for edge cases | Minimize refactoring scope for "No duplicates" and blank lines | 05-02 |
-| Sort matches.keys() for deterministic hash iteration | Dictionary iteration order must be deterministic | 05-03 |
-| Test determinism with 5 runs | More runs increase confidence in catching non-deterministic behavior | 05-03 |
+| Remove dead "master compare mode" code | Lines 1589-1655 were unreachable (master_path requires --action which sets preview/execute mode) | 05-VERIFICATION |
 
 ### Critical Research Insights
 
@@ -81,26 +78,27 @@ From research/SUMMARY.md:
 
 ### Blockers/Concerns
 
-**Phase 5 status (05-03 complete):**
-- ✅ ABC hierarchy defined (CompareFormatter, ActionFormatter) [05-01]
-- ✅ Text implementations done (TextCompareFormatter, TextActionFormatter) [05-01]
-- ✅ TextCompareFormatter wired into non-master compare mode [05-03]
-- ✅ Determinism tests added (OUT-04 verified) [05-03]
-- ✅ All 110 tests pass (byte-identical output confirmed)
-- Next: Wire TextCompareFormatter into master compare mode (05-04 or later)
+**Phase 5 status (COMPLETE):**
+- ✅ ABC hierarchy defined (CompareFormatter, ActionFormatter)
+- ✅ Text implementations done (TextCompareFormatter, TextActionFormatter)
+- ✅ All output routes through formatters
+- ✅ All 110 tests pass (106 existing + 4 determinism)
+- ✅ Dead code removed (67 lines)
+- ✅ Verification passed: 4/4 must-haves
 
 **Phase 6 considerations:**
 - JSON schema design needs careful thought for jq usability
 - Flag interaction matrix (--json with --summary, --verbose, --action, --execute)
+- JsonCompareFormatter and JsonActionFormatter to implement
 
 **Phase 7 considerations:**
 - Cannot change text output until JSON is available and stable
 
 ## Session Continuity
 
-Last session: 2026-01-22 (plan execution)
-Stopped at: Completed 05-02-PLAN.md (Action Mode Formatter Integration)
+Last session: 2026-01-22 (phase execution)
+Stopped at: Phase 5 complete, ready to plan Phase 6
 Resume file: None
 
 ---
-*Last updated: 2026-01-22 after 05-02 completion*
+*Last updated: 2026-01-22 after Phase 5 completion*
