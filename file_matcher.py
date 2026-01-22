@@ -1572,19 +1572,16 @@ def main() -> int:
             # Write log footer
             write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
 
-            # Print execution summary
-            print()
-            print(f"Execution complete:")
-            print(f"  Successful: {success_count}")
-            print(f"  Failed: {failure_count}")
-            print(f"  Skipped: {skipped_count}")
-            print(f"  Space saved: {format_file_size(space_saved)}")
-            print(f"  Log file: {actual_log_path}")
-            if failed_list:
-                print()
-                print("Failed files:")
-                for path, error in failed_list:
-                    print(f"  - {path}: {error}")
+            # Print execution summary via formatter
+            action_formatter_exec = TextActionFormatter(verbose=args.verbose, preview_mode=False)
+            action_formatter_exec.format_execution_summary(
+                success_count=success_count,
+                failure_count=failure_count,
+                skipped_count=skipped_count,
+                space_saved=space_saved,
+                log_path=str(actual_log_path),
+                failed_list=failed_list
+            )
 
             # Return appropriate exit code
             return determine_exit_code(success_count, failure_count)
@@ -1658,11 +1655,20 @@ def main() -> int:
                     print(f"\nNo unique files in {args.dir2}")
     else:
         # Original output format (no master mode)
+        compare_formatter = TextCompareFormatter(
+            verbose=args.verbose,
+            dir1_name=args.dir1,
+            dir2_name=args.dir2
+        )
+
         if args.summary:
-            print(f"\nMatched files summary:")
-            print(f"  Unique content hashes with matches: {len(matches)}")
-            print(f"  Files in {args.dir1} with matches in {args.dir2}: {matched_files1}")
-            print(f"  Files in {args.dir2} with matches in {args.dir1}: {matched_files2}")
+            compare_formatter.format_summary(
+                match_count=len(matches),
+                matched_files1=matched_files1,
+                matched_files2=matched_files2,
+                unmatched1=len(unmatched1),
+                unmatched2=len(unmatched2)
+            )
 
             if args.show_unmatched:
                 print(f"\nUnmatched files summary:")
@@ -1674,34 +1680,19 @@ def main() -> int:
                 print("No matching files with different names found.")
             else:
                 print(f"\nFound {len(matches)} hashes with matching files:\n")
-                for file_hash, (files1, files2) in matches.items():
-                    print(f"Hash: {file_hash[:10]}...")
-                    print(f"  Files in {args.dir1}:")
-                    for f in files1:
-                        print(f"    {f}")
-                    print(f"  Files in {args.dir2}:")
-                    for f in files2:
-                        print(f"    {f}")
-                    print()
+                # Sort hash keys for deterministic output (OUT-04)
+                for file_hash in sorted(matches.keys()):
+                    files1, files2 = matches[file_hash]
+                    compare_formatter.format_match_group(file_hash, files1, files2)
 
             # Optionally display unmatched files (detailed mode)
             if args.show_unmatched and not args.summary:
                 print("\nFiles with no content matches:")
                 print("==============================")
+                compare_formatter.format_unmatched(args.dir1, unmatched1)
+                compare_formatter.format_unmatched(args.dir2, unmatched2)
 
-                if unmatched1:
-                    print(f"\nUnique files in {args.dir1} ({len(unmatched1)}):")
-                    for f in sorted(unmatched1):
-                        print(f"  {f}")
-                else:
-                    print(f"\nNo unique files in {args.dir1}")
-
-                if unmatched2:
-                    print(f"\nUnique files in {args.dir2} ({len(unmatched2)}):")
-                    for f in sorted(unmatched2):
-                        print(f"  {f}")
-                else:
-                    print(f"\nNo unique files in {args.dir2}")
+        compare_formatter.finalize()
 
     return 0
 
