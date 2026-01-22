@@ -1457,37 +1457,29 @@ def main() -> int:
         # Helper function to print preview output
         def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
             if show_banner:
-                print(format_preview_banner())
-                print()
+                formatter.format_banner()
 
             if args.summary:
                 # Summary mode: show only statistics (no file listing)
                 bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
                 cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
-                footer_lines = format_statistics_footer(
+                formatter.format_statistics(
                     group_count=grp_count,
                     duplicate_count=dup_count,
                     master_count=len(master_results),
                     space_savings=bytes_saved,
                     action=args.action,
-                    verbose=args.verbose,
-                    cross_fs_count=cross_fs_count,
-                    preview_mode=True
+                    cross_fs_count=cross_fs_count
                 )
-                for line in footer_lines:
-                    print(line)
             else:
                 # Detailed output
                 if not matches:
                     print("No duplicates found.")
                 else:
                     # Print warnings first
-                    for warning in warnings:
-                        print(warning)
-                    if warnings:
-                        print()
+                    formatter.format_warnings(warnings)
 
-                    # Sort master_results by master file path (alphabetical)
+                    # Sort master_results by master file path (alphabetical) for determinism (OUT-04)
                     sorted_results = sorted(master_results, key=lambda x: x[0])
 
                     for i, (master_file, duplicates, reason) in enumerate(sorted_results):
@@ -1497,17 +1489,14 @@ def main() -> int:
                             all_paths = [master_file] + duplicates
                             file_sizes = {p: os.path.getsize(p) for p in all_paths}
 
-                        # Print group with WOULD X labels
+                        # Format group
                         cross_fs_to_show = cross_fs_files if args.action == 'hardlink' else None
-                        for line in format_duplicate_group(
+                        formatter.format_duplicate_group(
                             master_file, duplicates,
                             action=args.action,
-                            verbose=args.verbose,
                             file_sizes=file_sizes,
-                            cross_fs_files=cross_fs_to_show,
-                            preview_mode=True
-                        ):
-                            print(line)
+                            cross_fs_files=cross_fs_to_show
+                        )
 
                         # Print blank line between groups (but not after the last one)
                         if i < len(sorted_results) - 1:
@@ -1516,27 +1505,23 @@ def main() -> int:
                     # Print statistics footer
                     bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
                     cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
-                    footer_lines = format_statistics_footer(
+                    formatter.format_statistics(
                         group_count=grp_count,
                         duplicate_count=dup_count,
                         master_count=len(master_results),
                         space_savings=bytes_saved,
                         action=args.action,
-                        verbose=args.verbose,
-                        cross_fs_count=cross_fs_count,
-                        preview_mode=True
+                        cross_fs_count=cross_fs_count
                     )
-                    for line in footer_lines:
-                        print(line)
 
         # Preview mode (default when --action specified without --execute)
         if preview_mode:
-            print_preview_output(show_banner=True)
+            print_preview_output(action_formatter, show_banner=True)
 
         # Execute mode (--action with --execute)
         elif execute_mode:
             # First show preview so user sees what will happen
-            print_preview_output(show_banner=True)
+            print_preview_output(action_formatter, show_banner=True)
             print()
 
             # Then show execute banner and prompt for confirmation
