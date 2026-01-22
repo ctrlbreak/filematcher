@@ -134,7 +134,6 @@ class TestActionExecution(BaseFileMatcherTest):
         self.assertFalse(already_hardlinked(master_file, dup_file))
 
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'hardlink',
                                 '--execute', '--yes']):
             with patch('sys.stdin.isatty', return_value=False):
@@ -150,7 +149,6 @@ class TestActionExecution(BaseFileMatcherTest):
         dup_file = Path(self.test_dir2) / "different_name.txt"
 
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'symlink',
                                 '--execute', '--yes']):
             with patch('sys.stdin.isatty', return_value=False):
@@ -169,7 +167,6 @@ class TestActionExecution(BaseFileMatcherTest):
         self.assertTrue(dup_file.exists())
 
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'delete',
                                 '--execute', '--yes']):
             with patch('sys.stdin.isatty', return_value=False):
@@ -183,7 +180,6 @@ class TestActionExecution(BaseFileMatcherTest):
         """--log flag creates log file at specified path."""
         log_path = Path(self.test_dir1) / "test_execution.log"
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'hardlink',
                                 '--execute', '--yes',
                                 '--log', str(log_path)]):
@@ -198,7 +194,6 @@ class TestActionExecution(BaseFileMatcherTest):
     def test_fallback_symlink_flag_accepted(self):
         """--fallback-symlink flag is accepted with hardlink action."""
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'hardlink',
                                 '--fallback-symlink']):
             with patch('sys.stdin.isatty', return_value=False):
@@ -211,7 +206,6 @@ class TestActionExecution(BaseFileMatcherTest):
         """--fallback-symlink should only work with --action hardlink."""
         stderr_capture = io.StringIO()
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'symlink',
                                 '--fallback-symlink']):
             with redirect_stderr(stderr_capture):
@@ -235,7 +229,6 @@ class TestActionExecution(BaseFileMatcherTest):
             return (True, "", action)
 
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'hardlink',
                                 '--execute', '--yes']):
             with patch('sys.stdin.isatty', return_value=False):
@@ -252,7 +245,6 @@ class TestActionExecution(BaseFileMatcherTest):
         """All flags can be combined correctly."""
         log_path = Path(self.test_dir1) / "combined.log"
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'hardlink',
                                 '--execute', '--yes',
                                 '--log', str(log_path),
@@ -267,7 +259,6 @@ class TestActionExecution(BaseFileMatcherTest):
     def test_execute_shows_summary(self):
         """--execute shows execution summary with counts."""
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'hardlink',
                                 '--execute', '--yes']):
             with patch('sys.stdin.isatty', return_value=False):
@@ -286,7 +277,6 @@ class TestActionExecution(BaseFileMatcherTest):
         log_path = Path(self.test_dir1) / "test.log"
         stderr_capture = io.StringIO()
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
-                                '--master', self.test_dir1,
                                 '--action', 'hardlink',
                                 '--log', str(log_path)]):
             with redirect_stderr(stderr_capture):

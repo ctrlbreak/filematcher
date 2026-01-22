@@ -42,30 +42,6 @@ def confirm_execution(skip_confirm: bool = False, prompt: str = "Proceed? [y/N] 
     return response in ('y', 'yes')
 
 
-def validate_master_directory(master: str, dir1: str, dir2: str) -> Path:
-    """
-    Validate that master directory is one of the compared directories.
-
-    Args:
-        master: Path to the master directory
-        dir1: First directory being compared
-        dir2: Second directory being compared
-
-    Returns:
-        Resolved Path to the master directory
-
-    Raises:
-        ValueError: If master is not one of the compared directories
-    """
-    master_resolved = Path(master).resolve()
-    dir1_resolved = Path(dir1).resolve()
-    dir2_resolved = Path(dir2).resolve()
-
-    if master_resolved == dir1_resolved or master_resolved == dir2_resolved:
-        return master_resolved
-    raise ValueError("Master must be one of the compared directories")
-
-
 def select_master_file(file_paths: list[str], master_dir: Path | None) -> tuple[str, list[str], str]:
     """
     Select which file should be considered the master from a list of duplicates.
@@ -1010,10 +986,8 @@ def main() -> int:
                         help='Use fast mode for large files (uses file size + partial content sampling)')
     parser.add_argument('--verbose', '-v', action='store_true',
                         help='Show detailed progress for each file being processed')
-    parser.add_argument('--master', '-m',
-                        help='Designate one directory as master (files in master are never modified)')
     parser.add_argument('--action', '-a', choices=['hardlink', 'symlink', 'delete'],
-                        help='Action to take on duplicates (requires --master)')
+                        help='Action to take on duplicates (first directory is master, never modified)')
     parser.add_argument('--execute', action='store_true',
                         help='Execute the action (without this flag, only preview)')
     parser.add_argument('--yes', '-y', action='store_true',
@@ -1025,9 +999,9 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    # Validate --execute requires --master and --action
-    if args.execute and not (args.master and args.action):
-        parser.error("--execute requires --master and --action")
+    # Validate --execute requires --action
+    if args.execute and not args.action:
+        parser.error("--execute requires --action")
 
     # Validate --log requires --execute
     if args.log and not args.execute:
@@ -1037,13 +1011,10 @@ def main() -> int:
     if args.fallback_symlink and args.action != 'hardlink':
         parser.error("--fallback-symlink only applies to --action hardlink")
 
-    # Validate master directory if specified
+    # Set master to first directory when --action is used
     master_path = None
-    if args.master:
-        try:
-            master_path = validate_master_directory(args.master, args.dir1, args.dir2)
-        except ValueError as e:
-            parser.error(str(e))
+    if args.action:
+        master_path = Path(args.dir1).resolve()
 
     # Configure logging based on verbosity
     log_level = logging.DEBUG if args.verbose else logging.INFO
@@ -1101,8 +1072,8 @@ def main() -> int:
                 cross_fs_files.update(check_cross_filesystem(master_file, duplicates))
 
         # Determine mode: preview (default when --action specified) or execute
-        preview_mode = args.action and args.master and not args.execute
-        execute_mode = args.action and args.master and args.execute
+        preview_mode = args.action and not args.execute
+        execute_mode = args.action and args.execute
 
         # Helper function to print preview output
         def print_preview_output(show_banner: bool = True) -> None:
@@ -1216,7 +1187,7 @@ def main() -> int:
                 flags.append(f'--log {args.log}')
 
             # Write log header
-            write_log_header(audit_logger, args.dir1, args.dir2, args.master, args.action, flags)
+            write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
 
             # Build hash lookup for logging
             file_hash_lookup: dict[str, str] = {}

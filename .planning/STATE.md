@@ -67,7 +67,7 @@ None.
 v1.1 Deduplication milestone shipped with full capability:
 
 **Features:**
-- `--master` flag for directory protection
+- First directory is implicit master (files never modified)
 - `--action` flag with hardlink/symlink/delete choices
 - `--execute` flag for actual modifications (preview-by-default)
 - `--log` flag for custom audit log path
@@ -77,13 +77,13 @@ v1.1 Deduplication milestone shipped with full capability:
 **Usage:**
 ```bash
 # Preview deduplication
-filematcher dir1 dir2 --master dir1 --action hardlink
+filematcher dir1 dir2 --action hardlink
 
 # Execute with confirmation
-filematcher dir1 dir2 --master dir1 --action hardlink --execute
+filematcher dir1 dir2 --action hardlink --execute
 
 # Execute in script (no prompt)
-filematcher dir1 dir2 --master dir1 --action hardlink --execute --yes
+filematcher dir1 dir2 --action hardlink --execute --yes
 ```
 
 **Next milestone ideas (v1.2/v2.0):**

@@ -34,16 +34,16 @@ class TestFlagValidation(BaseFileMatcherTest):
         error_output = stderr_capture.getvalue()
         self.assertIn("unrecognized arguments", error_output)
 
-    def test_action_with_master_shows_preview(self):
-        """--action with --master (no --execute) should show PREVIEW MODE."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink']):
+    def test_action_shows_preview(self):
+        """--action (no --execute) should show PREVIEW MODE."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             self.assertIn("PREVIEW MODE", output)
 
     def test_action_choices_valid(self):
         """--action accepts hardlink, symlink, delete (shows preview)."""
         for action in ['hardlink', 'symlink', 'delete']:
-            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', action]):
+            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', action]):
                 output = self.run_main_with_args([])
                 # Should show preview mode
                 self.assertIn("PREVIEW MODE", output)
@@ -51,7 +51,7 @@ class TestFlagValidation(BaseFileMatcherTest):
     def test_action_invalid_choice(self):
         """--action with invalid choice should fail."""
         stderr_capture = io.StringIO()
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'invalid']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'invalid']):
             with redirect_stderr(stderr_capture):
                 with self.assertRaises(SystemExit) as cm:
                     main()
@@ -59,9 +59,8 @@ class TestFlagValidation(BaseFileMatcherTest):
         error_output = stderr_capture.getvalue()
         self.assertIn("invalid choice", error_output)
 
-    def test_execute_requires_master_and_action(self):
-        """--execute without --master and --action should fail."""
-        # Test --execute without --master
+    def test_execute_requires_action(self):
+        """--execute without --action should fail."""
         stderr_capture = io.StringIO()
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--execute']):
             with redirect_stderr(stderr_capture):
@@ -69,17 +68,7 @@ class TestFlagValidation(BaseFileMatcherTest):
                     main()
             self.assertEqual(cm.exception.code, 2)
         error_output = stderr_capture.getvalue()
-        self.assertIn("--execute requires --master and --action", error_output)
-
-        # Test --execute with --master but no --action
-        stderr_capture = io.StringIO()
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--execute']):
-            with redirect_stderr(stderr_capture):
-                with self.assertRaises(SystemExit) as cm:
-                    main()
-            self.assertEqual(cm.exception.code, 2)
-        error_output = stderr_capture.getvalue()
-        self.assertIn("--execute requires --master and --action", error_output)
+        self.assertIn("--execute requires --action", error_output)
 
 
 class TestPreviewBanner(BaseFileMatcherTest):
@@ -94,7 +83,7 @@ class TestPreviewBanner(BaseFileMatcherTest):
 
     def test_banner_displayed_at_top(self):
         """Preview banner should appear at start of output."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             # Verify "PREVIEW MODE" in output
             self.assertIn("PREVIEW MODE", output)
@@ -119,14 +108,14 @@ class TestPreviewBanner(BaseFileMatcherTest):
 
     def test_banner_not_shown_without_action(self):
         """Banner should not appear when --action not specified."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
             self.assertNotIn(PREVIEW_BANNER, output)
             self.assertNotIn("PREVIEW MODE", output)
 
     def test_banner_shown_with_summary(self):
         """Preview banner should appear even with --summary flag."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink', '--summary']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink', '--summary']):
             output = self.run_main_with_args([])
             self.assertIn("PREVIEW MODE", output)
             self.assertIn("Use --execute to apply changes", output)
@@ -144,7 +133,7 @@ class TestPreviewStatistics(BaseFileMatcherTest):
 
     def test_statistics_footer_displayed(self):
         """Statistics section should appear at end of output."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             # Verify "Statistics" header
             self.assertIn("Statistics", output)
@@ -159,7 +148,7 @@ class TestPreviewStatistics(BaseFileMatcherTest):
 
     def test_statistics_counts_correct(self):
         """Statistics should show correct counts."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             # The base test setup creates 1 duplicate group with 3 files having same content
             # (file1.txt, different_name.txt, file3.txt, also_different_name.txt all have "This is file content A\n")
@@ -170,14 +159,14 @@ class TestPreviewStatistics(BaseFileMatcherTest):
 
     def test_verbose_shows_exact_bytes(self):
         """Verbose mode should show exact byte count."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink', '--verbose']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink', '--verbose']):
             output = self.run_main_with_args([])
             # Verify "(X bytes)" format in verbose output
             self.assertIn("bytes)", output)
 
     def test_summary_shows_only_statistics(self):
         """--action --summary should show only stats, no file list."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink', '--summary']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink', '--summary']):
             output = self.run_main_with_args([])
             # Verify stats present
             self.assertIn("Statistics", output)
@@ -200,29 +189,21 @@ class TestPreviewActionLabels(BaseFileMatcherTest):
 
     def test_hardlink_action_label(self):
         """With --action hardlink, duplicates show [WOULD HARDLINK]."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             self.assertIn("[WOULD HARDLINK]", output)
 
     def test_symlink_action_label(self):
         """With --action symlink, duplicates show [WOULD SYMLINK]."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'symlink']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'symlink']):
             output = self.run_main_with_args([])
             self.assertIn("[WOULD SYMLINK]", output)
 
     def test_delete_action_label(self):
         """With --action delete, duplicates show [WOULD DELETE]."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'delete']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'delete']):
             output = self.run_main_with_args([])
             self.assertIn("[WOULD DELETE]", output)
-
-    def test_no_action_shows_question_mark(self):
-        """Without --action, duplicates show [DUP:?] in master mode."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
-            output = self.run_main_with_args([])
-            # In master mode without action, should show [DUP:?]
-            self.assertIn("[DUP:?]", output)
-
 
 class TestCrossFilesystemWarnings(BaseFileMatcherTest):
     """Tests for cross-filesystem warnings."""
@@ -237,7 +218,7 @@ class TestCrossFilesystemWarnings(BaseFileMatcherTest):
     def test_cross_fs_warning_in_output(self):
         """Cross-filesystem files should show [!cross-fs] warning."""
         # Mock check_cross_filesystem to return a known set of "cross-filesystem" files
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             # Get the duplicate file paths that would normally be checked
             # We'll mock check_cross_filesystem to return all duplicates as cross-fs
             with patch('file_matcher.check_cross_filesystem') as mock_check:
@@ -251,7 +232,7 @@ class TestCrossFilesystemWarnings(BaseFileMatcherTest):
 
     def test_cross_fs_count_in_statistics(self):
         """Statistics should show count of cross-fs files when present."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', 'hardlink']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             with patch('file_matcher.check_cross_filesystem') as mock_check:
                 # Return all duplicates as cross-filesystem
                 def mock_cross_fs(master_file, duplicates):
@@ -265,7 +246,7 @@ class TestCrossFilesystemWarnings(BaseFileMatcherTest):
     def test_no_cross_fs_warning_without_hardlink(self):
         """Cross-filesystem warning should not appear for symlink/delete actions."""
         for action in ['symlink', 'delete']:
-            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--action', action]):
+            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', action]):
                 output = self.run_main_with_args([])
                 # Should NOT show [!cross-fs] marker for non-hardlink actions
                 self.assertNotIn("[!cross-fs]", output)
@@ -284,7 +265,7 @@ class TestExecuteMode(BaseFileMatcherTest):
     def test_execute_shows_preview_then_banner(self):
         """--execute should show preview output then EXECUTING banner."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                   '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='n'):
                     output = self.run_main_with_args([])
@@ -294,7 +275,7 @@ class TestExecuteMode(BaseFileMatcherTest):
     def test_execute_prompts_for_confirmation(self):
         """--execute should prompt user before proceeding."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                   '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='n') as mock_input:
                     self.run_main_with_args([])
@@ -306,7 +287,7 @@ class TestExecuteMode(BaseFileMatcherTest):
     def test_execute_abort_shows_message(self):
         """Declining confirmation should show abort message."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                   '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='n'):
                     output = self.run_main_with_args([])
@@ -316,7 +297,7 @@ class TestExecuteMode(BaseFileMatcherTest):
     def test_execute_abort_exit_code_zero(self):
         """Aborting should exit with code 0 (not an error)."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                   '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='n'):
                     f = io.StringIO()
@@ -327,7 +308,7 @@ class TestExecuteMode(BaseFileMatcherTest):
     def test_yes_flag_skips_confirmation(self):
         """--yes should skip the confirmation prompt entirely."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute', '--yes']):
+                   '--action', 'hardlink', '--execute', '--yes']):
             with patch('builtins.input') as mock_input:
                 self.run_main_with_args([])
                 mock_input.assert_not_called()
@@ -335,7 +316,7 @@ class TestExecuteMode(BaseFileMatcherTest):
     def test_confirmation_accepts_y(self):
         """User typing 'y' should proceed."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                   '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='y'):
                     output = self.run_main_with_args([])
@@ -345,7 +326,7 @@ class TestExecuteMode(BaseFileMatcherTest):
     def test_confirmation_accepts_yes(self):
         """User typing 'yes' should proceed."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                   '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='yes'):
                     output = self.run_main_with_args([])
@@ -355,7 +336,7 @@ class TestExecuteMode(BaseFileMatcherTest):
         """Confirmation should accept 'Y' and 'YES' (case insensitive)."""
         for response in ['Y', 'YES', 'Yes']:
             with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                       '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                       '--action', 'hardlink', '--execute']):
                 with patch('sys.stdin.isatty', return_value=True):
                     with patch('builtins.input', return_value=response):
                         output = self.run_main_with_args([])
@@ -368,7 +349,7 @@ class TestNonInteractiveMode(BaseFileMatcherTest):
     def test_non_tty_defaults_to_abort(self):
         """Non-interactive mode should default to abort without --yes."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute']):
+                   '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=False):
                 stderr_capture = io.StringIO()
                 stdout_capture = io.StringIO()
@@ -383,7 +364,7 @@ class TestNonInteractiveMode(BaseFileMatcherTest):
     def test_non_tty_with_yes_proceeds(self):
         """Non-interactive mode with --yes should proceed without prompt."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--master', self.test_dir1, '--action', 'hardlink', '--execute', '--yes']):
+                   '--action', 'hardlink', '--execute', '--yes']):
             with patch('sys.stdin.isatty', return_value=False):
                 f = io.StringIO()
                 with redirect_stdout(f):

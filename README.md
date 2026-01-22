@@ -27,10 +27,10 @@ python file_matcher.py <dir1> <dir2>
 filematcher dir1 dir2
 
 # Preview deduplication (safe - no changes made)
-filematcher dir1 dir2 --master dir1 --action hardlink
+filematcher dir1 dir2 --action hardlink
 
 # Execute deduplication
-filematcher dir1 dir2 --master dir1 --action hardlink --execute
+filematcher dir1 dir2 --action hardlink --execute
 ```
 
 ## Usage
@@ -59,30 +59,30 @@ filematcher dir1 dir2 --verbose
 
 ### Deduplicating Files
 
-To deduplicate, specify a master directory (files here are preserved) and an action:
+To deduplicate, specify an action. The first directory is the master (files here are preserved):
 
 ```bash
 # Preview hard link deduplication (default: preview only)
-filematcher dir1 dir2 --master dir1 --action hardlink
+filematcher dir1 dir2 --action hardlink
 
 # Preview symbolic link deduplication
-filematcher dir1 dir2 --master dir1 --action symlink
+filematcher dir1 dir2 --action symlink
 
 # Preview deletion of duplicates
-filematcher dir1 dir2 --master dir1 --action delete
+filematcher dir1 dir2 --action delete
 ```
 
 To actually execute the changes, add `--execute`:
 
 ```bash
 # Execute with confirmation prompt
-filematcher dir1 dir2 --master dir1 --action hardlink --execute
+filematcher dir1 dir2 --action hardlink --execute
 
 # Execute without prompt (for scripts)
-filematcher dir1 dir2 --master dir1 --action hardlink --execute --yes
+filematcher dir1 dir2 --action hardlink --execute --yes
 
 # Execute with custom log file
-filematcher dir1 dir2 --master dir1 --action hardlink --execute --log changes.log
+filematcher dir1 dir2 --action hardlink --execute --log changes.log
 ```
 
 ### Cross-Filesystem Support
@@ -90,7 +90,7 @@ filematcher dir1 dir2 --master dir1 --action hardlink --execute --log changes.lo
 Hard links cannot span filesystems. Use `--fallback-symlink` to automatically use symbolic links when hard links fail:
 
 ```bash
-filematcher dir1 dir2 --master dir1 --action hardlink --fallback-symlink --execute
+filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
 ```
 
 ## Command-Line Options
@@ -102,8 +102,7 @@ filematcher dir1 dir2 --master dir1 --action hardlink --fallback-symlink --execu
 | `--summary` | `-s` | Show counts instead of file lists |
 | `--fast` | `-f` | Fast mode for large files (>100MB) |
 | `--verbose` | `-v` | Show per-file progress |
-| `--master` | `-m` | Master directory (files never modified) |
-| `--action` | `-a` | Action: `hardlink`, `symlink`, or `delete` |
+| `--action` | `-a` | Action: `hardlink`, `symlink`, or `delete` (first directory is master) |
 | `--execute` | | Execute changes (default: preview only) |
 | `--yes` | `-y` | Skip confirmation prompt |
 | `--log` | `-l` | Custom audit log path |
@@ -123,9 +122,9 @@ Hash: e853edac47...
     /path/dir2/different_name.txt
 ```
 
-### Master Mode Output
+### Action Mode Output
 
-When `--master` is specified, output shows which files are masters vs duplicates:
+When `--action` is specified, output shows which files are masters vs duplicates (first directory is master):
 
 ```
 [MASTER] /path/dir1/file1.txt (23 B)

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Tests for master directory validation and output formatting."""
+"""Tests for master directory output formatting (first directory is implicit master)."""
 
 from __future__ import annotations
 
@@ -11,12 +11,12 @@ from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
-from file_matcher import main, validate_master_directory
+from file_matcher import main
 from tests.test_base import BaseFileMatcherTest
 
 
-class TestMasterDirectoryValidation(BaseFileMatcherTest):
-    """Tests for --master flag validation."""
+class TestCompareMode(BaseFileMatcherTest):
+    """Tests for compare mode (no --action flag)."""
 
     def run_main_with_args(self, args: list[str]) -> str:
         """Helper to run main() with given args and capture stdout."""
@@ -25,74 +25,8 @@ class TestMasterDirectoryValidation(BaseFileMatcherTest):
             main()
         return f.getvalue()
 
-    def test_valid_master_dir1(self):
-        """Test that --master with first directory passes validation."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
-            # Should not raise SystemExit
-            output = self.run_main_with_args([])
-            # Tool should run successfully (no error exit)
-            self.assertNotIn("Error", output)
-
-    def test_valid_master_dir2(self):
-        """Test that --master with second directory passes validation."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir2]):
-            # Should not raise SystemExit
-            output = self.run_main_with_args([])
-            # Tool should run successfully (no error exit)
-            self.assertNotIn("Error", output)
-
-    def test_valid_master_relative_path(self):
-        """Test that --master with ./dir resolves correctly."""
-        # Create a relative path to test_dir1 from temp_dir
-        original_cwd = os.getcwd()
-        try:
-            os.chdir(self.temp_dir)
-            relative_path = "./test_dir1"
-            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', relative_path]):
-                output = self.run_main_with_args([])
-                self.assertNotIn("Error", output)
-        finally:
-            os.chdir(original_cwd)
-
-    def test_valid_master_parent_path(self):
-        """Test that --master with ../parent/dir resolves correctly."""
-        original_cwd = os.getcwd()
-        try:
-            # Change to test_dir1, then use ../test_dir2 as master
-            os.chdir(self.test_dir1)
-            relative_path = "../test_dir2"
-            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', relative_path]):
-                output = self.run_main_with_args([])
-                self.assertNotIn("Error", output)
-        finally:
-            os.chdir(original_cwd)
-
-    def test_invalid_master_nonexistent(self):
-        """Test that --master with non-existent path exits code 2."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', '/nonexistent/path']):
-            with self.assertRaises(SystemExit) as cm:
-                main()
-            self.assertEqual(cm.exception.code, 2)
-
-    def test_invalid_master_wrong_directory(self):
-        """Test that --master with unrelated directory exits code 2."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', '/tmp']):
-            with self.assertRaises(SystemExit) as cm:
-                main()
-            self.assertEqual(cm.exception.code, 2)
-
-    def test_invalid_master_error_message(self):
-        """Test that error message contains expected text."""
-        stderr_capture = io.StringIO()
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', '/tmp']):
-            with redirect_stderr(stderr_capture):
-                with self.assertRaises(SystemExit):
-                    main()
-        error_output = stderr_capture.getvalue()
-        self.assertIn("Master must be one of the compared directories", error_output)
-
-    def test_no_master_flag(self):
-        """Test that tool works without --master (backward compatibility)."""
+    def test_compare_mode_works(self):
+        """Test that tool works without --action (compare mode)."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
             # Original output format should have "Hash:" prefix
@@ -100,7 +34,7 @@ class TestMasterDirectoryValidation(BaseFileMatcherTest):
 
 
 class TestMasterDirectoryOutput(BaseFileMatcherTest):
-    """Tests for master-aware output formatting."""
+    """Tests for master-aware output formatting when --action is used."""
 
     def run_main_with_args(self, args: list[str]) -> str:
         """Helper to run main() with given args and capture stdout."""
@@ -109,17 +43,17 @@ class TestMasterDirectoryOutput(BaseFileMatcherTest):
             main()
         return f.getvalue()
 
-    def test_master_output_format(self):
-        """Test that output uses [MASTER]/[DUP:?] format when --master set."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
+    def test_action_output_format(self):
+        """Test that output uses [MASTER]/[WOULD ...] format when --action set."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
-            # New format should have [MASTER] and [DUP:?] prefixes
+            # New format should have [MASTER] and [WOULD HARDLINK] prefixes
             self.assertIn("[MASTER]", output)
-            self.assertIn("[DUP:?]", output)
+            self.assertIn("[WOULD HARDLINK]", output)
 
     def test_master_output_master_first(self):
-        """Test that [MASTER] lines contain files from master directory."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
+        """Test that [MASTER] lines contain files from first directory."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             # Find lines with [MASTER] - should be from test_dir1
             master_lines = [line for line in output.split('\n') if '[MASTER]' in line]
@@ -127,22 +61,22 @@ class TestMasterDirectoryOutput(BaseFileMatcherTest):
                 # Master file should be from test_dir1
                 self.assertIn('test_dir1', line)
 
-    def test_no_master_preserves_old_format(self):
-        """Test that without --master, output has Hash: format."""
+    def test_no_action_preserves_compare_format(self):
+        """Test that without --action, output has Hash: format."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
             self.assertIn("Hash:", output)
 
-    def test_master_summary_shows_counts(self):
+    def test_action_summary_shows_counts(self):
         """Test that --summary shows master files and duplicates counts."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--summary']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink', '--summary']):
             output = self.run_main_with_args([])
-            self.assertIn("Master files:", output)
-            self.assertIn("Duplicates:", output)
+            self.assertIn("Master files preserved:", output)
+            self.assertIn("Duplicate", output)
 
-    def test_master_verbose_shows_details(self):
+    def test_action_verbose_shows_details(self):
         """Test that --verbose shows duplicate count and file size."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1, '--verbose']):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink', '--verbose']):
             output = self.run_main_with_args([])
             # Verbose mode should show duplicate count and size in [MASTER] line
             self.assertIn("duplicates", output.lower())
@@ -185,37 +119,36 @@ class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
 
     def test_oldest_file_becomes_master(self):
         """Verify oldest file in master dir is selected as master."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             # The older file (dup_a.txt) should be selected as master
-            # It should appear in a [MASTER] line, with dup_b.txt as [DUP:?]
+            # It should appear in a [MASTER] line, with dup_b.txt as [WOULD HARDLINK]
             master_lines = [line for line in output.split('\n') if '[MASTER]' in line and 'dup_' in line]
             self.assertTrue(any('dup_a.txt' in line for line in master_lines),
                             "dup_a.txt (oldest) should be selected as master")
             # dup_b.txt should be a duplicate
-            dup_lines = [line for line in output.split('\n') if '[DUP:?]' in line and 'dup_b.txt' in line]
+            dup_lines = [line for line in output.split('\n') if '[WOULD HARDLINK]' in line and 'dup_b.txt' in line]
             self.assertTrue(len(dup_lines) > 0, "dup_b.txt should appear as a duplicate")
 
     def test_duplicate_group_has_correct_structure(self):
-        """Verify duplicate groups have [MASTER] followed by indented [DUP:?] lines."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
+        """Verify duplicate groups have [MASTER] followed by indented lines."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             lines = output.split('\n')
-            # Find groups - [MASTER] should be followed by indented [DUP:?] lines
+            # Find groups - [MASTER] should be followed by indented lines
             for i, line in enumerate(lines):
                 if '[MASTER]' in line:
-                    # Check that next non-empty lines are indented [DUP:?] lines
+                    # Check that next non-empty lines are indented
                     j = i + 1
                     while j < len(lines) and lines[j].strip() and '[MASTER]' not in lines[j]:
                         if lines[j].strip():
                             self.assertTrue(lines[j].startswith('    '),
                                             f"DUP lines should be indented: {lines[j]}")
-                            self.assertIn('[DUP:?]', lines[j])
                         j += 1
 
     def test_warning_multiple_masters(self):
         """Verify warning printed when multiple files in master have same content."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             # Should have a warning about multiple files in master directory
             self.assertIn("Warning:", output)
@@ -236,7 +169,7 @@ class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
         very_old_time = time.time() - 7200  # 2 hours ago
         os.utime(older_file_dir2, (very_old_time, very_old_time))
 
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--master', self.test_dir1]):
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             # Find the [MASTER] line with newer_master.txt - it should be from test_dir1
             master_lines = [line for line in output.split('\n') if '[MASTER]' in line and 'newer_master.txt' in line]
@@ -244,9 +177,9 @@ class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
             for line in master_lines:
                 # Master should be from test_dir1
                 self.assertIn('test_dir1', line)
-            # very_old.txt should be a [DUP:?]
-            dup_lines = [line for line in output.split('\n') if '[DUP:?]' in line and 'very_old.txt' in line]
-            self.assertTrue(len(dup_lines) > 0, "very_old.txt should appear as [DUP:?]")
+            # very_old.txt should be a [WOULD HARDLINK]
+            dup_lines = [line for line in output.split('\n') if '[WOULD HARDLINK]' in line and 'very_old.txt' in line]
+            self.assertTrue(len(dup_lines) > 0, "very_old.txt should appear as duplicate")
 
 
 if __name__ == "__main__":
