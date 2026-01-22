@@ -4,5 +4,11 @@
   "parallelization": true,
   "notes": {
     "testing": "Include unit tests with each feature to maintain comprehensive coverage"
+  },
+  "model_profile": "balanced",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true
   }
 }
