@@ -57,15 +57,16 @@ Plans:
 **Depends on**: Phase 4
 **Requirements**: OUT-03, OUT-04
 **Success Criteria** (what must be TRUE):
-  1. OutputFormatter Protocol exists defining format_banner, format_group, format_statistics, finalize methods
-  2. TextFormatter implementation wraps existing format functions and produces identical output to current version
-  3. JsonFormatter implementation accumulates structured data and outputs valid JSON
-  4. All existing tests pass without modification
-  5. Output is deterministic across multiple runs with same input
-**Plans**: TBD
+  1. OutputFormatter ABC hierarchy exists (CompareFormatter, ActionFormatter)
+  2. TextFormatter implementations wrap existing format functions and produce identical output
+  3. All existing tests pass without modification
+  4. Output is deterministic across multiple runs with same input
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md — Define ABC hierarchy (CompareFormatter, ActionFormatter) and TextFormatter implementations
+- [ ] 05-02-PLAN.md — Wire TextActionFormatter into main() action mode branches
+- [ ] 05-03-PLAN.md — Wire TextCompareFormatter into main() compare mode branches
 
 #### Phase 6: JSON Output
 **Goal**: Expose JSON output through CLI with stable schema and comprehensive metadata
@@ -124,10 +125,10 @@ Plans:
 | 2. Preview Mode | v1.1 | 3/3 | Complete | 2026-01-20 |
 | 3. Deduplication | v1.1 | 4/4 | Complete | 2026-01-20 |
 | 4. Audit Logging | v1.1 | 2/2 | Complete | 2026-01-20 |
-| 5. Formatter Abstraction | v1.2 | 0/? | Not started | - |
+| 5. Formatter Abstraction | v1.2 | 0/3 | Planned | - |
 | 6. JSON Output | v1.2 | 0/? | Not started | - |
 | 7. Output Unification | v1.2 | 0/? | Not started | - |
 | 8. Color Enhancement | v1.2 | 0/? | Not started | - |
 
 ---
-*Last updated: 2026-01-22 - v1.2 roadmap created*
+*Last updated: 2026-01-22 - Phase 5 planned (3 plans in 2 waves)*
