@@ -1451,8 +1451,8 @@ def main() -> int:
         preview_mode = args.action and not args.execute
         execute_mode = args.action and args.execute
 
-        # Create formatter for action mode
-        action_formatter = TextActionFormatter(verbose=args.verbose, preview_mode=not args.execute)
+        # Create formatter for action mode (always in preview mode for print_preview_output)
+        action_formatter = TextActionFormatter(verbose=args.verbose, preview_mode=True)
 
         # Helper function to print preview output
         def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
