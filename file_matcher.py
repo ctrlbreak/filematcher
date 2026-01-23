@@ -1696,7 +1696,11 @@ def create_audit_logger(log_path: Path | None = None) -> tuple[logging.Logger, P
     """
     if log_path is None:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        log_path = Path(f"filematcher_{timestamp}.log")
+        log_dir = os.environ.get('FILEMATCHER_LOG_DIR')
+        if log_dir:
+            log_path = Path(log_dir) / f"filematcher_{timestamp}.log"
+        else:
+            log_path = Path(f"filematcher_{timestamp}.log")
 
     # Create a new logger separate from the main logger
     audit_logger = logging.getLogger('filematcher.audit')
