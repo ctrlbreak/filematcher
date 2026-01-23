@@ -41,6 +41,9 @@ filematcher dir1 dir2 --action hardlink --execute
 # Basic comparison (finds all files with identical content)
 filematcher dir1 dir2
 
+# Equivalent to above (compare is the default action)
+filematcher dir1 dir2 --action compare
+
 # Only show files with identical content but different names
 filematcher dir1 dir2 --different-names-only
 
@@ -106,7 +109,7 @@ filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
 | `--fast` | `-f` | Fast mode for large files (>100MB) |
 | `--verbose` | `-v` | Show per-file progress |
 | `--different-names-only` | `-d` | Only report files with identical content but different names |
-| `--action` | `-a` | Action: `hardlink`, `symlink`, or `delete` (first directory is master) |
+| `--action` | `-a` | Action: `compare` (default), `hardlink`, `symlink`, or `delete` |
 | `--execute` | | Execute changes (default: preview only) |
 | `--yes` | `-y` | Skip confirmation prompt |
 | `--log` | `-l` | Custom audit log path |
@@ -289,6 +292,7 @@ Use --execute to apply changes
 
 | Action | Description |
 |--------|-------------|
+| `compare` | Compare only, no modifications (default when `--action` is not specified) |
 | `hardlink` | Replace duplicate with hard link to master (same inode, saves space) |
 | `symlink` | Replace duplicate with symbolic link to master (points to master path) |
 | `delete` | Delete duplicate file (irreversible) |
