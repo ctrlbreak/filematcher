@@ -1397,6 +1397,30 @@ def already_hardlinked(file1: str, file2: str) -> bool:
         return False
 
 
+def is_symlink_to_master(duplicate: str, master: str) -> bool:
+    """
+    Check if a duplicate file is a symlink pointing to the master file.
+
+    Args:
+        duplicate: Path to the potential symlink
+        master: Path to the master file
+
+    Returns:
+        True if duplicate is a symlink whose target resolves to master,
+        False otherwise or if either file cannot be accessed
+    """
+    try:
+        dup_path = Path(duplicate)
+        if not dup_path.is_symlink():
+            return False
+        # Resolve both paths to compare actual file locations
+        resolved_target = dup_path.resolve()
+        resolved_master = Path(master).resolve()
+        return resolved_target == resolved_master
+    except OSError:
+        return False
+
+
 def safe_replace_with_link(duplicate: Path, master: Path, action: str) -> tuple[bool, str]:
     """
     Safely replace duplicate file with a link to master using temp-rename pattern.
@@ -1481,9 +1505,13 @@ def execute_action(
     dup_path = Path(duplicate)
     master_path = Path(master)
 
-    # Check if already hardlinked (skip if so)
-    if action == 'hardlink' and already_hardlinked(duplicate, master):
-        return (True, "already linked", "skipped")
+    # Check if duplicate is a symlink pointing to master (skip if so)
+    if is_symlink_to_master(duplicate, master):
+        return (True, "symlink to master", "skipped")
+
+    # Check if already hardlinked to master (skip if so for any action)
+    if already_hardlinked(duplicate, master):
+        return (True, "hardlink to master", "skipped")
 
     # Execute the action
     if action == 'hardlink':
