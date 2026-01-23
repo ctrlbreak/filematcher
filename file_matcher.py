@@ -475,14 +475,34 @@ class TextCompareFormatter(CompareFormatter):
     for compare mode to delegate to. Matches current output format exactly.
     """
 
+    def __init__(
+        self,
+        verbose: bool = False,
+        dir1_name: str = "dir1",
+        dir2_name: str = "dir2",
+        color_config: ColorConfig | None = None
+    ):
+        """Initialize the formatter with configuration.
+
+        Args:
+            verbose: If True, show additional details in output
+            dir1_name: Label for first directory
+            dir2_name: Label for second directory
+            color_config: Color configuration (default: no color)
+        """
+        super().__init__(verbose, dir1_name, dir2_name)
+        self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
+
     def format_header(self, dir1: str, dir2: str, hash_algo: str) -> None:
         """Format comparison header showing mode and directories."""
-        print(f"Compare mode: {dir1} vs {dir2}")
+        header = f"Compare mode: {dir1} vs {dir2}"
+        print(cyan(header, self.cc))
 
     def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
         """Format one-liner summary after header."""
         space_str = format_file_size(space_savings)
-        print(f"Found {group_count} duplicate groups ({duplicate_count} files, {space_str} reclaimable)")
+        summary = f"Found {group_count} duplicate groups ({duplicate_count} files, {space_str} reclaimable)"
+        print(cyan(summary, self.cc))
         print()  # Blank line after summary
 
     def format_match_group(self, file_hash: str, files_dir1: list[str], files_dir2: list[str]) -> None:
@@ -493,8 +513,8 @@ class TextCompareFormatter(CompareFormatter):
             files_dir1: List of file paths from first directory (sorted for determinism)
             files_dir2: List of file paths from second directory (sorted for determinism)
         """
-        # Inline implementation matching current output format (lines 1314-1321)
-        print(f"Hash: {file_hash[:10]}...")
+        # Hash in dim (de-emphasize technical details)
+        print(dim(f"Hash: {file_hash[:10]}...", self.cc))
         print(f"  Files in {self.dir1_name}:")
         for f in sorted(files_dir1):  # Sorted for determinism (OUT-04)
             print(f"    {f}")
@@ -535,7 +555,7 @@ class TextCompareFormatter(CompareFormatter):
     def format_statistics(self, group_count: int, file_count: int, space_savings: int) -> None:
         """Format statistics footer matching action mode format."""
         print()
-        print("--- Statistics ---")
+        print(cyan("--- Statistics ---", self.cc))
         print(f"Duplicate groups: {group_count}")
         print(f"Total files with matches: {file_count}")
         if space_savings > 0:
