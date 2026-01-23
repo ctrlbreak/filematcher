@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 ## Current Position
 
 Phase: 8 of 8 (Color Enhancement)
-Plan: 1 of 3 complete
+Plan: 2 of 3 complete
 Status: In progress
-Last activity: 2026-01-23 - Completed 08-01-PLAN.md (color infrastructure)
+Last activity: 2026-01-23 - Completed 08-02-PLAN.md (CLI flags and formatter integration)
 
-Progress: [████████▓░] 80% (v1.1 complete: 4 phases, v1.2: 3/4 phases complete + 08-01)
+Progress: [████████▓░] 85% (v1.1 complete: 4 phases, v1.2: 3/4 phases complete + 08-01, 08-02)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23 (v1.1: 12, v1.2: 11)
-- Phase 8 plan 1 duration: 1 min (3 tasks)
-- Total execution time: v1.1: 2 days, v1.2: ~53 min
+- Total plans completed: 24 (v1.1: 12, v1.2: 12)
+- Phase 8 plan 2 duration: 4 min (4 tasks)
+- Total execution time: v1.1: 2 days, v1.2: ~57 min
 
 **By Phase:**
 
@@ -34,7 +34,7 @@ Progress: [████████▓░] 80% (v1.1 complete: 4 phases, v1.2: 3
 | 5. Formatter Abstraction | 3 | Complete (v1.2) |
 | 6. JSON Output | 3 | Complete (v1.2) |
 | 7. Output Unification | 4 | Complete (v1.2) |
-| 8. Color Enhancement | 3 | 1/3 in progress |
+| 8. Color Enhancement | 3 | 2/3 in progress |
 
 **Recent Trend:**
 - 05-01 completed: 6 min (3 tasks, ABC definitions)
@@ -48,6 +48,7 @@ Progress: [████████▓░] 80% (v1.1 complete: 4 phases, v1.2: 3
 - 07-03 completed: 8 min (3 tasks, statistics footer)
 - 07-04 completed: 2 min (3 tasks, tests and documentation)
 - 08-01 completed: 1 min (3 tasks, color infrastructure)
+- 08-02 completed: 4 min (4 tasks, CLI flags + formatter integration)
 
 ## Accumulated Context
 
@@ -107,6 +108,9 @@ Phase 8 decisions:
 | FORCE_COLOR support | CI systems like GitHub Actions use this | 08-01 |
 | Cached enabled state | Avoid repeated environment/TTY checks | 08-01 |
 | ColorConfig injection pattern | Pass ColorConfig instance to functions needing coloring | 08-01 |
+| store_const pattern for flags | Last-wins semantics via shared dest | 08-02 |
+| --json implies no color | JSON must never have ANSI codes | 08-02 |
+| Pattern-based line coloring | Detect line patterns after delegation for color application | 08-02 |
 
 ### Critical Research Insights
 
@@ -130,21 +134,21 @@ From research/SUMMARY.md:
 
 **Phase 8 status (In Progress):**
 - [x] Color infrastructure: ColorConfig, ANSI constants, colorize helpers (plan 08-01)
-- [ ] Formatter integration: Apply colors to text formatters (plan 08-02)
-- [ ] CLI flags: --color/--no-color flags and tests (plan 08-03)
+- [x] Formatter integration: Apply colors to text formatters (plan 08-02)
+- [ ] Tests and documentation (plan 08-03)
 
 **Test Suite:**
 - Total tests: 183
 - All tests passing
 
 **Next steps:**
-- Execute plan 08-02: Formatter color integration
+- Execute plan 08-03: Tests and documentation
 
 ## Session Continuity
 
 Last session: 2026-01-23 (plan execution)
-Stopped at: Completed 08-01-PLAN.md
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-01-23 after 08-01 completion*
+*Last updated: 2026-01-23 after 08-02 completion*
