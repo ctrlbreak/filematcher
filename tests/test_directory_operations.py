@@ -185,6 +185,14 @@ class TestSkipAlreadyLinked(unittest.TestCase):
 
         self.assertFalse(is_symlink_to(duplicate_path, self.master_file))
 
+    def test_is_symlink_to_missing_file_returns_false(self):
+        """Missing file returns False, not error."""
+        self.assertFalse(is_symlink_to("/nonexistent/path", self.master_file))
+
+    def test_is_symlink_to_both_files_missing_returns_false(self):
+        """Both files missing returns False, not error."""
+        self.assertFalse(is_symlink_to("/nonexistent/path1", "/nonexistent/path2"))
+
     def test_execute_action_skips_symlink_to_master(self):
         """execute_action skips symlinks pointing to master with correct reason."""
         symlink_path = os.path.join(self.dup_dir, "link.txt")

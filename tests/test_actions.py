@@ -160,17 +160,6 @@ class TestExecuteAction(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
 
-    def test_skips_is_hardlink_to(self):
-        """Already hardlinked files are skipped."""
-        self.master.write_text("content")
-        self.duplicate.hardlink_to(self.master)
-        success, error, action_used = execute_action(
-            str(self.duplicate), str(self.master), "hardlink"
-        )
-        self.assertTrue(success)
-        self.assertEqual(action_used, "skipped")
-        self.assertIn("hardlink to master", error)
-
     def test_hardlink_success(self):
         """Successful hardlink execution."""
         self.master.write_text("content")
