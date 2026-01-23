@@ -5,7 +5,7 @@
   "notes": {
     "testing": "Include unit tests with each feature to maintain comprehensive coverage"
   },
-  "model_profile": "balanced",
+  "model_profile": "quality",
   "workflow": {
     "research": true,
     "plan_check": true,

@@ -1,18 +1,16 @@
 # Phase 6: JSON Output - Research
 
 **Researched:** 2026-01-22
-**Domain:** Python CLI JSON output with structured schema and null-separated output
+**Domain:** Python CLI JSON output with structured schema
 **Confidence:** HIGH
 
 ## Summary
 
-This phase adds machine-readable JSON output and null-separated file paths to the file matcher CLI. Research confirms that Python's stdlib provides everything needed (json, os.stat, datetime) with no external dependencies.
+This phase adds machine-readable JSON output to the file matcher CLI. Research confirms that Python's stdlib provides everything needed (json, os.stat, datetime) with no external dependencies.
 
-The standard approach for CLI JSON output is a single, complete JSON object (not JSON Lines) with 2-space indentation, a version field for schema evolution, and RFC 3339 timestamps. The `-0`/`--null` flag follows Unix conventions from find/xargs/grep for safe shell piping of filenames with special characters.
+The standard approach for CLI JSON output is a single, complete JSON object (not JSON Lines) with 2-space indentation, a version field for schema evolution, and RFC 3339 timestamps. The `--json` flag should produce a single schema that optionally includes verbose metadata fields when combined with `--verbose`, maintaining backward compatibility by adding fields rather than changing structure.
 
-Key architectural decision: JSON and null-separated output should be mutually exclusive using argparse's `add_mutually_exclusive_group()`. The `--json` flag should produce a single schema that optionally includes verbose metadata fields when combined with `--verbose`, maintaining backward compatibility by adding fields rather than changing structure.
-
-**Primary recommendation:** Use single JSON object output (not JSONL) with 2-space indentation, RFC 3339 timestamps, version field "1.0", and mutually exclusive flags for `--json` vs `-0`. Include optional metadata fields in same schema based on `--verbose` flag.
+**Primary recommendation:** Use single JSON object output (not JSONL) with 2-space indentation, RFC 3339 timestamps, version field "1.0". Include optional metadata fields in same schema based on `--verbose` flag.
 
 ## Standard Stack
 
@@ -24,12 +22,11 @@ The established libraries/tools for this domain:
 | `json` | stdlib | JSON serialization | Python's built-in, zero dependencies, handles encoding correctly |
 | `os.stat` | stdlib | File metadata (size, timestamps) | Standard way to get mtime, size, ctime |
 | `datetime` | stdlib | ISO 8601 timestamp formatting | `.isoformat()` produces RFC 3339 compliant strings |
-| `argparse` | stdlib | CLI flag parsing | `add_mutually_exclusive_group()` for --json vs -0 |
+| `argparse` | stdlib | CLI flag parsing | Adding --json flag to existing parser |
 
 ### Supporting
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| `sys.stdout.buffer` | stdlib | Binary output for null bytes | Required for `-0` flag to write `\0` separator |
 | `sorted()` | builtin | Deterministic ordering | All collections in JSON must be sorted |
 
 ### Alternatives Considered
@@ -55,15 +52,10 @@ file_matcher.py (single file, maintaining existing pattern)
   +-- Text Implementations (TextCompareFormatter, TextActionFormatter) [Phase 5]
   |
   +-- JSON Implementations (JsonCompareFormatter, JsonActionFormatter) [THIS PHASE]
-  |     |
-  |     +-- Accumulator pattern: buffer data, serialize in finalize()
-  |     +-- sorted() for deterministic output
-  |     +-- RFC 3339 timestamps via datetime.isoformat()
-  |
-  +-- Null-separated output (-0 flag) [THIS PHASE]
         |
-        +-- Write to sys.stdout.buffer for binary \0 bytes
-        +-- Mutually exclusive with --json
+        +-- Accumulator pattern: buffer data, serialize in finalize()
+        +-- sorted() for deterministic output
+        +-- RFC 3339 timestamps via datetime.isoformat()
 ```
 
 ### Pattern 1: Single JSON Object with Version Field
@@ -130,41 +122,6 @@ def format_match_group(self, file_hash, files_dir1, files_dir2):
     self._data["matches"].append(group)
 ```
 
-### Pattern 4: Null-Separated Output for Safe Shell Piping
-
-**What:** Use `\0` (ASCII NUL) to separate filenames instead of newlines
-**When to use:** CLI tools that output file paths for piping to xargs/sort/etc
-**Example:**
-```python
-# Source: https://man7.org/linux/man-pages/man1/grep.1.html (grep -Z flag)
-import sys
-
-# Must use stdout.buffer for binary output
-for filepath in filepaths:
-    sys.stdout.buffer.write(filepath.encode('utf-8'))
-    sys.stdout.buffer.write(b'\0')  # NULL byte separator
-sys.stdout.buffer.flush()
-
-# Usage: filematcher dir1 dir2 -0 | xargs -0 ls -lh
-```
-
-### Pattern 5: Mutually Exclusive Output Formats
-
-**What:** Use argparse mutually exclusive group for --json vs -0
-**When to use:** Output formats that cannot be combined
-**Example:**
-```python
-# Source: https://docs.python.org/3/library/argparse.html
-import argparse
-
-parser = argparse.ArgumentParser()
-output_group = parser.add_mutually_exclusive_group()
-output_group.add_argument('--json', action='store_true',
-                         help='output results in JSON format')
-output_group.add_argument('-0', '--null', action='store_true',
-                         help='null-separated output for shell piping')
-```
-
 ### Anti-Patterns to Avoid
 
 - **JSON Lines (JSONL) for CLI tools with complete results:** JSONL is for streaming/incremental output. CLI tools that process all input before outputting should use single JSON object.
@@ -181,9 +138,7 @@ Problems that look simple but have existing solutions:
 |---------|-------------|-------------|-----|
 | JSON escaping | Manual string concatenation | `json.dumps()` | Handles Unicode, special chars, escaping correctly |
 | Timestamp formatting | Manual date string building | `datetime.isoformat()` | Produces RFC 3339 compliant timestamps |
-| Null byte output | `print('\0')` | `sys.stdout.buffer.write(b'\0')` | print() uses text mode; binary mode required for null bytes |
 | Deterministic JSON ordering | Custom sorting logic | `sorted()` on all collections | Simple, consistent, Pythonic |
-| Mutually exclusive flags | Manual validation | `argparse.add_mutually_exclusive_group()` | Built-in, clear error messages |
 
 **Key insight:** The Phase 5 formatter abstraction already provides the structure. Phase 6 just adds JsonCompareFormatter and JsonActionFormatter implementations that accumulate data and serialize with `json.dumps()`.
 
@@ -221,17 +176,7 @@ Problems that look simple but have existing solutions:
 4. Parsers that ignore unknown fields work with both
 **Warning signs:** Need different parsers for verbose vs non-verbose JSON
 
-### Pitfall 4: Text Mode for Null-Separated Output
-
-**What goes wrong:** Using `print()` or `sys.stdout.write()` for null bytes produces incorrect output
-**Why it happens:** Python's text mode treats `\0` as string character, not binary byte
-**How to avoid:**
-1. Use `sys.stdout.buffer.write()` for binary output
-2. Encode strings to bytes: `filepath.encode('utf-8')`
-3. Write null byte as `b'\0'`
-**Warning signs:** `xargs -0` fails, output shows literal `\0` characters
-
-### Pitfall 5: Non-Deterministic JSON Output
+### Pitfall 4: Non-Deterministic JSON Output
 
 **What goes wrong:** Same input produces different JSON output ordering between runs
 **Why it happens:** Dict iteration, unsorted file lists
@@ -242,7 +187,7 @@ Problems that look simple but have existing solutions:
 4. Sort statistics keys if using dict comprehensions
 **Warning signs:** Git diffs show reordering with no actual changes, flaky tests
 
-### Pitfall 6: Timestamps as Unix Epoch Integers
+### Pitfall 5: Timestamps as Unix Epoch Integers
 
 **What goes wrong:** JSON contains `"mtime": 1737546645.123`
 **Why it happens:** Using raw `os.stat().st_mtime` value
@@ -253,7 +198,7 @@ Problems that look simple but have existing solutions:
 4. Standard for JSON/API timestamps
 **Warning signs:** Timestamps are large integers, users need to convert manually
 
-### Pitfall 7: Missing Schema Version Field
+### Pitfall 6: Missing Schema Version Field
 
 **What goes wrong:** JSON output has no version field, breaking when schema evolves
 **Why it happens:** Thinking version isn't needed for "v1"
@@ -350,55 +295,6 @@ class JsonCompareFormatter(CompareFormatter):
         print(json.dumps(self._data, indent=2))
 ```
 
-### Null-Separated Output Implementation
-
-```python
-# Source: https://man7.org/linux/man-pages/man1/grep.1.html
-import sys
-
-def output_null_separated(filepaths: list[str]) -> None:
-    """Output file paths separated by null bytes for safe shell piping.
-
-    Compatible with: xargs -0, sort -z, grep -Z, find -print0
-    """
-    for filepath in sorted(filepaths):  # Deterministic ordering
-        # Must use binary mode for null bytes
-        sys.stdout.buffer.write(filepath.encode('utf-8'))
-        sys.stdout.buffer.write(b'\0')  # ASCII NUL separator
-
-    sys.stdout.buffer.flush()
-
-# Usage from CLI:
-# filematcher dir1 dir2 -0 | xargs -0 ls -lh
-# filematcher dir1 dir2 -0 | sort -z | uniq -z
-```
-
-### Mutually Exclusive Flags in argparse
-
-```python
-# Source: https://docs.python.org/3/library/argparse.html
-parser = argparse.ArgumentParser()
-
-# Create mutually exclusive group
-output_group = parser.add_mutually_exclusive_group()
-
-output_group.add_argument(
-    '--json',
-    action='store_true',
-    help='output results in JSON format'
-)
-
-output_group.add_argument(
-    '-0', '--null',
-    action='store_true',
-    dest='null_separated',
-    help='output null-separated file paths for shell piping (like find -print0)'
-)
-
-# User gets error if both provided:
-# error: argument -0/--null: not allowed with argument --json
-```
-
 ### File Metadata Extraction with RFC 3339 Timestamps
 
 ```python
@@ -458,19 +354,12 @@ Things that couldn't be fully resolved:
    - What's unclear: Which timestamps to include in verbose mode
    - Recommendation: Include only size and mtime in verbose mode. mtime is most useful (when file content changed), size is essential. Avoid ctime (platform-dependent meaning) and atime (often disabled for performance).
 
-4. **Cross-filesystem compatibility for null output**
-   - What we know: `-0` outputs null-separated UTF-8 encoded paths
-   - What's unclear: Handling of non-UTF-8 filesystem paths (rare but possible on Unix)
-   - Recommendation: Encode with UTF-8 and use 'replace' or 'surrogateescape' error handling. Document that -0 assumes UTF-8 filesystem encoding. This matches behavior of find/grep/xargs.
-
 ## Sources
 
 ### Primary (HIGH confidence)
 - [Python json module documentation](https://docs.python.org/3/library/json.html) - json.dumps(), indent parameter, separators
-- [Python argparse documentation](https://docs.python.org/3/library/argparse.html) - add_mutually_exclusive_group()
 - [Python os.stat documentation](https://docs.python.org/3/library/stat.html) - File metadata, stat_result attributes
 - [Python datetime documentation](https://docs.python.org/3/library/datetime.html) - isoformat() for RFC 3339
-- [grep(1) man page](https://man7.org/linux/man-pages/man1/grep.1.html) - -Z/--null flag specification
 - [ripgrep man page](https://manpages.debian.org/testing/ripgrep/rg.1.en.html) - --json message types and schema
 
 ### Secondary (MEDIUM confidence)
@@ -488,7 +377,7 @@ Things that couldn't be fully resolved:
 
 **Confidence breakdown:**
 - Standard stack: HIGH - All stdlib, well-documented, stable APIs
-- Architecture: HIGH - Patterns well-established in Phase 5, JSON/null output conventions clear from Unix/CLI history
+- Architecture: HIGH - Patterns well-established in Phase 5, JSON output conventions clear
 - Pitfalls: MEDIUM - Based on general Python/JSON experience and documented issues in npm/cli and forcedotcom/cli GitHub issues, not file-matcher-specific
 
 **Research date:** 2026-01-22
