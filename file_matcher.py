@@ -2419,7 +2419,7 @@ def main() -> int:
         preview_mode = args.action and not args.execute
         execute_mode = args.action and args.execute
 
-        # Create formatter for action mode (always in preview mode for print_preview_output)
+        # Create formatter for action mode (handles all actions including compare)
         if args.json:
             action_formatter = JsonActionFormatter(
                 verbose=args.verbose,
