@@ -678,7 +678,7 @@ class JsonActionFormatter(ActionFormatter):
 
     def finalize(self) -> None:
         """Finalize output by sorting collections and printing JSON."""
-        # Compare mode: produce JsonCompareFormatter-compatible schema
+        # Compare mode: produce compare-compatible JSON schema
         if self._action == "compare":
             # Convert duplicateGroups to matches format for compare mode
             matches = []
@@ -2431,81 +2431,6 @@ def main() -> int:
 
                 # Return appropriate exit code
                 return determine_exit_code(success_count, failure_count)
-
-    else:
-        # Original output format (no master mode / compare mode)
-        if args.json:
-            compare_formatter = JsonCompareFormatter(
-                verbose=args.verbose,
-                dir1_name=args.dir1,
-                dir2_name=args.dir2
-            )
-            compare_formatter.format_header(args.dir1, args.dir2, hash_algo)
-        else:
-            compare_formatter = TextCompareFormatter(
-                verbose=args.verbose,
-                dir1_name=args.dir1,
-                dir2_name=args.dir2,
-                color_config=color_config
-            )
-            # Output unified header (unless --quiet)
-            if not args.quiet:
-                compare_formatter.format_header(args.dir1, args.dir2, hash_algo)
-                # Summary line with 0 space savings (compare mode doesn't compute it)
-                compare_formatter.format_summary_line(
-                    group_count=len(matches),
-                    duplicate_count=matched_files1 + matched_files2,
-                    space_savings=0
-                )
-
-        if args.summary:
-            # Summary mode: only show statistics
-            compare_formatter.format_summary(
-                match_count=len(matches),
-                matched_files1=matched_files1,
-                matched_files2=matched_files2,
-                unmatched1=len(unmatched1),
-                unmatched2=len(unmatched2)
-            )
-
-            if args.show_unmatched and not args.json:
-                print(f"\nUnmatched files summary:")
-                print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
-                print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
-        else:
-            # Detailed output
-            if not matches:
-                compare_formatter.format_empty_result(mode="compare")
-            else:
-                # Sort hash keys for deterministic output (OUT-04)
-                for file_hash in sorted(matches.keys()):
-                    files1, files2 = matches[file_hash]
-                    compare_formatter.format_match_group(file_hash, files1, files2)
-
-            # Optionally display unmatched files (detailed mode)
-            if args.show_unmatched:
-                compare_formatter.format_unmatched_header()
-                compare_formatter.format_unmatched(args.dir1, unmatched1)
-                compare_formatter.format_unmatched(args.dir2, unmatched2)
-
-            # Add statistics footer (compare mode doesn't compute space savings)
-            compare_formatter.format_statistics(
-                group_count=len(matches),
-                file_count=matched_files1 + matched_files2,
-                space_savings=0  # Compare mode doesn't determine master/duplicate
-            )
-
-            # Always call format_summary for JSON to ensure summary field is populated
-            if args.json:
-                compare_formatter.format_summary(
-                    match_count=len(matches),
-                    matched_files1=matched_files1,
-                    matched_files2=matched_files2,
-                    unmatched1=len(unmatched1),
-                    unmatched2=len(unmatched2)
-                )
-
-        compare_formatter.finalize()
 
     return 0
 
