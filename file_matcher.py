@@ -380,6 +380,7 @@ class ActionFormatter(ABC):
         master_file: str,
         duplicates: list[str],
         action: str,
+        file_hash: str | None = None,
         file_sizes: dict[str, int] | None = None,
         cross_fs_files: set[str] | None = None
     ) -> None:
@@ -389,6 +390,7 @@ class ActionFormatter(ABC):
             master_file: Path to the master file (preserved)
             duplicates: List of duplicate file paths
             action: Action type (hardlink, symlink, delete)
+            file_hash: Content hash for this group (for verbose mode)
             file_sizes: Optional dict mapping paths to file sizes (for verbose mode)
             cross_fs_files: Optional set of duplicates on different filesystem
         """
@@ -819,6 +821,7 @@ class JsonActionFormatter(ActionFormatter):
         master_file: str,
         duplicates: list[str],
         action: str,
+        file_hash: str | None = None,
         file_sizes: dict[str, int] | None = None,
         cross_fs_files: set[str] | None = None
     ) -> None:
@@ -828,6 +831,7 @@ class JsonActionFormatter(ActionFormatter):
             master_file: Path to the master file (preserved)
             duplicates: List of duplicate file paths
             action: Action type (hardlink, symlink, delete)
+            file_hash: Content hash for this group (included in JSON)
             file_sizes: Optional dict mapping paths to file sizes
             cross_fs_files: Optional set of duplicates on different filesystem
         """
@@ -856,10 +860,12 @@ class JsonActionFormatter(ActionFormatter):
 
             dup_objects.append(dup_obj)
 
-        group = {
+        group: dict = {
             "masterFile": master_file,
             "duplicates": dup_objects
         }
+        if file_hash:
+            group["hash"] = file_hash
         self._data["duplicateGroups"].append(group)
 
     def format_statistics(
@@ -1026,6 +1032,7 @@ class TextActionFormatter(ActionFormatter):
         master_file: str,
         duplicates: list[str],
         action: str,
+        file_hash: str | None = None,
         file_sizes: dict[str, int] | None = None,
         cross_fs_files: set[str] | None = None
     ) -> None:
@@ -1035,11 +1042,13 @@ class TextActionFormatter(ActionFormatter):
         - Master file paths in green (protected)
         - Duplicate file paths in yellow (removal candidates)
         - Cross-filesystem warnings in red
+        - Hash line in dim (verbose only)
 
         Args:
             master_file: Path to the master file (preserved)
             duplicates: List of duplicate file paths
             action: Action type (hardlink, symlink, delete)
+            file_hash: Content hash for this group (for verbose mode)
             file_sizes: Optional dict mapping paths to file sizes (for verbose mode)
             cross_fs_files: Optional set of duplicates on different filesystem
         """
@@ -1070,6 +1079,10 @@ class TextActionFormatter(ActionFormatter):
                     print(yellow(line, self.cc))
             else:
                 print(line)
+
+        # Hash as de-emphasized trailing detail (verbose only)
+        if self.verbose and file_hash:
+            print(dim(f"  Hash: {file_hash[:10]}...", self.cc))
 
     def format_statistics(
         self,
@@ -1406,14 +1419,14 @@ def format_statistics_footer(
 
 
 def calculate_space_savings(
-    duplicate_groups: list[tuple[str, list[str], str]]
+    duplicate_groups: list[tuple[str, list[str], str, str]]
 ) -> tuple[int, int, int]:
     """
     Calculate space that would be saved by deduplication.
 
     Args:
-        duplicate_groups: List of (master_file, duplicates_list, reason) tuples
-                         (matches output from select_master_file)
+        duplicate_groups: List of (master_file, duplicates_list, reason, hash) tuples
+                         (matches output from select_master_file with hash)
 
     Returns:
         Tuple of (total_bytes_saved, total_duplicate_count, group_count)
@@ -1425,7 +1438,7 @@ def calculate_space_savings(
     total_duplicates = 0
     groups_with_duplicates = 0
 
-    for master_file, duplicates, _reason in duplicate_groups:
+    for master_file, duplicates, _reason, _hash in duplicate_groups:
         if not duplicates:
             continue
         # All duplicates have same size as master
@@ -1648,7 +1661,7 @@ def determine_exit_code(success_count: int, failure_count: int) -> int:
 
 
 def execute_all_actions(
-    duplicate_groups: list[tuple[str, list[str], str]],
+    duplicate_groups: list[tuple[str, list[str], str, str]],
     action: str,
     fallback_symlink: bool = False,
     verbose: bool = False,
@@ -1662,7 +1675,7 @@ def execute_all_actions(
     processing of remaining files.
 
     Args:
-        duplicate_groups: List of (master_file, duplicates_list, reason) tuples
+        duplicate_groups: List of (master_file, duplicates_list, reason, hash) tuples
         action: Action type ("hardlink", "symlink", or "delete")
         fallback_symlink: If True, fall back to symlink for cross-device hardlink
         verbose: If True, print progress to stderr
@@ -1684,10 +1697,10 @@ def execute_all_actions(
     failed_list: list[tuple[str, str]] = []
 
     # Count total duplicates for progress tracking
-    total_duplicates = sum(len(dups) for _, dups, _ in duplicate_groups)
+    total_duplicates = sum(len(dups) for _, dups, _, _ in duplicate_groups)
     processed = 0
 
-    for master_file, duplicates, _reason in duplicate_groups:
+    for master_file, duplicates, _reason, _hash in duplicate_groups:
         # Check if master file exists
         if not os.path.exists(master_file):
             logger.warning(f"Master file missing, skipping group: {master_file}")
@@ -2236,14 +2249,14 @@ def main() -> int:
                 warnings.append(f"Warning: Multiple files in master directory have identical content: {', '.join(master_files_in_group)}")
 
             master_file, duplicates, reason = select_master_file(all_files, master_path)
-            master_results.append((master_file, duplicates, reason))
+            master_results.append((master_file, duplicates, reason, file_hash))
             total_masters += 1
             total_duplicates += len(duplicates)
 
         # Check cross-filesystem for hardlink action
         cross_fs_files = set()
         if args.action == 'hardlink':
-            for master_file, duplicates, reason in master_results:
+            for master_file, duplicates, reason, _ in master_results:
                 cross_fs_files.update(check_cross_filesystem(master_file, duplicates))
 
         # Determine mode: preview (default when --action specified) or execute
@@ -2299,7 +2312,7 @@ def main() -> int:
                     # Sort master_results by master file path (alphabetical) for determinism (OUT-04)
                     sorted_results = sorted(master_results, key=lambda x: x[0])
 
-                    for i, (master_file, duplicates, reason) in enumerate(sorted_results):
+                    for i, (master_file, duplicates, reason, file_hash) in enumerate(sorted_results):
                         # Build file_sizes dict for verbose mode (JSON always needs sizes)
                         file_sizes = None
                         if args.verbose or args.json:
@@ -2311,6 +2324,7 @@ def main() -> int:
                         formatter.format_duplicate_group(
                             master_file, duplicates,
                             action=args.action,
+                            file_hash=file_hash,
                             file_sizes=file_sizes,
                             cross_fs_files=cross_fs_to_show
                         )
@@ -2378,7 +2392,7 @@ def main() -> int:
                 # Collect duplicate groups for JSON (need to rebuild since execution may have changed files)
                 # Sort master_results for determinism
                 sorted_results = sorted(master_results, key=lambda x: x[0])
-                for master_file, duplicates, reason in sorted_results:
+                for master_file, duplicates, reason, file_hash in sorted_results:
                     file_sizes = None
                     if args.verbose or args.json:
                         all_paths = [master_file] + duplicates
@@ -2392,6 +2406,7 @@ def main() -> int:
                     action_formatter.format_duplicate_group(
                         master_file, duplicates,
                         action=args.action,
+                        file_hash=file_hash,
                         file_sizes=file_sizes,
                         cross_fs_files=cross_fs_to_show
                     )

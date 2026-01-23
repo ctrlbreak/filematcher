@@ -299,8 +299,8 @@ class TestExecuteAllActions(unittest.TestCase):
         dup2.write_text("content2")
 
         groups = [
-            (str(master1), [str(dup1)], "test"),
-            (str(master2), [str(dup2)], "test"),
+            (str(master1), [str(dup1)], "test", "hash1"),
+            (str(master2), [str(dup2)], "test", "hash2"),
         ]
 
         success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
@@ -321,8 +321,8 @@ class TestExecuteAllActions(unittest.TestCase):
         dup2.write_text("content2")
 
         groups = [
-            (str(master1), [str(dup1)], "test"),
-            (str(master2), [str(dup2)], "test"),
+            (str(master1), [str(dup1)], "test", "hash1"),
+            (str(master2), [str(dup2)], "test", "hash2"),
         ]
 
         # Mock first call to fail
@@ -349,7 +349,7 @@ class TestExecuteAllActions(unittest.TestCase):
         master.write_text("content")
         missing_dup = str(self.dup_dir / "nonexistent.txt")
 
-        groups = [(str(master), [missing_dup], "test")]
+        groups = [(str(master), [missing_dup], "test", "hash1")]
 
         success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
         self.assertEqual(skipped, 1)
@@ -361,7 +361,7 @@ class TestExecuteAllActions(unittest.TestCase):
         dup = self.dup_dir / "dup.txt"
         dup.write_text("content")
 
-        groups = [(missing_master, [str(dup)], "test")]
+        groups = [(missing_master, [str(dup)], "test", "hash1")]
 
         success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
         # Entire group skipped, not counted as failure
@@ -375,7 +375,7 @@ class TestExecuteAllActions(unittest.TestCase):
         dup = self.dup_dir / "dup.txt"
         dup.hardlink_to(master)  # Already linked
 
-        groups = [(str(master), [str(dup)], "test")]
+        groups = [(str(master), [str(dup)], "test", "hash1")]
 
         success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
         self.assertEqual(skipped, 1)
@@ -388,7 +388,7 @@ class TestExecuteAllActions(unittest.TestCase):
         dup = self.dup_dir / "dup.txt"
         dup.write_text("content")
 
-        groups = [(str(master), [str(dup)], "test")]
+        groups = [(str(master), [str(dup)], "test", "hash1")]
 
         with patch('file_matcher.execute_action', return_value=(False, "Test error", "hardlink")):
             success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
