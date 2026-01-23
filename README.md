@@ -111,6 +111,131 @@ filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
 | `--yes` | `-y` | Skip confirmation prompt |
 | `--log` | `-l` | Custom audit log path |
 | `--fallback-symlink` | | Use symlink if hardlink fails |
+| `--json` | `-j` | Output results in JSON format for scripting |
+
+## JSON Output
+
+Use `--json` or `-j` to get machine-readable JSON output for scripting and automation.
+
+### Basic Usage
+
+```bash
+# Compare mode with JSON output
+filematcher dir1 dir2 --json
+
+# Action mode preview with JSON
+filematcher dir1 dir2 --action hardlink --json
+
+# Execute with JSON output (requires --yes for non-interactive mode)
+filematcher dir1 dir2 --action hardlink --execute --yes --json
+```
+
+### Schema (Compare Mode)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `timestamp` | string | Execution time (RFC 3339 format) |
+| `directories.dir1` | string | First directory path (absolute) |
+| `directories.dir2` | string | Second directory path (absolute) |
+| `hashAlgorithm` | string | Hash algorithm used ("md5" or "sha256") |
+| `matches` | array | Groups of files with matching content |
+| `matches[].hash` | string | Content hash for the group |
+| `matches[].filesDir1` | array | File paths from dir1 (sorted) |
+| `matches[].filesDir2` | array | File paths from dir2 (sorted) |
+| `unmatchedDir1` | array | Unmatched files in dir1 (with --show-unmatched) |
+| `unmatchedDir2` | array | Unmatched files in dir2 (with --show-unmatched) |
+| `summary.matchCount` | number | Number of unique content hashes with matches |
+| `summary.matchedFilesDir1` | number | Files with matches in dir1 |
+| `summary.matchedFilesDir2` | number | Files with matches in dir2 |
+| `metadata` | object | Per-file metadata (with --verbose) |
+| `metadata[path].sizeBytes` | number | File size in bytes |
+| `metadata[path].modified` | string | Last modified time (RFC 3339) |
+
+### Schema (Action Mode)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `timestamp` | string | Execution time (RFC 3339) |
+| `mode` | string | "preview" or "execute" |
+| `action` | string | "hardlink", "symlink", or "delete" |
+| `directories.master` | string | Master directory path (absolute) |
+| `directories.duplicate` | string | Duplicate directory path (absolute) |
+| `warnings` | array | Warning messages (e.g., multiple files in master with same content) |
+| `duplicateGroups` | array | Groups of duplicates |
+| `duplicateGroups[].masterFile` | string | Master file path (preserved) |
+| `duplicateGroups[].duplicates` | array | Duplicate file objects |
+| `duplicateGroups[].duplicates[].path` | string | Duplicate file path |
+| `duplicateGroups[].duplicates[].sizeBytes` | number | File size in bytes |
+| `duplicateGroups[].duplicates[].action` | string | Action to apply |
+| `duplicateGroups[].duplicates[].crossFilesystem` | boolean | True if on different filesystem than master |
+| `statistics.groupCount` | number | Number of duplicate groups |
+| `statistics.duplicateCount` | number | Total duplicate files |
+| `statistics.masterCount` | number | Number of master files |
+| `statistics.spaceSavingsBytes` | number | Bytes that would be/were saved |
+| `statistics.crossFilesystemCount` | number | Files that cannot be hardlinked (cross-fs) |
+
+**Additional fields when `--execute` is used:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `execution.successCount` | number | Number of successful operations |
+| `execution.failureCount` | number | Number of failed operations |
+| `execution.skippedCount` | number | Number of skipped operations |
+| `execution.spaceSavedBytes` | number | Actual bytes saved |
+| `execution.logPath` | string | Path to the audit log file |
+| `execution.failures` | array | Failed operation details |
+| `execution.failures[].path` | string | File that failed |
+| `execution.failures[].error` | string | Error message |
+
+### jq Examples
+
+```bash
+# List all matching file pairs (first file from each directory)
+filematcher dir1 dir2 --json | jq -r '.matches[] | "\(.filesDir1[0]) <-> \(.filesDir2[0])"'
+
+# Get count of matching groups
+filematcher dir1 dir2 --json | jq '.summary.matchCount'
+
+# List all matched files from dir1
+filematcher dir1 dir2 --json | jq -r '.matches[].filesDir1[]'
+
+# Get total space that would be saved by hardlinking
+filematcher dir1 dir2 --action hardlink --json | jq '.statistics.spaceSavingsBytes'
+
+# List only duplicate file paths (files to be replaced/deleted)
+filematcher dir1 dir2 --action hardlink --json | jq -r '.duplicateGroups[].duplicates[].path'
+
+# Get human-readable space savings (bytes to MB)
+filematcher dir1 dir2 --action hardlink --json | jq '.statistics.spaceSavingsBytes / 1048576 | "\(.) MB"'
+
+# Filter duplicates larger than 1MB
+filematcher dir1 dir2 --action hardlink --json | \
+  jq '[.duplicateGroups[].duplicates[] | select(.sizeBytes > 1048576)]'
+
+# List master files and their duplicate counts
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '.duplicateGroups[] | "\(.masterFile): \(.duplicates | length) duplicates"'
+
+# Get execution results summary
+filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+  jq '{success: .execution.successCount, failed: .execution.failureCount, saved: .execution.spaceSavedBytes}'
+```
+
+### Flag Interactions
+
+| Flags | Behavior |
+|-------|----------|
+| `--json --summary` | Summary statistics only, matches array still populated but no verbose metadata |
+| `--json --verbose` | Includes per-file metadata (size, modified time) in `metadata` object |
+| `--json --show-unmatched` | Includes `unmatchedDir1` and `unmatchedDir2` arrays with file paths |
+| `--json --execute` | Requires `--yes` flag (no interactive prompts in JSON mode) |
+| `--json --action` | Outputs action mode schema instead of compare mode schema |
+
+**Notes:**
+- All file paths in JSON output are absolute paths
+- All lists (matches, files, duplicates) are sorted for deterministic output
+- Logger/progress messages go to stderr, JSON goes to stdout
+- Timestamps use RFC 3339 format with timezone (e.g., `2026-01-23T10:30:00+00:00`)
 
 ## Output Formats
 
