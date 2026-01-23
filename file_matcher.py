@@ -516,17 +516,17 @@ class TextCompareFormatter(CompareFormatter):
         sorted_dir1 = sorted(files_dir1)  # Sorted for determinism (OUT-04)
         sorted_dir2 = sorted(files_dir2)  # Sorted for determinism (OUT-04)
 
-        # Primary file: first from dir1 (green, unindented)
+        # Primary file: first from dir1 (green, unindented) - MASTER
         primary = sorted_dir1[0]
-        print(green(f"[{self.dir1_name}] {primary}", self.cc))
+        print(green(f"[MASTER] {primary}", self.cc))
 
-        # Additional dir1 files (indented, green)
+        # Additional dir1 files (indented, green) - also masters
         for f in sorted_dir1[1:]:
-            print(green(f"    [{self.dir1_name}] {f}", self.cc))
+            print(green(f"    [MASTER] {f}", self.cc))
 
-        # Dir2 files (indented, yellow)
+        # Dir2 files (indented, yellow) - duplicates
         for f in sorted_dir2:
-            print(yellow(f"    [{self.dir2_name}] {f}", self.cc))
+            print(yellow(f"    [DUPLICATE] {f}", self.cc))
 
         # Hash as de-emphasized trailing detail
         print(dim(f"  Hash: {file_hash[:10]}...", self.cc))

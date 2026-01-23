@@ -246,8 +246,8 @@ filematcher dir1 dir2 --action hardlink --execute --yes --json | \
 Compare mode: dir1 vs dir2
 Found 2 duplicate groups (3 files, 0 B reclaimable)
 
-[dir1] /path/dir1/file1.txt
-    [dir2] /path/dir2/different_name.txt
+[MASTER] /path/dir1/file1.txt
+    [DUPLICATE] /path/dir2/different_name.txt
   Hash: e853edac47...
 
 --- Statistics ---
@@ -257,7 +257,7 @@ Total files with matches: 3
 
 ### Action Mode Output
 
-When `--action` is specified, output shows which files are masters vs duplicates (first directory is master):
+When `--action` is specified, output shows the action that would be taken:
 
 ```
 [MASTER] /path/dir1/file1.txt (23 B)
