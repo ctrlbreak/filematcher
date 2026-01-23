@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 ## Current Position
 
 Phase: 6 of 8 (JSON Output)
-Plan: 1 of TBD complete
+Plan: 2 of TBD complete
 Status: In progress
-Last activity: 2026-01-23 — Completed 06-01-PLAN.md (JSON formatter classes)
+Last activity: 2026-01-23 - Completed 06-02-PLAN.md (--json CLI flag and wiring)
 
-Progress: [██████░░░░] 56% (v1.1 complete: 4 phases, v1.2: 1/4 phases + 1 plan)
+Progress: [██████░░░░] 58% (v1.1 complete: 4 phases, v1.2: 1/4 phases + 2 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 16 (v1.1: 12, v1.2: 4)
-- Phase 6 plan 1 duration: 2 min (2 tasks)
-- Total execution time: v1.1: 2 days, v1.2: ~17 min (so far)
+- Total plans completed: 17 (v1.1: 12, v1.2: 5)
+- Phase 6 plan 2 duration: 3 min (3 tasks)
+- Total execution time: v1.1: 2 days, v1.2: ~20 min (so far)
 
 **By Phase:**
 
@@ -32,7 +32,7 @@ Progress: [██████░░░░] 56% (v1.1 complete: 4 phases, v1.2: 1
 | 3. Deduplication | 4 | Complete (v1.1) |
 | 4. Audit Logging | 2 | Complete (v1.1) |
 | 5. Formatter Abstraction | 3 | Complete (v1.2) |
-| 6. JSON Output | 1/TBD | In progress |
+| 6. JSON Output | 2/TBD | In progress |
 | 7. Output Unification | TBD | Not started |
 | 8. Color Enhancement | TBD | Not started |
 
@@ -41,6 +41,7 @@ Progress: [██████░░░░] 56% (v1.1 complete: 4 phases, v1.2: 1
 - 05-02 completed: 3 min (2 tasks, action mode wiring)
 - 05-03 completed: 3 min (3 tasks, compare mode wiring + determinism tests)
 - 06-01 completed: 2 min (2 tasks, JSON formatter classes)
+- 06-02 completed: 3 min (3 tasks, --json flag and wiring)
 
 ## Accumulated Context
 
@@ -72,6 +73,8 @@ Phase 6 decisions:
 | camelCase field names | Per CONTEXT.md decisions, consistent with JavaScript conventions | 06-01 |
 | RFC 3339 timestamps | ISO 8601 with timezone for machine-readability | 06-01 |
 | set_directories helper method | JsonActionFormatter needs master/duplicate paths explicitly | 06-01 |
+| Logger to stderr when --json | Keep stdout clean for JSON parsing; Unix convention | 06-02 |
+| --json --execute requires --yes | No interactive prompts possible when outputting JSON | 06-02 |
 
 ### Critical Research Insights
 
@@ -91,18 +94,19 @@ From research/SUMMARY.md:
 **Phase 6 status (IN PROGRESS):**
 - [x] JsonCompareFormatter implemented (plan 06-01)
 - [x] JsonActionFormatter implemented (plan 06-01)
-- [ ] --json flag wiring in main() (plan 06-02)
-- [ ] Tests for JSON output (plan 06-02/03)
-- [ ] Flag interaction matrix (--json with --summary, --verbose, --action, --execute)
+- [x] --json flag wiring in main() (plan 06-02)
+- [x] Flag interaction matrix verified (--json with --summary, --verbose, --action, --execute)
+- [ ] Tests for JSON output (plan 06-03 if needed)
 
 **Phase 7 considerations:**
-- Cannot change text output until JSON is available and stable
+- JSON output is now available and stable
+- Ready to proceed with output unification
 
 ## Session Continuity
 
 Last session: 2026-01-23 (plan execution)
-Stopped at: Completed 06-01-PLAN.md
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-01-23 after 06-01 completion*
+*Last updated: 2026-01-23 after 06-02 completion*
