@@ -112,6 +112,7 @@ filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
 | `--log` | `-l` | Custom audit log path |
 | `--fallback-symlink` | | Use symlink if hardlink fails |
 | `--json` | `-j` | Output results in JSON format for scripting |
+| `--quiet` | `-q` | Suppress progress messages and headers (data and errors still shown) |
 
 ## JSON Output
 
@@ -318,6 +319,36 @@ Space reclaimed: 2.4 KB
 | 1 | All operations failed |
 | 2 | Invalid arguments |
 | 3 | Partial success (some operations failed) |
+
+## Output Streams
+
+File Matcher follows Unix conventions for output streams:
+
+- **stdout**: Data output (match groups, statistics, JSON)
+- **stderr**: Progress messages, status updates, errors
+
+This enables clean piping:
+
+```bash
+# Pipe only data to grep
+filematcher dir1 dir2 | grep "pattern"
+
+# Redirect data to file, see progress on terminal
+filematcher dir1 dir2 > matches.txt
+
+# Suppress all progress with --quiet
+filematcher dir1 dir2 --quiet | wc -l
+```
+
+Use `--quiet` to suppress progress messages entirely while still outputting data and errors:
+
+```bash
+# Quiet mode for scripting - only data output, no progress
+filematcher dir1 dir2 --quiet
+
+# Combine with --json for clean machine-readable output
+filematcher dir1 dir2 --json --quiet
+```
 
 ## Testing
 
