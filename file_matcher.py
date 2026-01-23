@@ -1691,8 +1691,14 @@ def main() -> int:
                         help='Use symlink instead of hardlink for cross-filesystem duplicates')
     parser.add_argument('--different-names-only', '-d', action='store_true',
                         help='Only report files with identical content but different names (exclude same-name matches)')
+    parser.add_argument('--json', '-j', action='store_true',
+                        help='Output results in JSON format for scripting')
 
     args = parser.parse_args()
+
+    # Validate --json with --execute requires --yes (no interactive prompts in JSON mode)
+    if args.json and args.execute and not args.yes:
+        parser.error("--json with --execute requires --yes flag to confirm (no interactive prompts in JSON mode)")
 
     # Validate --execute requires --action
     if args.execute and not args.action:
