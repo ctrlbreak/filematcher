@@ -302,5 +302,81 @@ class TestActionExecution(BaseFileMatcherTest):
         self.assertIn("--log requires --execute", error_output)
 
 
+class TestFormatterEdgeCases(BaseFileMatcherTest):
+    """Tests for edge case formatter methods added for output unification."""
+
+    def setUp(self):
+        """Set up empty test directories for edge case testing."""
+        super().setUp()
+        # Create additional empty directories for no-match testing
+        self.empty_dir1 = os.path.join(self.temp_dir, "empty1")
+        self.empty_dir2 = os.path.join(self.temp_dir, "empty2")
+        os.makedirs(self.empty_dir1)
+        os.makedirs(self.empty_dir2)
+
+    def run_main_with_args(self, args: list[str]) -> str:
+        """Helper to run main() with given args and capture stdout."""
+        f = io.StringIO()
+        with redirect_stdout(f):
+            main()
+        return f.getvalue()
+
+    def test_empty_result_compare_mode(self):
+        """Test format_empty_result in compare mode."""
+        # Create dirs with no matching files (different content)
+        with open(os.path.join(self.empty_dir1, "unique1.txt"), "w") as f:
+            f.write("content1")
+        with open(os.path.join(self.empty_dir2, "unique2.txt"), "w") as f:
+            f.write("content2")
+
+        with patch('sys.argv', ['file_matcher.py', self.empty_dir1, self.empty_dir2]):
+            output = self.run_main_with_args([])
+            self.assertIn("No matching files found", output)
+
+    def test_empty_result_dedup_mode(self):
+        """Test format_empty_result in dedup mode."""
+        # Create two dirs with unique content (no matches between them)
+        with open(os.path.join(self.empty_dir1, "file1.txt"), "w") as f:
+            f.write("unique1_master")
+        with open(os.path.join(self.empty_dir2, "file2.txt"), "w") as f:
+            f.write("unique2_dup")
+
+        with patch('sys.argv', ['file_matcher.py', self.empty_dir1, self.empty_dir2,
+                                '--action', 'hardlink']):
+            with patch('sys.stdin.isatty', return_value=False):
+                output = self.run_main_with_args([])
+                self.assertIn("No duplicates found", output)
+
+    def test_unmatched_header_text_mode(self):
+        """Test format_unmatched_header routes through formatter."""
+        # Create dirs with no matching files
+        with open(os.path.join(self.empty_dir1, "unique.txt"), "w") as f:
+            f.write("unique")
+        with open(os.path.join(self.empty_dir2, "other.txt"), "w") as f:
+            f.write("other")
+
+        with patch('sys.argv', ['file_matcher.py', self.empty_dir1, self.empty_dir2, '-u']):
+            output = self.run_main_with_args([])
+            self.assertIn("Files with no content matches", output)
+
+    def test_unmatched_header_json_mode(self):
+        """Test JSON mode doesn't output unmatched header text."""
+        import json as json_module
+        # Create dirs with no matching files
+        with open(os.path.join(self.empty_dir1, "unique.txt"), "w") as f:
+            f.write("unique")
+        with open(os.path.join(self.empty_dir2, "other.txt"), "w") as f:
+            f.write("other")
+
+        with patch('sys.argv', ['file_matcher.py', self.empty_dir1, self.empty_dir2,
+                                '-u', '--json']):
+            output = self.run_main_with_args([])
+            # JSON mode should NOT have the text header
+            self.assertNotIn("Files with no content matches", output)
+            # But should have valid JSON
+            parsed = json_module.loads(output)
+            self.assertIn('unmatchedDir1', parsed)
+
+
 if __name__ == "__main__":
     unittest.main()
