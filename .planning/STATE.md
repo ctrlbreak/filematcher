@@ -37,7 +37,7 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Test Suite
 
-- Total tests: 203
+- Total tests: 204
 - All passing
 - Coverage: file_matcher.py fully tested
 
@@ -45,10 +45,10 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ### Quick 004: Skip Files Already Symlinked/Hardlinked (2026-01-23)
 
-- Added is_symlink_to_master() detection
+- Added is_symlink_to() and is_hardlink_to() detection functions
 - Extended hardlink check to all actions
 - Specific skip reasons: "symlink to master", "hardlink to master"
-- 5 new tests added
+- 9 new tests added, consolidated in test_directory_operations.py
 
 ## Pending Todos
 
