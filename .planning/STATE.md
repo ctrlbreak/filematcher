@@ -154,6 +154,7 @@ From research/SUMMARY.md:
 |---|-------------|------|--------|-----------|
 | 001 | Route edge case prints through formatters | 2026-01-23 | b27d735 | [001-route-edge-case-prints-through-formatter](./quick/001-route-edge-case-prints-through-formatter/) |
 | 002 | Refactor group output reduce duplication | 2026-01-23 | f9695f3 | [002-refactor-group-output-reduce-duplication](./quick/002-refactor-group-output-reduce-duplication/) |
+| 003 | Single-line verbose progress in TTY | 2026-01-23 | 74566c4 | [003-verbose-progress-single-line](./quick/003-verbose-progress-single-line/) |
 
 ### v1.2 Complete
 
@@ -215,7 +216,7 @@ All phases complete:
 
 ## Session Continuity
 
-Last session: 2026-01-23
+Last session: 2026-01-23 17:15
 Stopped at: Completed 10-04-PLAN.md (v1.3 complete, all phases finished)
 Resume file: None
 
