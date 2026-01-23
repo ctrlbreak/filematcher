@@ -404,6 +404,182 @@ class JsonCompareFormatter(CompareFormatter):
         print(json.dumps(self._data, indent=2))
 
 
+class JsonActionFormatter(ActionFormatter):
+    """JSON output formatter for action mode (preview/execute).
+
+    Implements accumulator pattern - collects data during format_* calls,
+    then serializes to JSON in finalize().
+    """
+
+    def __init__(self, verbose: bool = False, preview_mode: bool = True):
+        """Initialize the formatter with configuration.
+
+        Args:
+            verbose: If True, include additional details in output
+            preview_mode: If True, mode is "preview"; if False, mode is "execute"
+        """
+        super().__init__(verbose, preview_mode)
+        self._data: dict = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mode": "preview" if preview_mode else "execute",
+            "action": "",
+            "directories": {
+                "master": "",
+                "duplicate": ""
+            },
+            "warnings": [],
+            "duplicateGroups": [],
+            "statistics": {}
+        }
+        # Track action type for execution results
+        self._action_type = ""
+
+    def format_banner(self) -> None:
+        """Format banner - in JSON mode, this is a no-op (mode is in data structure)."""
+        pass
+
+    def format_warnings(self, warnings: list[str]) -> None:
+        """Accumulate warnings.
+
+        Args:
+            warnings: List of warning messages
+        """
+        self._data["warnings"] = list(warnings)  # Copy to avoid mutation
+
+    def format_duplicate_group(
+        self,
+        master_file: str,
+        duplicates: list[str],
+        action: str,
+        file_sizes: dict[str, int] | None = None,
+        cross_fs_files: set[str] | None = None
+    ) -> None:
+        """Accumulate a duplicate group.
+
+        Args:
+            master_file: Path to the master file (preserved)
+            duplicates: List of duplicate file paths
+            action: Action type (hardlink, symlink, delete)
+            file_sizes: Optional dict mapping paths to file sizes
+            cross_fs_files: Optional set of duplicates on different filesystem
+        """
+        # Store action type for later use
+        self._action_type = action
+        self._data["action"] = action
+
+        # Build duplicate objects with sorted paths for determinism
+        sorted_duplicates = sorted(duplicates)
+        dup_objects = []
+        for dup in sorted_duplicates:
+            dup_obj: dict = {
+                "path": dup,
+                "action": action,
+                "crossFilesystem": cross_fs_files is not None and dup in cross_fs_files
+            }
+            # Always include sizeBytes (needed for space calculations)
+            if file_sizes and dup in file_sizes:
+                dup_obj["sizeBytes"] = file_sizes[dup]
+            else:
+                # Try to get size if not provided
+                try:
+                    dup_obj["sizeBytes"] = os.path.getsize(dup)
+                except OSError:
+                    dup_obj["sizeBytes"] = 0
+
+            dup_objects.append(dup_obj)
+
+        group = {
+            "masterFile": master_file,
+            "duplicates": dup_objects
+        }
+        self._data["duplicateGroups"].append(group)
+
+    def format_statistics(
+        self,
+        group_count: int,
+        duplicate_count: int,
+        master_count: int,
+        space_savings: int,
+        action: str,
+        cross_fs_count: int = 0
+    ) -> None:
+        """Accumulate statistics.
+
+        Args:
+            group_count: Number of duplicate groups
+            duplicate_count: Total number of duplicate files
+            master_count: Number of master files (preserved)
+            space_savings: Bytes that would be saved
+            action: Action type for action-specific messaging
+            cross_fs_count: Number of files that can't be hardlinked (cross-fs)
+        """
+        self._data["action"] = action
+        self._data["statistics"] = {
+            "groupCount": group_count,
+            "duplicateCount": duplicate_count,
+            "masterCount": master_count,
+            "spaceSavingsBytes": space_savings,
+            "crossFilesystemCount": cross_fs_count
+        }
+
+    def format_execution_summary(
+        self,
+        success_count: int,
+        failure_count: int,
+        skipped_count: int,
+        space_saved: int,
+        log_path: str,
+        failed_list: list[tuple[str, str]]
+    ) -> None:
+        """Accumulate execution summary (only in execute mode).
+
+        Args:
+            success_count: Number of successful operations
+            failure_count: Number of failed operations
+            skipped_count: Number of skipped operations
+            space_saved: Total bytes saved
+            log_path: Path to the audit log file
+            failed_list: List of (file_path, error_message) tuples for failures
+        """
+        # Convert failed_list to JSON-friendly format with sorted paths
+        failures = [
+            {"path": path, "error": error}
+            for path, error in sorted(failed_list)
+        ]
+
+        self._data["execution"] = {
+            "successCount": success_count,
+            "failureCount": failure_count,
+            "skippedCount": skipped_count,
+            "spaceSavedBytes": space_saved,
+            "logPath": log_path,
+            "failures": failures
+        }
+
+    def set_directories(self, master_dir: str, duplicate_dir: str) -> None:
+        """Set the directory paths for JSON output.
+
+        Args:
+            master_dir: Path to the master directory
+            duplicate_dir: Path to the duplicate directory
+        """
+        self._data["directories"]["master"] = str(Path(master_dir).resolve())
+        self._data["directories"]["duplicate"] = str(Path(duplicate_dir).resolve())
+
+    def finalize(self) -> None:
+        """Finalize output by sorting collections and printing JSON."""
+        # Sort duplicateGroups by master file path for determinism
+        self._data["duplicateGroups"].sort(key=lambda g: g["masterFile"])
+
+        # Sort duplicates within each group by path (already done in format_duplicate_group,
+        # but ensure consistency)
+        for group in self._data["duplicateGroups"]:
+            group["duplicates"].sort(key=lambda d: d["path"])
+
+        # Output JSON
+        print(json.dumps(self._data, indent=2))
+
+
 class TextActionFormatter(ActionFormatter):
     """Text output formatter for action mode (preview/execute).
 
