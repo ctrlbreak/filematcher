@@ -803,14 +803,15 @@ class JsonActionFormatter(ActionFormatter):
     then serializes to JSON in finalize().
     """
 
-    def __init__(self, verbose: bool = False, preview_mode: bool = True):
+    def __init__(self, verbose: bool = False, preview_mode: bool = True, action: str | None = None):
         """Initialize the formatter with configuration.
 
         Args:
             verbose: If True, include additional details in output
             preview_mode: If True, mode is "preview"; if False, mode is "execute"
+            action: Action type (compare, hardlink, symlink, delete)
         """
-        super().__init__(verbose, preview_mode)
+        super().__init__(verbose, preview_mode, action)
         self._data: dict = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "mode": "preview" if preview_mode else "execute",
@@ -825,6 +826,8 @@ class JsonActionFormatter(ActionFormatter):
         }
         # Track action type for execution results
         self._action_type = ""
+        # Track hash algorithm for compare mode JSON
+        self._hash_algorithm = "md5"
 
     def format_banner(self) -> None:
         """Format banner - in JSON mode, this is a no-op (mode is in data structure)."""
@@ -976,6 +979,14 @@ class JsonActionFormatter(ActionFormatter):
         self._data["directories"]["master"] = str(Path(master_dir).resolve())
         self._data["directories"]["duplicate"] = str(Path(duplicate_dir).resolve())
 
+    def set_hash_algorithm(self, algorithm: str) -> None:
+        """Set the hash algorithm for JSON output (used in compare mode).
+
+        Args:
+            algorithm: Hash algorithm name (md5, sha256)
+        """
+        self._hash_algorithm = algorithm
+
     def format_empty_result(self) -> None:
         """No-op for JSON - empty results represented in JSON structure."""
         pass
@@ -992,8 +1003,53 @@ class JsonActionFormatter(ActionFormatter):
         """Return empty string for JSON mode - banners not needed."""
         return ""
 
+    def _convert_statistics_to_summary(self) -> dict:
+        """Convert action-mode statistics to compare-mode summary format."""
+        stats = self._data.get("statistics", {})
+        return {
+            "matchCount": stats.get("groupCount", stats.get("summaryDuplicateGroups", 0)),
+            "matchedFilesDir1": stats.get("summaryDuplicateFiles", 0),
+            "matchedFilesDir2": stats.get("summaryDuplicateFiles", 0),
+            "unmatchedFilesDir1": 0,
+            "unmatchedFilesDir2": 0
+        }
+
     def finalize(self) -> None:
         """Finalize output by sorting collections and printing JSON."""
+        # Compare mode: produce JsonCompareFormatter-compatible schema
+        if self._action == "compare":
+            # Convert duplicateGroups to matches format for compare mode
+            matches = []
+            for group in self._data.get("duplicateGroups", []):
+                master = group.get("masterFile", "")
+                duplicates = [d["path"] for d in group.get("duplicates", [])]
+                # In compare mode, master goes to filesDir1, duplicates to filesDir2
+                match_entry = {
+                    "hash": group.get("hash", ""),
+                    "filesDir1": [master],
+                    "filesDir2": sorted(duplicates)
+                }
+                matches.append(match_entry)
+
+            # Sort matches by first file in filesDir1 for determinism
+            matches.sort(key=lambda m: m["filesDir1"][0] if m["filesDir1"] else "")
+
+            compare_data = {
+                "timestamp": self._data["timestamp"],
+                "directories": {
+                    "dir1": self._data["directories"].get("master", ""),
+                    "dir2": self._data["directories"].get("duplicate", "")
+                },
+                "hashAlgorithm": self._hash_algorithm,
+                "matches": matches,
+                "unmatchedDir1": [],
+                "unmatchedDir2": [],
+                "summary": self._convert_statistics_to_summary()
+            }
+            print(json.dumps(compare_data, indent=2))
+            return
+
+        # Action modes: use existing schema
         # Sort duplicateGroups by master file path for determinism
         self._data["duplicateGroups"].sort(key=lambda g: g["masterFile"])
 
@@ -2356,13 +2412,16 @@ def main() -> int:
         if args.json:
             action_formatter = JsonActionFormatter(
                 verbose=args.verbose,
-                preview_mode=not args.execute
+                preview_mode=not args.execute,
+                action=args.action
             )
             action_formatter.set_directories(args.dir1, args.dir2)
+            action_formatter.set_hash_algorithm(hash_algo)
         else:
             action_formatter = TextActionFormatter(
                 verbose=args.verbose,
                 preview_mode=True,
+                action=args.action,
                 color_config=color_config
             )
 
@@ -2549,6 +2608,7 @@ def main() -> int:
                     action_formatter_exec_header = TextActionFormatter(
                         verbose=args.verbose,
                         preview_mode=False,
+                        action=args.action,
                         color_config=color_config
                     )
                     action_formatter_exec_header.format_unified_header(args.action, args.dir1, args.dir2)
@@ -2595,6 +2655,7 @@ def main() -> int:
                 action_formatter_exec = TextActionFormatter(
                     verbose=args.verbose,
                     preview_mode=False,
+                    action=args.action,
                     color_config=color_config
                 )
                 action_formatter_exec.format_execution_summary(
