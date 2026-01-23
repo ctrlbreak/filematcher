@@ -522,24 +522,47 @@ class TextCompareFormatter(CompareFormatter):
         primary = sorted_dir1[0]
         # Count duplicates: all dir2 files + additional dir1 files (excluding primary)
         dup_count = len(sorted_dir2) + len(sorted_dir1) - 1
-        if self.verbose:
-            # Get file size for verbose mode
-            try:
-                size = os.path.getsize(primary)
-                size_str = format_file_size(size)
-                print(green(f"[MASTER] {primary} ({dup_count} duplicates, {size_str})", self.cc))
-            except OSError:
-                print(green(f"[MASTER] {primary} ({dup_count} duplicates)", self.cc))
-        else:
-            print(green(f"[MASTER] {primary}", self.cc))
 
-        # Additional dir1 files (indented, green) - also masters
+        # Build secondary files list with labels:
+        # - Additional dir1 files get MASTER label (same source as primary)
+        # - Dir2 files get DUPLICATE label
+        secondary_files: list[tuple[str, str]] = []
         for f in sorted_dir1[1:]:
-            print(green(f"    [MASTER] {f}", self.cc))
-
-        # Dir2 files (indented, yellow) - duplicates
+            secondary_files.append((f, "MASTER"))
         for f in sorted_dir2:
-            print(yellow(f"    [DUPLICATE] {f}", self.cc))
+            secondary_files.append((f, "DUPLICATE"))
+
+        # Build file_sizes dict for verbose mode
+        file_sizes: dict[str, int] | None = None
+        if self.verbose:
+            try:
+                file_sizes = {primary: os.path.getsize(primary)}
+            except OSError:
+                file_sizes = None
+
+        # Delegate to shared helper for line generation
+        lines = format_group_lines(
+            primary_file=primary,
+            secondary_files=secondary_files,
+            primary_label="MASTER",
+            verbose=self.verbose,
+            file_sizes=file_sizes,
+            dup_count=dup_count
+        )
+
+        # Apply colors and print
+        for line in lines:
+            if line.startswith("[MASTER]"):
+                # Primary master line (green)
+                print(green(line, self.cc))
+            elif "    [MASTER]" in line:
+                # Secondary master line (green)
+                print(green(line, self.cc))
+            elif "    [DUPLICATE]" in line:
+                # Duplicate line (yellow)
+                print(yellow(line, self.cc))
+            else:
+                print(line)
 
         # Hash as de-emphasized trailing detail (verbose only)
         if self.verbose:
