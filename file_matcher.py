@@ -109,6 +109,17 @@ class CompareFormatter(ABC):
         pass
 
     @abstractmethod
+    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
+        """Format and output the one-liner summary after header.
+
+        Args:
+            group_count: Number of duplicate groups found
+            duplicate_count: Total number of duplicate files
+            space_savings: Bytes reclaimable
+        """
+        pass
+
+    @abstractmethod
     def finalize(self) -> None:
         """Finalize output (e.g., flush buffers, close files)."""
         pass
@@ -133,6 +144,28 @@ class ActionFormatter(ABC):
     @abstractmethod
     def format_banner(self) -> None:
         """Format and output the mode banner (PREVIEW or EXECUTE)."""
+        pass
+
+    @abstractmethod
+    def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
+        """Format and output the unified mode header with directories.
+
+        Args:
+            action: Action type (hardlink, symlink, delete)
+            dir1: Master directory path
+            dir2: Duplicate directory path
+        """
+        pass
+
+    @abstractmethod
+    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
+        """Format and output the one-liner summary after header.
+
+        Args:
+            group_count: Number of duplicate groups found
+            duplicate_count: Total number of duplicate files
+            space_savings: Bytes reclaimable
+        """
         pass
 
     @abstractmethod
