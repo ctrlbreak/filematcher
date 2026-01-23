@@ -2254,9 +2254,9 @@ def main() -> int:
     if args.json and args.execute and not args.yes:
         parser.error("--json with --execute requires --yes flag to confirm (no interactive prompts in JSON mode)")
 
-    # Validate --execute requires --action
-    if args.execute and not args.action:
-        parser.error("--execute requires --action")
+    # Validate --execute not allowed with compare action (compare doesn't modify files)
+    if args.execute and args.action == 'compare':
+        parser.error("compare action doesn't modify files - remove --execute flag")
 
     # Validate --log requires --execute
     if args.log and not args.execute:
@@ -2266,9 +2266,9 @@ def main() -> int:
     if args.fallback_symlink and args.action != 'hardlink':
         parser.error("--fallback-symlink only applies to --action hardlink")
 
-    # Set master to first directory when --action is used
+    # Set master to first directory when a modifying action is used
     master_path = None
-    if args.action:
+    if args.action in ('hardlink', 'symlink', 'delete'):
         master_path = Path(args.dir1).resolve()
 
     # Configure logging based on verbosity and quiet mode
