@@ -97,10 +97,13 @@ Plans:
   3. Statistics include duplicate groups count, file counts, and space calculations
   4. All output routes through formatter abstraction (no direct print statements)
   5. Progress messages go to stderr, data output goes to stdout
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 07-01: TBD
+- [ ] 07-01-PLAN.md — Stream separation (stderr routing) and --quiet flag
+- [ ] 07-02-PLAN.md — Unified header format and summary line for both modes
+- [ ] 07-03-PLAN.md — Statistics footer in compare mode
+- [ ] 07-04-PLAN.md — Tests for output unification and README updates
 
 #### Phase 8: Color Enhancement
 **Goal**: TTY-aware color output highlighting key information
@@ -130,8 +133,8 @@ Plans:
 | 4. Audit Logging | v1.1 | 2/2 | Complete | 2026-01-20 |
 | 5. Formatter Abstraction | v1.2 | 3/3 | Complete | 2026-01-22 |
 | 6. JSON Output | v1.2 | 3/3 | Complete | 2026-01-23 |
-| 7. Output Unification | v1.2 | 0/? | Not started | - |
+| 7. Output Unification | v1.2 | 0/4 | Planning complete | - |
 | 8. Color Enhancement | v1.2 | 0/? | Not started | - |
 
 ---
-*Last updated: 2026-01-23 - Phase 6 complete*
+*Last updated: 2026-01-23 - Phase 7 planning complete*
