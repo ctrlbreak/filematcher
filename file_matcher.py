@@ -1718,8 +1718,10 @@ def main() -> int:
         master_path = Path(args.dir1).resolve()
 
     # Configure logging based on verbosity
+    # When --json is used, send log messages to stderr to keep stdout clean for JSON
     log_level = logging.DEBUG if args.verbose else logging.INFO
-    handler = logging.StreamHandler(sys.stdout)
+    log_stream = sys.stderr if args.json else sys.stdout
+    handler = logging.StreamHandler(log_stream)
     handler.setFormatter(logging.Formatter('%(message)s'))
     logger.handlers = [handler]
     logger.setLevel(log_level)
@@ -1777,7 +1779,14 @@ def main() -> int:
         execute_mode = args.action and args.execute
 
         # Create formatter for action mode (always in preview mode for print_preview_output)
-        action_formatter = TextActionFormatter(verbose=args.verbose, preview_mode=True)
+        if args.json:
+            action_formatter = JsonActionFormatter(
+                verbose=args.verbose,
+                preview_mode=not args.execute
+            )
+            action_formatter.set_directories(args.dir1, args.dir2)
+        else:
+            action_formatter = TextActionFormatter(verbose=args.verbose, preview_mode=True)
 
         # Helper function to print preview output
         def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
@@ -1799,7 +1808,8 @@ def main() -> int:
             else:
                 # Detailed output
                 if not matches:
-                    print("No duplicates found.")
+                    if not args.json:
+                        print("No duplicates found.")
                 else:
                     # Print warnings first
                     formatter.format_warnings(warnings)
@@ -1808,9 +1818,9 @@ def main() -> int:
                     sorted_results = sorted(master_results, key=lambda x: x[0])
 
                     for i, (master_file, duplicates, reason) in enumerate(sorted_results):
-                        # Build file_sizes dict for verbose mode
+                        # Build file_sizes dict for verbose mode (JSON always needs sizes)
                         file_sizes = None
-                        if args.verbose:
+                        if args.verbose or args.json:
                             all_paths = [master_file] + duplicates
                             file_sizes = {p: os.path.getsize(p) for p in all_paths}
 
@@ -1823,8 +1833,8 @@ def main() -> int:
                             cross_fs_files=cross_fs_to_show
                         )
 
-                        # Print blank line between groups (but not after the last one)
-                        if i < len(sorted_results) - 1:
+                        # Print blank line between groups (but not after the last one) - text mode only
+                        if i < len(sorted_results) - 1 and not args.json:
                             print()
 
                     # Print statistics footer
@@ -1842,84 +1852,179 @@ def main() -> int:
         # Preview mode (default when --action specified without --execute)
         if preview_mode:
             print_preview_output(action_formatter, show_banner=True)
+            action_formatter.finalize()
 
         # Execute mode (--action with --execute)
         elif execute_mode:
-            # First show preview so user sees what will happen
-            print_preview_output(action_formatter, show_banner=True)
-            print()
+            if args.json:
+                # JSON mode: skip preview, execute directly, output JSON with results
+                # Create audit logger
+                log_path = Path(args.log) if args.log else None
+                audit_logger, actual_log_path = create_audit_logger(log_path)
 
-            # Then show execute banner and prompt for confirmation
-            print(format_execute_banner())
+                # Build flags list for log header
+                flags = ['--execute', '--json', '--yes']
+                if args.verbose:
+                    flags.append('--verbose')
+                if args.fallback_symlink:
+                    flags.append('--fallback-symlink')
+                if args.log:
+                    flags.append(f'--log {args.log}')
 
-            # Calculate space savings for confirmation prompt
-            bytes_saved, dup_count, _ = calculate_space_savings(master_results)
-            cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
-            prompt = format_confirmation_prompt(dup_count, args.action, bytes_saved, cross_fs_count if args.fallback_symlink else 0)
-            if not confirm_execution(skip_confirm=args.yes, prompt=prompt):
-                print("Aborted. No changes made.")
-                return 0
+                # Write log header
+                write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
 
-            # Create audit logger
-            log_path = Path(args.log) if args.log else None
-            audit_logger, actual_log_path = create_audit_logger(log_path)
+                # Build hash lookup for logging
+                file_hash_lookup: dict[str, str] = {}
+                for file_hash, (files1, files2) in matches.items():
+                    for f in files1 + files2:
+                        file_hash_lookup[f] = file_hash
 
-            # Build flags list for log header
-            flags = ['--execute']
-            if args.verbose:
-                flags.append('--verbose')
-            if args.yes:
-                flags.append('--yes')
-            if args.fallback_symlink:
-                flags.append('--fallback-symlink')
-            if args.log:
-                flags.append(f'--log {args.log}')
+                # Execute actions with logging
+                success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
+                    master_results,
+                    args.action,
+                    fallback_symlink=args.fallback_symlink,
+                    verbose=args.verbose,
+                    audit_logger=audit_logger,
+                    file_hashes=file_hash_lookup
+                )
 
-            # Write log header
-            write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
+                # Write log footer
+                write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
 
-            # Build hash lookup for logging
-            file_hash_lookup: dict[str, str] = {}
-            for file_hash, (files1, files2) in matches.items():
-                for f in files1 + files2:
-                    file_hash_lookup[f] = file_hash
+                # Collect duplicate groups for JSON (need to rebuild since execution may have changed files)
+                # Sort master_results for determinism
+                sorted_results = sorted(master_results, key=lambda x: x[0])
+                for master_file, duplicates, reason in sorted_results:
+                    file_sizes = None
+                    if args.verbose or args.json:
+                        all_paths = [master_file] + duplicates
+                        file_sizes = {}
+                        for p in all_paths:
+                            try:
+                                file_sizes[p] = os.path.getsize(p)
+                            except OSError:
+                                file_sizes[p] = 0  # File may have been deleted/replaced
+                    cross_fs_to_show = cross_fs_files if args.action == 'hardlink' else None
+                    action_formatter.format_duplicate_group(
+                        master_file, duplicates,
+                        action=args.action,
+                        file_sizes=file_sizes,
+                        cross_fs_files=cross_fs_to_show
+                    )
 
-            # Execute actions with logging
-            success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
-                master_results,
-                args.action,
-                fallback_symlink=args.fallback_symlink,
-                verbose=args.verbose,
-                audit_logger=audit_logger,
-                file_hashes=file_hash_lookup
-            )
+                # Add statistics
+                bytes_saved_preview, dup_count, grp_count = calculate_space_savings(master_results)
+                cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+                action_formatter.format_statistics(
+                    group_count=grp_count,
+                    duplicate_count=dup_count,
+                    master_count=len(master_results),
+                    space_savings=bytes_saved_preview,
+                    action=args.action,
+                    cross_fs_count=cross_fs_count
+                )
 
-            # Write log footer
-            write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
+                # Add execution summary to JSON
+                action_formatter.format_execution_summary(
+                    success_count=success_count,
+                    failure_count=failure_count,
+                    skipped_count=skipped_count,
+                    space_saved=space_saved,
+                    log_path=str(actual_log_path),
+                    failed_list=failed_list
+                )
 
-            # Print execution summary via formatter
-            action_formatter_exec = TextActionFormatter(verbose=args.verbose, preview_mode=False)
-            action_formatter_exec.format_execution_summary(
-                success_count=success_count,
-                failure_count=failure_count,
-                skipped_count=skipped_count,
-                space_saved=space_saved,
-                log_path=str(actual_log_path),
-                failed_list=failed_list
-            )
+                action_formatter.finalize()
+                return determine_exit_code(success_count, failure_count)
 
-            # Return appropriate exit code
-            return determine_exit_code(success_count, failure_count)
+            else:
+                # Text mode: show preview first, then execute
+                # First show preview so user sees what will happen
+                print_preview_output(action_formatter, show_banner=True)
+                print()
+
+                # Then show execute banner and prompt for confirmation
+                print(format_execute_banner())
+
+                # Calculate space savings for confirmation prompt
+                bytes_saved, dup_count, _ = calculate_space_savings(master_results)
+                cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+                prompt = format_confirmation_prompt(dup_count, args.action, bytes_saved, cross_fs_count if args.fallback_symlink else 0)
+                if not confirm_execution(skip_confirm=args.yes, prompt=prompt):
+                    print("Aborted. No changes made.")
+                    return 0
+
+                # Create audit logger
+                log_path = Path(args.log) if args.log else None
+                audit_logger, actual_log_path = create_audit_logger(log_path)
+
+                # Build flags list for log header
+                flags = ['--execute']
+                if args.verbose:
+                    flags.append('--verbose')
+                if args.yes:
+                    flags.append('--yes')
+                if args.fallback_symlink:
+                    flags.append('--fallback-symlink')
+                if args.log:
+                    flags.append(f'--log {args.log}')
+
+                # Write log header
+                write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
+
+                # Build hash lookup for logging
+                file_hash_lookup: dict[str, str] = {}
+                for file_hash, (files1, files2) in matches.items():
+                    for f in files1 + files2:
+                        file_hash_lookup[f] = file_hash
+
+                # Execute actions with logging
+                success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
+                    master_results,
+                    args.action,
+                    fallback_symlink=args.fallback_symlink,
+                    verbose=args.verbose,
+                    audit_logger=audit_logger,
+                    file_hashes=file_hash_lookup
+                )
+
+                # Write log footer
+                write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
+
+                # Print execution summary via formatter
+                action_formatter_exec = TextActionFormatter(verbose=args.verbose, preview_mode=False)
+                action_formatter_exec.format_execution_summary(
+                    success_count=success_count,
+                    failure_count=failure_count,
+                    skipped_count=skipped_count,
+                    space_saved=space_saved,
+                    log_path=str(actual_log_path),
+                    failed_list=failed_list
+                )
+
+                # Return appropriate exit code
+                return determine_exit_code(success_count, failure_count)
 
     else:
-        # Original output format (no master mode)
-        compare_formatter = TextCompareFormatter(
-            verbose=args.verbose,
-            dir1_name=args.dir1,
-            dir2_name=args.dir2
-        )
+        # Original output format (no master mode / compare mode)
+        if args.json:
+            compare_formatter = JsonCompareFormatter(
+                verbose=args.verbose,
+                dir1_name=args.dir1,
+                dir2_name=args.dir2
+            )
+            compare_formatter.format_header(args.dir1, args.dir2, hash_algo)
+        else:
+            compare_formatter = TextCompareFormatter(
+                verbose=args.verbose,
+                dir1_name=args.dir1,
+                dir2_name=args.dir2
+            )
 
         if args.summary:
+            # Summary mode: only show statistics
             compare_formatter.format_summary(
                 match_count=len(matches),
                 matched_files1=matched_files1,
@@ -1928,27 +2033,40 @@ def main() -> int:
                 unmatched2=len(unmatched2)
             )
 
-            if args.show_unmatched:
+            if args.show_unmatched and not args.json:
                 print(f"\nUnmatched files summary:")
                 print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
                 print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
         else:
             # Detailed output
             if not matches:
-                print("No matching files found.")
+                if not args.json:
+                    print("No matching files found.")
             else:
-                print(f"\nFound {len(matches)} hashes with matching files:\n")
+                if not args.json:
+                    print(f"\nFound {len(matches)} hashes with matching files:\n")
                 # Sort hash keys for deterministic output (OUT-04)
                 for file_hash in sorted(matches.keys()):
                     files1, files2 = matches[file_hash]
                     compare_formatter.format_match_group(file_hash, files1, files2)
 
             # Optionally display unmatched files (detailed mode)
-            if args.show_unmatched and not args.summary:
-                print("\nFiles with no content matches:")
-                print("==============================")
+            if args.show_unmatched:
+                if not args.json:
+                    print("\nFiles with no content matches:")
+                    print("==============================")
                 compare_formatter.format_unmatched(args.dir1, unmatched1)
                 compare_formatter.format_unmatched(args.dir2, unmatched2)
+
+            # Always call format_summary for JSON to ensure summary field is populated
+            if args.json:
+                compare_formatter.format_summary(
+                    match_count=len(matches),
+                    matched_files1=matched_files1,
+                    matched_files2=matched_files2,
+                    unmatched1=len(unmatched1),
+                    unmatched2=len(unmatched2)
+                )
 
         compare_formatter.finalize()
 
