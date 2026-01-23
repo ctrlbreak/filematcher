@@ -961,10 +961,27 @@ class TextActionFormatter(ActionFormatter):
     These functions are already battle-tested and produce the expected format.
     """
 
+    def __init__(
+        self,
+        verbose: bool = False,
+        preview_mode: bool = True,
+        color_config: ColorConfig | None = None
+    ):
+        """Initialize the formatter with configuration.
+
+        Args:
+            verbose: If True, show additional details in output
+            preview_mode: If True, format for preview; if False, format for execution
+            color_config: Color configuration (default: no color)
+        """
+        super().__init__(verbose, preview_mode)
+        self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
+
     def format_banner(self) -> None:
         """Format and output the mode banner (PREVIEW or EXECUTE)."""
         if self.preview_mode:
-            print(format_preview_banner())
+            # PREVIEW banner in bold yellow (attention-grabbing safety warning)
+            print(bold_yellow(format_preview_banner(), self.cc))
         else:
             print(format_execute_banner())
         print()
@@ -972,12 +989,14 @@ class TextActionFormatter(ActionFormatter):
     def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
         """Format unified header showing mode, state, action and directories."""
         state = "PREVIEW" if self.preview_mode else "EXECUTING"
-        print(f"Action mode ({state}): {action} {dir1} vs {dir2}")
+        header = f"Action mode ({state}): {action} {dir1} vs {dir2}"
+        print(cyan(header, self.cc))
 
     def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
         """Format one-liner summary after header."""
         space_str = format_file_size(space_savings)
-        print(f"Found {group_count} duplicate groups ({duplicate_count} files, {space_str} reclaimable)")
+        summary = f"Found {group_count} duplicate groups ({duplicate_count} files, {space_str} reclaimable)"
+        print(cyan(summary, self.cc))
         print()  # Blank line after summary
 
     def format_warnings(self, warnings: list[str]) -> None:
@@ -987,7 +1006,8 @@ class TextActionFormatter(ActionFormatter):
             warnings: List of warning messages
         """
         for warning in warnings:
-            print(warning)
+            # Warnings in red (attention needed)
+            print(red(warning, self.cc))
         if warnings:
             print()
 
@@ -1001,7 +1021,10 @@ class TextActionFormatter(ActionFormatter):
     ) -> None:
         """Format and output a duplicate group.
 
-        Delegates to existing format_duplicate_group function.
+        Delegates to existing format_duplicate_group function and applies colors:
+        - Master file paths in green (protected)
+        - Duplicate file paths in yellow (removal candidates)
+        - Cross-filesystem warnings in red
 
         Args:
             master_file: Path to the master file (preserved)
@@ -1022,7 +1045,21 @@ class TextActionFormatter(ActionFormatter):
             preview_mode=self.preview_mode
         )
         for line in lines:
-            print(line)
+            if line.startswith("[MASTER]"):
+                # Master file path in green (protected)
+                print(green(line, self.cc))
+            elif line.startswith("    ["):
+                # Duplicate file path in yellow (removal candidate)
+                # Check for cross-fs warning and color that part red
+                if "[!cross-fs]" in line:
+                    # Split and color the warning part red
+                    main_part = line.replace(" [!cross-fs]", "")
+                    warning_part = " [!cross-fs]"
+                    print(yellow(main_part, self.cc) + red(warning_part, self.cc))
+                else:
+                    print(yellow(line, self.cc))
+            else:
+                print(line)
 
     def format_statistics(
         self,
@@ -1035,7 +1072,8 @@ class TextActionFormatter(ActionFormatter):
     ) -> None:
         """Format and output statistics footer.
 
-        Delegates to existing format_statistics_footer function.
+        Delegates to existing format_statistics_footer function and applies colors:
+        - Statistics header in cyan
 
         Args:
             group_count: Number of duplicate groups
@@ -1057,7 +1095,10 @@ class TextActionFormatter(ActionFormatter):
             preview_mode=self.preview_mode
         )
         for line in lines:
-            print(line)
+            if line == "--- Statistics ---":
+                print(cyan(line, self.cc))
+            else:
+                print(line)
 
     def format_execution_summary(
         self,
