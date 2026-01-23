@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import argparse
+from enum import Enum
 import hashlib
 import logging
 import os
@@ -44,6 +45,89 @@ DIM = "\033[2m"         # De-emphasis (hash values)
 
 # Compound styles
 BOLD_YELLOW = "\033[1;33m"  # PREVIEW MODE banner
+
+
+# ============================================================================
+# Color Configuration
+# ============================================================================
+
+class ColorMode(Enum):
+    """Color output mode."""
+    AUTO = "auto"      # Enable color if TTY and no NO_COLOR
+    NEVER = "never"    # Never use color
+    ALWAYS = "always"  # Always use color (even in pipes)
+
+
+class ColorConfig:
+    """Determines whether to use color based on mode, environment, and TTY.
+
+    Follows NO_COLOR standard (https://no-color.org/) and common CLI conventions.
+
+    Priority order:
+    1. Explicit mode (NEVER or ALWAYS) from --color/--no-color flags
+    2. NO_COLOR environment variable (disables color)
+    3. FORCE_COLOR environment variable (enables color, for CI systems)
+    4. TTY detection on the output stream
+    """
+
+    def __init__(
+        self,
+        mode: ColorMode = ColorMode.AUTO,
+        stream: object = None
+    ):
+        """Initialize color configuration.
+
+        Args:
+            mode: Color mode (AUTO, NEVER, ALWAYS)
+            stream: Output stream for TTY detection (default: sys.stdout)
+        """
+        self.mode = mode
+        self.stream = stream if stream is not None else sys.stdout
+        self._enabled: bool | None = None
+
+    @property
+    def enabled(self) -> bool:
+        """Determine if color should be used.
+
+        Returns:
+            True if color output should be used, False otherwise.
+        """
+        # Use cached value if already computed
+        if self._enabled is not None:
+            return self._enabled
+
+        # NEVER mode: always disabled
+        if self.mode == ColorMode.NEVER:
+            self._enabled = False
+            return False
+
+        # ALWAYS mode: always enabled (explicit user intent overrides environment)
+        if self.mode == ColorMode.ALWAYS:
+            self._enabled = True
+            return True
+
+        # AUTO mode: check environment and TTY
+        # NO_COLOR takes precedence (standard compliance)
+        if os.environ.get('NO_COLOR'):
+            self._enabled = False
+            return False
+
+        # FORCE_COLOR enables (used by CI systems like GitHub Actions)
+        if os.environ.get('FORCE_COLOR'):
+            self._enabled = True
+            return True
+
+        # TTY detection
+        try:
+            self._enabled = self.stream.isatty()
+        except AttributeError:
+            self._enabled = False
+
+        return self._enabled
+
+    def reset(self) -> None:
+        """Reset cached enabled state (for testing)."""
+        self._enabled = None
 
 
 # ============================================================================
