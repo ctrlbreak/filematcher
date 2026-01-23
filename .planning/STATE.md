@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** Phase 6 - JSON Output (COMPLETE)
+**Current focus:** Phase 7 - Output Unification (IN PROGRESS)
 
 ## Current Position
 
-Phase: 6 of 8 (JSON Output) - COMPLETE
-Plan: 3 of 3 complete
-Status: Phase complete
-Last activity: 2026-01-23 - Completed 06-03-PLAN.md (tests and documentation)
+Phase: 7 of 8 (Output Unification)
+Plan: 1 of 3 complete
+Status: In progress
+Last activity: 2026-01-23 - Completed 07-01-PLAN.md (stream separation and quiet flag)
 
-Progress: [███████░░░] 65% (v1.1 complete: 4 phases, v1.2: 2/4 phases complete)
+Progress: [████████░░] 75% (v1.1 complete: 4 phases, v1.2: 2.3/4 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 18 (v1.1: 12, v1.2: 6)
-- Phase 6 plan 3 duration: 4 min (2 tasks)
-- Total execution time: v1.1: 2 days, v1.2: ~25 min (so far)
+- Total plans completed: 19 (v1.1: 12, v1.2: 7)
+- Phase 7 plan 1 duration: 5 min (3 tasks)
+- Total execution time: v1.1: 2 days, v1.2: ~30 min (so far)
 
 **By Phase:**
 
@@ -33,7 +33,7 @@ Progress: [███████░░░] 65% (v1.1 complete: 4 phases, v1.2: 2
 | 4. Audit Logging | 2 | Complete (v1.1) |
 | 5. Formatter Abstraction | 3 | Complete (v1.2) |
 | 6. JSON Output | 3 | Complete (v1.2) |
-| 7. Output Unification | TBD | Not started |
+| 7. Output Unification | 3 | 1/3 complete |
 | 8. Color Enhancement | TBD | Not started |
 
 **Recent Trend:**
@@ -43,6 +43,7 @@ Progress: [███████░░░] 65% (v1.1 complete: 4 phases, v1.2: 2
 - 06-01 completed: 2 min (2 tasks, JSON formatter classes)
 - 06-02 completed: 3 min (3 tasks, --json flag and wiring)
 - 06-03 completed: 4 min (2 tasks, tests and documentation)
+- 07-01 completed: 5 min (3 tasks, stderr routing + --quiet flag)
 
 ## Accumulated Context
 
@@ -79,6 +80,14 @@ Phase 6 decisions:
 | Test via subprocess and mock | Subprocess for true CLI behavior, mock for faster unit tests | 06-03 |
 | Schema documentation tables | Clear field/type/description presentation in README | 06-03 |
 
+Phase 7 decisions:
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| stderr for all modes | Unix convention: status/progress to stderr, data to stdout | 07-01 |
+| --quiet uses ERROR level | Only errors get through; suppresses INFO/DEBUG | 07-01 |
+| --quiet precedence over --verbose | Explicit user intent for silence | 07-01 |
+
 ### Critical Research Insights
 
 From research/SUMMARY.md:
@@ -94,24 +103,21 @@ From research/SUMMARY.md:
 
 ### Blockers/Concerns
 
-**Phase 6 status (COMPLETE):**
-- [x] JsonCompareFormatter implemented (plan 06-01)
-- [x] JsonActionFormatter implemented (plan 06-01)
-- [x] --json flag wiring in main() (plan 06-02)
-- [x] Flag interaction matrix verified (--json with --summary, --verbose, --action, --execute)
-- [x] Tests for JSON output (plan 06-03) - 31 tests
-- [x] Documentation with schema and jq examples (plan 06-03)
+**Phase 7 status (IN PROGRESS):**
+- [x] Stream separation: logger to stderr in all modes (plan 07-01)
+- [x] --quiet/-q flag implemented (plan 07-01)
+- [ ] Unified header system (plan 07-02)
+- [ ] Summary statistics unification (plan 07-03)
 
-**Phase 7 considerations:**
-- JSON output is now available and stable with full test coverage
-- README documents JSON schema for users
-- Ready to proceed with output unification
+**Next steps:**
+- Plan 07-02: Unified header/banner system
+- Plan 07-03: Summary statistics unification
 
 ## Session Continuity
 
 Last session: 2026-01-23 (plan execution)
-Stopped at: Completed 06-03-PLAN.md - Phase 6 complete
+Stopped at: Completed 07-01-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-01-23 after 06-03 completion*
+*Last updated: 2026-01-23 after 07-01 completion*
