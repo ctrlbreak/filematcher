@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** Phase 10 - Unify Compare as Action
+**Current focus:** v1.3 Complete - All planned phases finished
 
 ## Current Position
 
 Phase: 10 of 10 (Unify Compare as Action)
-Plan: 3 of 3
-Status: Phase complete
-Last activity: 2026-01-23 - Completed 10-03-PLAN.md
+Plan: 4 of 4 (Cleanup)
+Status: All phases complete
+Last activity: 2026-01-23 - Completed 10-04-PLAN.md (cleanup dead code)
 
-Progress: [██████████] 100% (v1.1: 4 phases, v1.2: 5 phases, v1.3: complete)
+Progress: [##########] 100% (v1.1: 4 phases, v1.2: 5 phases, v1.3: 4 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 29 (v1.1: 12, v1.2: 14, v1.3: 3)
-- Phase 10 plan 3 duration: 8 min (3 tasks)
-- Total execution time: v1.1: 2 days, v1.2: ~61 min, v1.3: ~14 min
+- Total plans completed: 30 (v1.1: 12, v1.2: 14, v1.3: 4)
+- Phase 10 plan 4 duration: 3 min (5 tasks)
+- Total execution time: v1.1: 2 days, v1.2: ~61 min, v1.3: ~17 min
 
 **By Phase:**
 
@@ -36,7 +36,7 @@ Progress: [██████████] 100% (v1.1: 4 phases, v1.2: 5 phases,
 | 7. Output Unification | 4 | Complete (v1.2) |
 | 8. Color Enhancement | 3 | Complete (v1.2) |
 | 9. Unify Group Output | 1 | Complete (v1.2) |
-| 10. Unify Compare as Action | 3/3 | Complete (v1.3) |
+| 10. Unify Compare as Action | 4/4 | Complete (v1.3) |
 
 **Recent Trend:**
 - 08-01 completed: 1 min (3 tasks, color infrastructure)
@@ -46,6 +46,7 @@ Progress: [██████████] 100% (v1.1: 4 phases, v1.2: 5 phases,
 - 10-01 completed: 2 min (3 tasks, compare action + validation)
 - 10-02 completed: 4 min (3 tasks, ActionFormatter compare support)
 - 10-03 completed: 8 min (3 tasks, unified main flow)
+- 10-04 completed: 3 min (5 tasks, cleanup dead code, 513 lines removed)
 
 ## Accumulated Context
 
@@ -132,6 +133,8 @@ Phase 10 decisions:
 | JsonActionFormatter stores hash algorithm | Needed for compare mode JSON schema | 10-02 |
 | master_path always set for unified flow | All modes flow through same code path | 10-03 |
 | format_compare_summary/format_unmatched_section methods | Compare mode needs different output format | 10-03 |
+| Delete CompareFormatter hierarchy entirely | No longer needed after ActionFormatter unification | 10-04 |
+| Single ActionFormatter hierarchy for all modes | compare, hardlink, symlink, delete all use same code path | 10-04 |
 
 ### Critical Research Insights
 
@@ -190,7 +193,7 @@ All phases complete:
 
 ## Roadmap Evolution
 
-- **2026-01-23**: Phase 10 complete: Unified compare as action (v1.3 complete)
+- **2026-01-23**: Phase 10 plan 4 complete: Cleanup dead code (513 lines removed)
 - **2026-01-23**: Phase 10 plan 3 complete: Unified main flow
 - **2026-01-23**: Phase 10 plan 2 complete: ActionFormatter supports compare action
 - **2026-01-23**: Phase 10 plan 1 complete: compare action added to argparse
@@ -200,16 +203,21 @@ All phases complete:
 ### v1.3 Complete
 
 **Phase 10 - Unify Compare as Action:**
-- compare added to --action choices as default
-- ActionFormatter extended to handle compare mode
-- Unified main() code path for all action types
-- Dead CompareFormatter code path ready for cleanup
+- Plan 01: compare added to --action choices as default
+- Plan 02: ActionFormatter extended to handle compare mode
+- Plan 03: Unified main() code path for all action types
+- Plan 04: Cleanup - deleted 513 lines of dead CompareFormatter code
+
+**Final codebase:**
+- Single ActionFormatter hierarchy handles all modes (compare, hardlink, symlink, delete)
+- file_matcher.py reduced from 2951 to 2438 lines
+- All 198 tests pass
 
 ## Session Continuity
 
 Last session: 2026-01-23
-Stopped at: Completed 10-03-PLAN.md (Phase 10 complete)
+Stopped at: Completed 10-04-PLAN.md (v1.3 complete, all phases finished)
 Resume file: None
 
 ---
-*Last updated: 2026-01-23 - Phase 10 complete, v1.3 finished*
+*Last updated: 2026-01-23 - Phase 10 plan 4 complete, v1.3 finished*
