@@ -169,7 +169,7 @@ class TestExecuteAction(unittest.TestCase):
         )
         self.assertTrue(success)
         self.assertEqual(action_used, "skipped")
-        self.assertIn("already linked", error)
+        self.assertIn("hardlink to master", error)
 
     def test_hardlink_success(self):
         """Successful hardlink execution."""
