@@ -43,6 +43,13 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Quick Tasks Completed
 
+### Quick 005: Clean Up Test Logs (2026-01-23)
+
+- Test logs redirected to .logs_test/ via FILEMATCHER_LOG_DIR env var
+- create_audit_logger respects FILEMATCHER_LOG_DIR environment variable
+- run_tests.py creates/clears .logs_test/ at test start
+- .logs_test/ added to .gitignore
+
 ### Quick 004: Skip Files Already Symlinked/Hardlinked (2026-01-23)
 
 - Added is_symlink_to() and is_hardlink_to() detection functions
@@ -56,8 +63,8 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Session Continuity
 
-Last session: 2026-01-23 23:34
-Stopped at: Completed quick task 004
+Last session: 2026-01-23 23:55
+Stopped at: Completed quick task 005
 Resume file: None
 
 ## Next Steps
@@ -65,4 +72,4 @@ Resume file: None
 Run `/gsd:new-milestone` to start next milestone (questioning → research → requirements → roadmap)
 
 ---
-*Last updated: 2026-01-23 - Quick task 004 complete*
+*Last updated: 2026-01-23 - Quick task 005 complete*
