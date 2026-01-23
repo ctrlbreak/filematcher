@@ -93,6 +93,22 @@ class CompareFormatter(ABC):
         pass
 
     @abstractmethod
+    def format_statistics(
+        self,
+        group_count: int,
+        file_count: int,
+        space_savings: int
+    ) -> None:
+        """Format and output the statistics footer.
+
+        Args:
+            group_count: Number of unique content hashes with matches
+            file_count: Total number of files involved in matches
+            space_savings: Bytes potentially reclaimable (0 if not computed)
+        """
+        pass
+
+    @abstractmethod
     def finalize(self) -> None:
         """Finalize output (e.g., flush buffers, close files)."""
         pass
