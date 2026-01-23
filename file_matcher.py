@@ -109,6 +109,20 @@ class CompareFormatter(ABC):
         pass
 
     @abstractmethod
+    def format_empty_result(self, mode: str = "compare") -> None:
+        """Format message when no matches found.
+
+        Args:
+            mode: "compare" for compare mode, "dedup" for dedup mode
+        """
+        pass
+
+    @abstractmethod
+    def format_unmatched_header(self) -> None:
+        """Format the header for unmatched files section."""
+        pass
+
+    @abstractmethod
     def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
         """Format and output the one-liner summary after header.
 
@@ -242,6 +256,21 @@ class ActionFormatter(ABC):
         pass
 
     @abstractmethod
+    def format_user_abort(self) -> None:
+        """Format message when user aborts execution."""
+        pass
+
+    @abstractmethod
+    def format_execute_prompt_separator(self) -> None:
+        """Format blank line/separator before execute prompt."""
+        pass
+
+    @abstractmethod
+    def format_execute_banner_line(self) -> str:
+        """Return the execute banner text (for caller to print or embed)."""
+        pass
+
+    @abstractmethod
     def finalize(self) -> None:
         """Finalize output (e.g., flush buffers, close files)."""
         pass
@@ -325,6 +354,18 @@ class TextCompareFormatter(CompareFormatter):
             print(f"Space reclaimable: {format_file_size(space_savings)}")
         else:
             print("Space reclaimable: (run with --action to calculate)")
+
+    def format_empty_result(self, mode: str = "compare") -> None:
+        """Format message when no matches found."""
+        if mode == "dedup":
+            print("No duplicates found.")
+        else:
+            print("No matching files found.")
+
+    def format_unmatched_header(self) -> None:
+        """Format the header for unmatched files section."""
+        print("\nFiles with no content matches:")
+        print("==============================")
 
     def finalize(self) -> None:
         """Finalize output. Text output is immediate, so nothing to do."""
@@ -471,6 +512,14 @@ class JsonCompareFormatter(CompareFormatter):
         self._data["summary"]["duplicateGroups"] = group_count
         self._data["summary"]["duplicateFiles"] = duplicate_count
         self._data["summary"]["spaceReclaimable"] = space_savings
+
+    def format_empty_result(self, mode: str = "compare") -> None:
+        """No-op for JSON - empty results represented in JSON structure."""
+        pass
+
+    def format_unmatched_header(self) -> None:
+        """No-op for JSON - section headers not needed."""
+        pass
 
     def finalize(self) -> None:
         """Finalize output by sorting collections and printing JSON."""
@@ -667,6 +716,18 @@ class JsonActionFormatter(ActionFormatter):
         self._data["directories"]["master"] = str(Path(master_dir).resolve())
         self._data["directories"]["duplicate"] = str(Path(duplicate_dir).resolve())
 
+    def format_user_abort(self) -> None:
+        """No-op for JSON - abort status represented in JSON structure."""
+        pass
+
+    def format_execute_prompt_separator(self) -> None:
+        """No-op for JSON - visual separators not needed."""
+        pass
+
+    def format_execute_banner_line(self) -> str:
+        """Return empty string for JSON mode - banners not needed."""
+        return ""
+
     def finalize(self) -> None:
         """Finalize output by sorting collections and printing JSON."""
         # Sort duplicateGroups by master file path for determinism
@@ -817,6 +878,18 @@ class TextActionFormatter(ActionFormatter):
             print("Failed files:")
             for path, error in sorted(failed_list):  # Sorted for determinism (OUT-04)
                 print(f"  - {path}: {error}")
+
+    def format_user_abort(self) -> None:
+        """Format message when user aborts execution."""
+        print("Aborted. No changes made.")
+
+    def format_execute_prompt_separator(self) -> None:
+        """Format blank line/separator before execute prompt."""
+        print()
+
+    def format_execute_banner_line(self) -> str:
+        """Return the execute banner text."""
+        return format_execute_banner()
 
     def finalize(self) -> None:
         """Finalize output. Text output is immediate, so nothing to do."""
