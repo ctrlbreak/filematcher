@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Python CLI utility that finds files with identical content across two directory hierarchies and deduplicates them using hard links, symbolic links, or deletion. Features preview-by-default safety, master directory protection, and comprehensive audit logging.
+A Python CLI utility that finds files with identical content across two directory hierarchies and deduplicates them using hard links, symbolic links, or deletion. Features preview-by-default safety, master directory protection, comprehensive audit logging, JSON output for scripting, and TTY-aware color output.
 
 ## Core Value
 
@@ -29,23 +29,18 @@ Safely deduplicate files across directories while preserving the master copy and
 - ✓ Preview mode by default (--execute required for changes) — v1.1
 - ✓ Confirmation prompt before execution — v1.1
 - ✓ Log all modifications (file path, action taken, target) — v1.1
+- ✓ Unified output format across compare and action modes — v1.3
+- ✓ Statistics shown in all modes — v1.3
+- ✓ JSON output format for scripting (`--json` flag) — v1.3
+- ✓ TTY-aware color output with `--color`/`--no-color` flags — v1.3
+- ✓ Progress to stderr, data to stdout (Unix convention) — v1.3
+- ✓ Deterministic output ordering — v1.3
 
 ### Active
 
 <!-- Current scope. Building toward these. -->
 
-- [ ] Unified output format across compare and action modes
-- [ ] Statistics shown in all modes
-- [ ] JSON output format for scripting (`--json` flag)
-
-## Current Milestone: v1.2 Output Rationalisation
-
-**Goal:** Unify output formatting across modes and add machine-readable JSON output.
-
-**Target features:**
-- Consistent output structure between compare mode and action mode
-- Statistics footer in all modes (not just action mode)
-- JSON output option for scripting and pipelines
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -57,17 +52,20 @@ Safely deduplicate files across directories while preserving the master copy and
 - Multi-directory (3+) comparison — current two-directory model sufficient
 - GUI interface — CLI-focused tool
 - Undo/rollback functionality — log file serves as record; manual recovery
+- CSV/XML output — JSON is more flexible; CSV can be derived from JSON with jq
+- Interactive output selection — flags are sufficient
+- Progress bars — current verbose mode sufficient; adds dependency complexity
 
 ## Context
 
-**Current state:** v1.1 shipped with full deduplication capability. Starting v1.2 for output rationalisation.
+**Current state:** v1.3 shipped with unified output architecture.
 
-- 1,374 lines Python (file_matcher.py)
-- 1,996 lines tests (114 tests, all passing)
+- 2,455 lines Python (file_matcher.py)
+- 3,542 lines tests (198 tests, all passing)
 - Pure Python standard library (no external dependencies)
 - Python 3.9+ compatibility
 
-**Architecture:** Single-file implementation (`file_matcher.py`) with functional design, CLI parsing via argparse, logging via standard library.
+**Architecture:** Single-file implementation (`file_matcher.py`) with ActionFormatter hierarchy for all output modes (compare, hardlink, symlink, delete). CLI parsing via argparse, logging via standard library.
 
 **Tech stack:**
 - argparse for CLI
@@ -75,6 +73,7 @@ Safely deduplicate files across directories while preserving the master copy and
 - pathlib for file operations
 - os.link/symlink for deduplication actions
 - logging module for audit trails
+- ActionFormatter ABC with Text/JSON implementations
 
 ## Constraints
 
@@ -92,6 +91,12 @@ Safely deduplicate files across directories while preserving the master copy and
 | Temp-rename safety pattern | Atomic operations prevent data loss on failure | ✓ Good |
 | Separate audit logger | Avoids mixing audit logs with console output | ✓ Good |
 | Exit codes 0/1/2/3 | Clear signal for success/all-fail/validation/partial | ✓ Good |
+| ActionFormatter ABC hierarchy | Single code path for all modes; 513 lines removed | ✓ Good |
+| compare is default action | Always have meaningful action value, unified CLI model | ✓ Good |
+| JSON accumulator pattern | format_* methods collect data, finalize() serializes | ✓ Good |
+| stderr for progress/status | Unix convention enables clean piping of data output | ✓ Good |
+| 16-color ANSI codes | Maximum terminal compatibility vs 256-color/truecolor | ✓ Good |
+| NO_COLOR environment support | Industry standard (no-color.org) for accessibility | ✓ Good |
 
 ---
-*Last updated: 2026-01-22 after v1.2 milestone start*
+*Last updated: 2026-01-23 after v1.3 milestone*

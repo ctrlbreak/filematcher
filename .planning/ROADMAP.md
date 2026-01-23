@@ -3,8 +3,7 @@
 ## Milestones
 
 - ✅ **v1.1 Deduplication** - Phases 1-4 (shipped 2026-01-20)
-- ✅ **v1.2 Output Rationalisation** - Phases 5-9 (shipped 2026-01-23)
-- ✅ **v1.3 Code Unification** - Phase 10 (shipped 2026-01-23)
+- ✅ **v1.3 Code Unification** - Phases 5-10 (shipped 2026-01-23)
 
 ## Phases
 
@@ -49,120 +48,78 @@ Plans:
 
 </details>
 
-### 🚧 v1.2 Output Rationalisation
+<details>
+<summary>✅ v1.3 Code Unification (Phases 5-10) - SHIPPED 2026-01-23</summary>
 
-**Milestone Goal:** Unify output formatting across modes and add machine-readable JSON output for scripting and automation.
-
-#### Phase 5: Formatter Abstraction ✓
-**Goal**: Create unified output abstraction layer without changing user-visible behavior
-**Depends on**: Phase 4
+### Phase 5: Formatter Abstraction
+**Goal**: Create unified output abstraction layer
 **Requirements**: OUT-04
-**Success Criteria** (what must be TRUE):
-  1. OutputFormatter ABC hierarchy exists (CompareFormatter, ActionFormatter)
-  2. TextFormatter implementations wrap existing format functions and produce identical output
-  3. All existing tests pass without modification
-  4. Output is deterministic across multiple runs with same input
 **Plans**: 3 plans
 **Completed**: 2026-01-22
 
 Plans:
-- [x] 05-01-PLAN.md — Define ABC hierarchy (CompareFormatter, ActionFormatter) and TextFormatter implementations
-- [x] 05-02-PLAN.md — Wire TextActionFormatter into main() action mode branches
-- [x] 05-03-PLAN.md — Wire TextCompareFormatter into main() compare mode branches
+- [x] 05-01: Define ABC hierarchy and Text implementations
+- [x] 05-02: Wire TextActionFormatter into main()
+- [x] 05-03: Wire TextCompareFormatter into main()
 
-#### Phase 6: JSON Output ✓
-**Goal**: Expose JSON output through CLI with stable schema and comprehensive metadata
-**Depends on**: Phase 5
+### Phase 6: JSON Output
+**Goal**: Expose JSON output through CLI
 **Requirements**: JSON-01, JSON-02, JSON-03, JSON-04
-**Success Criteria** (what must be TRUE):
-  1. User can run `filematcher dir1 dir2 --json` and receive valid JSON output
-  2. JSON schema is documented with version field and examples
-  3. JSON includes rich metadata (file sizes, hashes, timestamps, action types)
-  4. `--json` works correctly with all existing flags (--summary, --verbose, --action, --execute)
-  5. Text output remains unchanged (no breaking changes to default format)
 **Plans**: 3 plans
 **Completed**: 2026-01-23
 
 Plans:
-- [x] 06-01-PLAN.md — Implement JsonCompareFormatter and JsonActionFormatter classes
-- [x] 06-02-PLAN.md — Add --json CLI flag and wire formatters into main()
-- [x] 06-03-PLAN.md — JSON output tests and README schema documentation
+- [x] 06-01: Implement Json formatters
+- [x] 06-02: Add --json CLI flag
+- [x] 06-03: Tests and documentation
 
-#### Phase 7: Output Unification ✓
-**Goal**: Consistent output structure across compare and action modes with statistics in all modes
-**Depends on**: Phase 6
+### Phase 7: Output Unification
+**Goal**: Consistent output structure with statistics
 **Requirements**: OUT-01, OUT-02, OUT-03
-**Success Criteria** (what must be TRUE):
-  1. Compare mode and action mode use identical output structure (same sections, same ordering)
-  2. Statistics footer appears in all modes (compare, action preview, action execute)
-  3. Statistics include duplicate groups count, file counts, and space calculations
-  4. All output routes through formatter abstraction (no direct print statements)
-  5. Progress messages go to stderr, data output goes to stdout
 **Plans**: 4 plans
 **Completed**: 2026-01-23
 
 Plans:
-- [x] 07-01-PLAN.md — Stream separation (stderr routing) and --quiet flag
-- [x] 07-02-PLAN.md — Unified header format and summary line for both modes
-- [x] 07-03-PLAN.md — Statistics footer in compare mode
-- [x] 07-04-PLAN.md — Tests for output unification and README updates
+- [x] 07-01: Stream separation and --quiet flag
+- [x] 07-02: Unified header format
+- [x] 07-03: Statistics footer
+- [x] 07-04: Tests and documentation
 
-#### Phase 8: Color Enhancement ✓
-**Goal**: TTY-aware color output highlighting key information
-**Depends on**: Phase 7
+### Phase 8: Color Enhancement
+**Goal**: TTY-aware color output
 **Requirements**: UX-01, UX-02, UX-03
-**Success Criteria** (what must be TRUE):
-  1. Color output automatically enabled when stdout is a TTY
-  2. Color automatically disabled when piped or redirected
-  3. Colors highlight masters (green), duplicates (yellow), warnings (red), statistics (cyan)
-  4. `--no-color` flag explicitly disables colors
-  5. NO_COLOR environment variable is respected
-  6. Text content is identical with or without color (only ANSI codes added)
 **Plans**: 3 plans
 **Completed**: 2026-01-23
 
 Plans:
-- [x] 08-01-PLAN.md — ColorConfig class, ANSI constants, and colorize helper functions
-- [x] 08-02-PLAN.md — Add --color/--no-color CLI flags and integrate color into Text formatters
-- [x] 08-03-PLAN.md — Tests for color output and README documentation
+- [x] 08-01: ColorConfig and ANSI helpers
+- [x] 08-02: CLI flags and formatter integration
+- [x] 08-03: Tests and documentation
 
-#### Phase 9: Unify Default and Action Output for Groups ✓
-**Goal**: Unify output format between compare mode and action mode for duplicate groups
-**Depends on**: Phase 8
-**Success Criteria** (what must be TRUE):
-  1. Compare mode shows files with directory labels [dir1]/[dir2] instead of hash header
-  2. Compare mode uses hierarchical format (first file unindented, matches indented)
-  3. Hash displayed as trailing detail, not header
-  4. All tests pass with updated assertions
-  5. Action mode output unchanged
+### Phase 9: Unify Group Output
+**Goal**: Consistent group format between modes
 **Plans**: 1 plan
 **Completed**: 2026-01-23
 
 Plans:
-- [x] 09-01-PLAN.md — Update TextCompareFormatter.format_match_group for hierarchical output
+- [x] 09-01: Hierarchical output format
 
-#### Phase 10: Unify Compare as Action ✓
-**Goal**: Refactor default compare mode into a "compare" action that reuses the action code path, eliminating duplicate code paths
-**Depends on**: Phase 9
-**Success Criteria** (what must be TRUE):
-  1. Default mode (no --action flag) behaves identically to current behavior
-  2. New `--action compare` explicitly invokes compare mode
-  3. Compare mode reuses action mode code path (ActionFormatter, action flow)
-  4. Separate CompareFormatter hierarchy removed or deprecated
-  5. All existing tests pass without modification
-  6. JSON output schema unchanged for compare mode
+### Phase 10: Unify Compare as Action
+**Goal**: Refactor compare mode to use action code path
 **Plans**: 4 plans
 **Completed**: 2026-01-23
 
 Plans:
-- [x] 10-01-PLAN.md — Add compare to action choices with default and validation
-- [x] 10-02-PLAN.md — Extend ActionFormatter classes to handle compare action
-- [x] 10-03-PLAN.md — Unify main() to use action path for all modes
-- [x] 10-04-PLAN.md — Delete CompareFormatter hierarchy and dead code
+- [x] 10-01: Add compare to action choices
+- [x] 10-02: Extend ActionFormatter for compare
+- [x] 10-03: Unify main() flow
+- [x] 10-04: Delete CompareFormatter hierarchy
+
+</details>
 
 ## Progress
 
-**Execution Order:** Phases execute in numeric order: 5 → 6 → 7 → 8 → 9 → 10
+**All phases complete. Use `/gsd:new-milestone` to start next milestone.**
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -170,12 +127,12 @@ Plans:
 | 2. Preview Mode | v1.1 | 3/3 | Complete | 2026-01-20 |
 | 3. Deduplication | v1.1 | 4/4 | Complete | 2026-01-20 |
 | 4. Audit Logging | v1.1 | 2/2 | Complete | 2026-01-20 |
-| 5. Formatter Abstraction | v1.2 | 3/3 | Complete | 2026-01-22 |
-| 6. JSON Output | v1.2 | 3/3 | Complete | 2026-01-23 |
-| 7. Output Unification | v1.2 | 4/4 | Complete | 2026-01-23 |
-| 8. Color Enhancement | v1.2 | 3/3 | Complete | 2026-01-23 |
-| 9. Unify Group Output | v1.2 | 1/1 | Complete | 2026-01-23 |
+| 5. Formatter Abstraction | v1.3 | 3/3 | Complete | 2026-01-22 |
+| 6. JSON Output | v1.3 | 3/3 | Complete | 2026-01-23 |
+| 7. Output Unification | v1.3 | 4/4 | Complete | 2026-01-23 |
+| 8. Color Enhancement | v1.3 | 3/3 | Complete | 2026-01-23 |
+| 9. Unify Group Output | v1.3 | 1/1 | Complete | 2026-01-23 |
 | 10. Unify Compare as Action | v1.3 | 4/4 | Complete | 2026-01-23 |
 
 ---
-*Last updated: 2026-01-23 - Phase 10 complete (v1.3 shipped)*
+*Last updated: 2026-01-23 - v1.3 milestone archived*
