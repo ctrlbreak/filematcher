@@ -259,12 +259,14 @@ class TextCompareFormatter(CompareFormatter):
     """
 
     def format_header(self, dir1: str, dir2: str, hash_algo: str) -> None:
-        """Format comparison header.
+        """Format comparison header showing mode and directories."""
+        print(f"Compare mode: {dir1} vs {dir2}")
 
-        Note: Header is printed by logger in main(), not by formatter.
-        This method exists for interface completeness.
-        """
-        pass
+    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
+        """Format one-liner summary after header."""
+        space_str = format_file_size(space_savings)
+        print(f"Found {group_count} duplicate groups ({duplicate_count} files, {space_str} reclaimable)")
+        print()  # Blank line after summary
 
     def format_match_group(self, file_hash: str, files_dir1: list[str], files_dir2: list[str]) -> None:
         """Format a group of matching files.
@@ -460,6 +462,16 @@ class JsonCompareFormatter(CompareFormatter):
             "spaceReclaimableFormatted": format_file_size(space_savings) if space_savings > 0 else None
         }
 
+    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
+        """Store summary line data for JSON output."""
+        # For JSON, summary line data is integrated into the summary structure
+        # This ensures the one-liner info is available in JSON output
+        if "summary" not in self._data:
+            self._data["summary"] = {}
+        self._data["summary"]["duplicateGroups"] = group_count
+        self._data["summary"]["duplicateFiles"] = duplicate_count
+        self._data["summary"]["spaceReclaimable"] = space_savings
+
     def finalize(self) -> None:
         """Finalize output by sorting collections and printing JSON."""
         # Sort matches by (first file in dir1, hash) for determinism
@@ -512,6 +524,20 @@ class JsonActionFormatter(ActionFormatter):
     def format_banner(self) -> None:
         """Format banner - in JSON mode, this is a no-op (mode is in data structure)."""
         pass
+
+    def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
+        """Store header data for JSON output."""
+        self._data["action"] = action
+        # Directories are already set via set_directories, this ensures action is captured
+
+    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
+        """Store summary line data for JSON output."""
+        # For JSON, summary line data goes into statistics structure
+        if "statistics" not in self._data or not self._data["statistics"]:
+            self._data["statistics"] = {}
+        self._data["statistics"]["summaryDuplicateGroups"] = group_count
+        self._data["statistics"]["summaryDuplicateFiles"] = duplicate_count
+        self._data["statistics"]["summarySpaceReclaimable"] = space_savings
 
     def format_warnings(self, warnings: list[str]) -> None:
         """Accumulate warnings.
@@ -669,6 +695,17 @@ class TextActionFormatter(ActionFormatter):
         else:
             print(format_execute_banner())
         print()
+
+    def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
+        """Format unified header showing mode, state, action and directories."""
+        state = "PREVIEW" if self.preview_mode else "EXECUTING"
+        print(f"Action mode ({state}): {action} {dir1} vs {dir2}")
+
+    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
+        """Format one-liner summary after header."""
+        space_str = format_file_size(space_savings)
+        print(f"Found {group_count} duplicate groups ({duplicate_count} files, {space_str} reclaimable)")
+        print()  # Blank line after summary
 
     def format_warnings(self, warnings: list[str]) -> None:
         """Format and output warnings.
@@ -2140,6 +2177,13 @@ def main() -> int:
                     print("==============================")
                 compare_formatter.format_unmatched(args.dir1, unmatched1)
                 compare_formatter.format_unmatched(args.dir2, unmatched2)
+
+            # Add statistics footer (compare mode doesn't compute space savings)
+            compare_formatter.format_statistics(
+                group_count=len(matches),
+                file_count=matched_files1 + matched_files2,
+                space_savings=0  # Compare mode doesn't determine master/duplicate
+            )
 
             # Always call format_summary for JSON to ensure summary field is populated
             if args.json:
