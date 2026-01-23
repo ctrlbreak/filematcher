@@ -1416,8 +1416,11 @@ def format_duplicate_group(
     Returns:
         List of formatted lines for this group
     """
-    # Determine action label based on preview_mode
-    if action and preview_mode:
+    # Determine action label based on preview_mode and action type
+    if action == "compare":
+        # Compare mode: always use DUPLICATE label (no WOULD/execution states)
+        action_label = "DUPLICATE"
+    elif action and preview_mode:
         # Preview mode: use "WOULD X" labels
         action_labels = {
             "hardlink": "WOULD HARDLINK",
@@ -1534,6 +1537,15 @@ def format_statistics_footer(
     lines.append("")  # Blank line before statistics
     lines.append("--- Statistics ---")
     lines.append(f"Duplicate groups: {group_count}")
+
+    # Compare mode: show total files, not master/duplicate breakdown
+    if action == 'compare':
+        total_files = master_count + duplicate_count
+        lines.append(f"Total files with matches: {total_files}")
+        lines.append("Space reclaimable: (run with --action to calculate)")
+        return lines
+
+    # Action modes: show master/duplicate breakdown
     lines.append(f"Master files preserved: {master_count}")
     lines.append(f"Duplicate files: {duplicate_count}")
 
@@ -2332,10 +2344,9 @@ def main() -> int:
     if args.fallback_symlink and args.action != 'hardlink':
         parser.error("--fallback-symlink only applies to --action hardlink")
 
-    # Set master to first directory when a modifying action is used
-    master_path = None
-    if args.action in ('hardlink', 'symlink', 'delete'):
-        master_path = Path(args.dir1).resolve()
+    # Set master to first directory - always set now (all modes are "action" modes)
+    # For compare action, master_path is used for display purposes only (no modifications)
+    master_path = Path(args.dir1).resolve()
 
     # Configure logging based on verbosity and quiet mode
     # --quiet suppresses all status messages (only errors get through)
@@ -2431,8 +2442,14 @@ def main() -> int:
             if not args.quiet:
                 formatter.format_unified_header(args.action, args.dir1, args.dir2)
                 # Calculate space savings for summary line
-                bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
-                formatter.format_summary_line(grp_count, dup_count, bytes_saved)
+                # Compare mode: show 0 space savings and total matched files count
+                if args.action == 'compare':
+                    # For compare mode, show total files (master + duplicates) and 0 space
+                    total_files = matched_files1 + matched_files2
+                    formatter.format_summary_line(len(matches), total_files, 0)
+                else:
+                    bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
+                    formatter.format_summary_line(grp_count, dup_count, bytes_saved)
 
             if show_banner:
                 formatter.format_banner()
