@@ -506,21 +506,30 @@ class TextCompareFormatter(CompareFormatter):
         print()  # Blank line after summary
 
     def format_match_group(self, file_hash: str, files_dir1: list[str], files_dir2: list[str]) -> None:
-        """Format a group of matching files.
+        """Format a group of matching files with unified hierarchical structure.
 
         Args:
             file_hash: Content hash for this group
             files_dir1: List of file paths from first directory (sorted for determinism)
             files_dir2: List of file paths from second directory (sorted for determinism)
         """
-        # Hash in dim (de-emphasize technical details)
-        print(dim(f"Hash: {file_hash[:10]}...", self.cc))
-        print(f"  Files in {self.dir1_name}:")
-        for f in sorted(files_dir1):  # Sorted for determinism (OUT-04)
-            print(f"    {f}")
-        print(f"  Files in {self.dir2_name}:")
-        for f in sorted(files_dir2):  # Sorted for determinism (OUT-04)
-            print(f"    {f}")
+        sorted_dir1 = sorted(files_dir1)  # Sorted for determinism (OUT-04)
+        sorted_dir2 = sorted(files_dir2)  # Sorted for determinism (OUT-04)
+
+        # Primary file: first from dir1 (green, unindented)
+        primary = sorted_dir1[0]
+        print(green(f"[{self.dir1_name}] {primary}", self.cc))
+
+        # Additional dir1 files (indented, green)
+        for f in sorted_dir1[1:]:
+            print(green(f"    [{self.dir1_name}] {f}", self.cc))
+
+        # Dir2 files (indented, yellow)
+        for f in sorted_dir2:
+            print(yellow(f"    [{self.dir2_name}] {f}", self.cc))
+
+        # Hash as de-emphasized trailing detail
+        print(dim(f"  Hash: {file_hash[:10]}...", self.cc))
         print()
 
     def format_unmatched(self, dir_label: str, files: list[str]) -> None:
