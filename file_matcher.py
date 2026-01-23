@@ -2222,8 +2222,9 @@ def main() -> int:
                         help='Use fast mode for large files (uses file size + partial content sampling)')
     parser.add_argument('--verbose', '-v', action='store_true',
                         help='Show detailed progress for each file being processed')
-    parser.add_argument('--action', '-a', choices=['hardlink', 'symlink', 'delete'],
-                        help='Action to take on duplicates (first directory is master, never modified)')
+    parser.add_argument('--action', '-a', choices=['compare', 'hardlink', 'symlink', 'delete'],
+                        default='compare',
+                        help='Action: compare (default, no changes), hardlink, symlink, or delete')
     parser.add_argument('--execute', action='store_true',
                         help='Execute the action (without this flag, only preview)')
     parser.add_argument('--yes', '-y', action='store_true',
