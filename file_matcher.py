@@ -328,15 +328,17 @@ class ActionFormatter(ABC):
     Action mode shows master/duplicate relationships and actions to be taken.
     """
 
-    def __init__(self, verbose: bool = False, preview_mode: bool = True):
+    def __init__(self, verbose: bool = False, preview_mode: bool = True, action: str | None = None):
         """Initialize the formatter with configuration.
 
         Args:
             verbose: If True, show additional details in output
             preview_mode: If True, format for preview; if False, format for execution
+            action: Action type (compare, hardlink, symlink, delete) for action-specific formatting
         """
         self.verbose = verbose
         self.preview_mode = preview_mode
+        self._action = action
 
     @abstractmethod
     def format_banner(self) -> None:
