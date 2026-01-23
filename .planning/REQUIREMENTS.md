@@ -16,10 +16,10 @@ Requirements for output rationalisation milestone. Each maps to roadmap phases.
 
 ### Machine-Readable Output
 
-- [ ] **JSON-01**: `--json` flag outputs results in JSON format
-- [ ] **JSON-02**: JSON schema is documented and stable
-- [ ] **JSON-03**: JSON includes rich metadata (file sizes, hashes, timestamps)
-- [ ] **JSON-04**: `--json` works with all existing flags (--summary, --verbose, --action, etc.)
+- [x] **JSON-01**: `--json` flag outputs results in JSON format
+- [x] **JSON-02**: JSON schema is documented and stable
+- [x] **JSON-03**: JSON includes rich metadata (file sizes, hashes, timestamps)
+- [x] **JSON-04**: `--json` works with all existing flags (--summary, --verbose, --action, etc.)
 
 ### Enhanced UX
 
@@ -67,10 +67,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OUT-02 | Phase 7 | Pending |
 | OUT-03 | Phase 7 | Pending |
 | OUT-04 | Phase 5 | Complete |
-| JSON-01 | Phase 6 | Pending |
-| JSON-02 | Phase 6 | Pending |
-| JSON-03 | Phase 6 | Pending |
-| JSON-04 | Phase 6 | Pending |
+| JSON-01 | Phase 6 | Complete |
+| JSON-02 | Phase 6 | Complete |
+| JSON-03 | Phase 6 | Complete |
+| JSON-04 | Phase 6 | Complete |
 | UX-01 | Phase 8 | Pending |
 | UX-02 | Phase 8 | Pending |
 | UX-03 | Phase 8 | Pending |
@@ -91,4 +91,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-22 - OUT-04 complete (Phase 5)*
+*Last updated: 2026-01-23 - JSON-01 through JSON-04 complete (Phase 6)*

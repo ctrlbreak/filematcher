@@ -69,7 +69,7 @@ Plans:
 - [x] 05-02-PLAN.md — Wire TextActionFormatter into main() action mode branches
 - [x] 05-03-PLAN.md — Wire TextCompareFormatter into main() compare mode branches
 
-#### Phase 6: JSON Output
+#### Phase 6: JSON Output ✓
 **Goal**: Expose JSON output through CLI with stable schema and comprehensive metadata
 **Depends on**: Phase 5
 **Requirements**: JSON-01, JSON-02, JSON-03, JSON-04
@@ -80,11 +80,12 @@ Plans:
   4. `--json` works correctly with all existing flags (--summary, --verbose, --action, --execute)
   5. Text output remains unchanged (no breaking changes to default format)
 **Plans**: 3 plans
+**Completed**: 2026-01-23
 
 Plans:
-- [ ] 06-01-PLAN.md — Implement JsonCompareFormatter and JsonActionFormatter classes
-- [ ] 06-02-PLAN.md — Add --json CLI flag and wire formatters into main()
-- [ ] 06-03-PLAN.md — JSON output tests and README schema documentation
+- [x] 06-01-PLAN.md — Implement JsonCompareFormatter and JsonActionFormatter classes
+- [x] 06-02-PLAN.md — Add --json CLI flag and wire formatters into main()
+- [x] 06-03-PLAN.md — JSON output tests and README schema documentation
 
 #### Phase 7: Output Unification
 **Goal**: Consistent output structure across compare and action modes with statistics in all modes
@@ -128,9 +129,9 @@ Plans:
 | 3. Deduplication | v1.1 | 4/4 | Complete | 2026-01-20 |
 | 4. Audit Logging | v1.1 | 2/2 | Complete | 2026-01-20 |
 | 5. Formatter Abstraction | v1.2 | 3/3 | Complete | 2026-01-22 |
-| 6. JSON Output | v1.2 | 0/3 | Planned | - |
+| 6. JSON Output | v1.2 | 3/3 | Complete | 2026-01-23 |
 | 7. Output Unification | v1.2 | 0/? | Not started | - |
 | 8. Color Enhancement | v1.2 | 0/? | Not started | - |
 
 ---
-*Last updated: 2026-01-23 - Phase 6 planned*
+*Last updated: 2026-01-23 - Phase 6 complete*
