@@ -2184,6 +2184,10 @@ def main() -> int:
     logger.handlers = [handler]
     logger.setLevel(log_level)
 
+    # Determine color mode and create color config
+    color_mode = determine_color_mode(args)
+    color_config = ColorConfig(mode=color_mode, stream=sys.stdout)
+
     if not os.path.isdir(args.dir1) or not os.path.isdir(args.dir2):
         logger.error("Error: Both arguments must be directories")
         return 1
@@ -2244,7 +2248,11 @@ def main() -> int:
             )
             action_formatter.set_directories(args.dir1, args.dir2)
         else:
-            action_formatter = TextActionFormatter(verbose=args.verbose, preview_mode=True)
+            action_formatter = TextActionFormatter(
+                verbose=args.verbose,
+                preview_mode=True,
+                color_config=color_config
+            )
 
         # Helper function to print preview output
         def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
@@ -2424,7 +2432,11 @@ def main() -> int:
 
                 # Show EXECUTING header after confirmation (unless --quiet)
                 if not args.quiet:
-                    action_formatter_exec_header = TextActionFormatter(verbose=args.verbose, preview_mode=False)
+                    action_formatter_exec_header = TextActionFormatter(
+                        verbose=args.verbose,
+                        preview_mode=False,
+                        color_config=color_config
+                    )
                     action_formatter_exec_header.format_unified_header(args.action, args.dir1, args.dir2)
                     print()
 
@@ -2466,7 +2478,11 @@ def main() -> int:
                 write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
 
                 # Print execution summary via formatter
-                action_formatter_exec = TextActionFormatter(verbose=args.verbose, preview_mode=False)
+                action_formatter_exec = TextActionFormatter(
+                    verbose=args.verbose,
+                    preview_mode=False,
+                    color_config=color_config
+                )
                 action_formatter_exec.format_execution_summary(
                     success_count=success_count,
                     failure_count=failure_count,
@@ -2492,7 +2508,8 @@ def main() -> int:
             compare_formatter = TextCompareFormatter(
                 verbose=args.verbose,
                 dir1_name=args.dir1,
-                dir2_name=args.dir2
+                dir2_name=args.dir2,
+                color_config=color_config
             )
             # Output unified header (unless --quiet)
             if not args.quiet:
