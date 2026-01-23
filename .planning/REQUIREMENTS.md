@@ -9,9 +9,9 @@ Requirements for output rationalisation milestone. Each maps to roadmap phases.
 
 ### Output Consistency
 
-- [ ] **OUT-01**: Output structure is consistent between compare mode and action mode
-- [ ] **OUT-02**: Statistics footer appears in all modes (duplicate groups, file counts, space calculations)
-- [ ] **OUT-03**: Progress and status messages go to stderr, data output goes to stdout
+- [x] **OUT-01**: Output structure is consistent between compare mode and action mode
+- [x] **OUT-02**: Statistics footer appears in all modes (duplicate groups, file counts, space calculations)
+- [x] **OUT-03**: Progress and status messages go to stderr, data output goes to stdout
 - [x] **OUT-04**: Output is deterministic (same input produces same output ordering)
 
 ### Machine-Readable Output
@@ -63,9 +63,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OUT-01 | Phase 7 | Pending |
-| OUT-02 | Phase 7 | Pending |
-| OUT-03 | Phase 7 | Pending |
+| OUT-01 | Phase 7 | Complete |
+| OUT-02 | Phase 7 | Complete |
+| OUT-03 | Phase 7 | Complete |
 | OUT-04 | Phase 5 | Complete |
 | JSON-01 | Phase 6 | Complete |
 | JSON-02 | Phase 6 | Complete |
@@ -91,4 +91,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-23 - JSON-01 through JSON-04 complete (Phase 6)*
+*Last updated: 2026-01-23 - OUT-01 through OUT-03 complete (Phase 7)*

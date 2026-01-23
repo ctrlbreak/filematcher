@@ -14,12 +14,12 @@ Plan: 4 of 4 complete (all plans done)
 Status: Phase 7 complete
 Last activity: 2026-01-23 - Completed 07-04-PLAN.md (tests and documentation)
 
-Progress: [██████████] 100% (v1.1 complete: 4 phases, v1.2: 4/4 phases complete)
+Progress: [████████░░] 75% (v1.1 complete: 4 phases, v1.2: 3/4 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 23 (v1.1: 12, v1.2: 11)
+- Total plans completed: 22 (v1.1: 12, v1.2: 10)
 - Phase 7 plan 4 duration: 2 min (3 tasks)
 - Total execution time: v1.1: 2 days, v1.2: ~52 min
 
@@ -107,7 +107,7 @@ From research/SUMMARY.md:
 
 ### Pending Todos
 
-1. **Rationalise output from compare mode and action mode** (cli) - DONE in Phase 7
+1. **Formatter abstraction edge cases** - 6 direct print() calls bypass formatters (see TODOS.md)
 2. **Check and refine behaviour if matched files are hardlinks or symlinks** (cli) - Edge case handling (future)
 
 ### Blockers/Concerns
