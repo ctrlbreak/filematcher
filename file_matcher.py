@@ -131,6 +131,61 @@ class ColorConfig:
 
 
 # ============================================================================
+# Color Helper Functions
+# ============================================================================
+
+def colorize(text: str, code: str, color_config: ColorConfig) -> str:
+    """Wrap text with ANSI color code if color is enabled.
+
+    Args:
+        text: Text to colorize
+        code: ANSI escape code (e.g., GREEN, BOLD)
+        color_config: ColorConfig instance determining if color is enabled
+
+    Returns:
+        Colorized text if enabled, original text otherwise.
+    """
+    if not color_config.enabled:
+        return text
+    return f"{code}{text}{RESET}"
+
+
+def green(text: str, cc: ColorConfig) -> str:
+    """Color text green (masters, protected files)."""
+    return colorize(text, GREEN, cc)
+
+
+def yellow(text: str, cc: ColorConfig) -> str:
+    """Color text yellow (duplicates, removal candidates)."""
+    return colorize(text, YELLOW, cc)
+
+
+def red(text: str, cc: ColorConfig) -> str:
+    """Color text red (warnings, errors)."""
+    return colorize(text, RED, cc)
+
+
+def cyan(text: str, cc: ColorConfig) -> str:
+    """Color text cyan (statistics, summaries)."""
+    return colorize(text, CYAN, cc)
+
+
+def dim(text: str, cc: ColorConfig) -> str:
+    """Dim text (hash values, de-emphasized content)."""
+    return colorize(text, DIM, cc)
+
+
+def bold(text: str, cc: ColorConfig) -> str:
+    """Bold text (emphasis)."""
+    return colorize(text, BOLD, cc)
+
+
+def bold_yellow(text: str, cc: ColorConfig) -> str:
+    """Bold yellow text (PREVIEW MODE banner)."""
+    return colorize(text, BOLD_YELLOW, cc)
+
+
+# ============================================================================
 # Output Formatter ABCs
 # ============================================================================
 
