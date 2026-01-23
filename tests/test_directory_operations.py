@@ -3,7 +3,10 @@
 import os
 import unittest
 
-from file_matcher import index_directory, find_matching_files, get_file_hash
+from file_matcher import (
+    index_directory, find_matching_files, get_file_hash,
+    is_symlink_to_master, execute_action, already_hardlinked
+)
 from tests.test_base import BaseFileMatcherTest
 
 
@@ -131,6 +134,104 @@ class TestDifferentNamesOnly(unittest.TestCase):
         matches, _, _ = find_matching_files(self.dir1, self.dir2, different_names_only=True)
         # Now the "identical content A" group has different names, so it should be included
         self.assertEqual(len(matches), 2)
+
+
+class TestSkipAlreadyLinked(unittest.TestCase):
+    """Tests for symlink and hardlink detection and skipping."""
+
+    def setUp(self):
+        """Set up test directories with master and duplicate files."""
+        import tempfile
+        self.temp_dir = tempfile.mkdtemp()
+        self.master_dir = os.path.join(self.temp_dir, "master")
+        self.dup_dir = os.path.join(self.temp_dir, "dup")
+        os.makedirs(self.master_dir)
+        os.makedirs(self.dup_dir)
+
+        # Create master file
+        self.master_file = os.path.join(self.master_dir, "master.txt")
+        with open(self.master_file, "w") as f:
+            f.write("master content\n")
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.temp_dir)
+
+    def test_is_symlink_to_master_true(self):
+        """Symlink pointing to master file is detected."""
+        symlink_path = os.path.join(self.dup_dir, "link.txt")
+        os.symlink(self.master_file, symlink_path)
+
+        self.assertTrue(is_symlink_to_master(symlink_path, self.master_file))
+
+    def test_is_symlink_to_master_false_different_target(self):
+        """Symlink pointing to different file is not detected as symlink to master."""
+        # Create another file
+        other_file = os.path.join(self.master_dir, "other.txt")
+        with open(other_file, "w") as f:
+            f.write("other content\n")
+
+        # Create symlink pointing to other file
+        symlink_path = os.path.join(self.dup_dir, "link.txt")
+        os.symlink(other_file, symlink_path)
+
+        self.assertFalse(is_symlink_to_master(symlink_path, self.master_file))
+
+    def test_is_symlink_to_master_false_regular_file(self):
+        """Regular file is not detected as symlink to master."""
+        duplicate_path = os.path.join(self.dup_dir, "dup.txt")
+        with open(duplicate_path, "w") as f:
+            f.write("master content\n")
+
+        self.assertFalse(is_symlink_to_master(duplicate_path, self.master_file))
+
+    def test_execute_action_skips_symlink_to_master(self):
+        """execute_action skips symlinks pointing to master with correct reason."""
+        symlink_path = os.path.join(self.dup_dir, "link.txt")
+        os.symlink(self.master_file, symlink_path)
+
+        success, error, actual_action = execute_action(
+            symlink_path, self.master_file, 'hardlink'
+        )
+
+        self.assertTrue(success)
+        self.assertEqual(error, "symlink to master")
+        self.assertEqual(actual_action, "skipped")
+        # Symlink should still exist
+        self.assertTrue(os.path.islink(symlink_path))
+
+    def test_execute_action_skips_hardlink_to_master_all_actions(self):
+        """execute_action skips hardlinks to master for all action types."""
+        hardlink_path = os.path.join(self.dup_dir, "linked.txt")
+        os.link(self.master_file, hardlink_path)
+
+        # Test with action='symlink'
+        success, error, actual_action = execute_action(
+            hardlink_path, self.master_file, 'symlink'
+        )
+        self.assertTrue(success)
+        self.assertEqual(error, "hardlink to master")
+        self.assertEqual(actual_action, "skipped")
+
+        # Test with action='delete'
+        success, error, actual_action = execute_action(
+            hardlink_path, self.master_file, 'delete'
+        )
+        self.assertTrue(success)
+        self.assertEqual(error, "hardlink to master")
+        self.assertEqual(actual_action, "skipped")
+
+        # Test with action='hardlink' (original behavior)
+        success, error, actual_action = execute_action(
+            hardlink_path, self.master_file, 'hardlink'
+        )
+        self.assertTrue(success)
+        self.assertEqual(error, "hardlink to master")
+        self.assertEqual(actual_action, "skipped")
+
+        # Hardlink should still exist (not modified)
+        self.assertTrue(os.path.exists(hardlink_path))
+        self.assertTrue(already_hardlinked(hardlink_path, self.master_file))
 
 
 if __name__ == "__main__":
