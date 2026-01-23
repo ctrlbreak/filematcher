@@ -1377,7 +1377,7 @@ def check_cross_filesystem(master_file: str, duplicates: list[str]) -> set[str]:
     return cross_fs
 
 
-def already_hardlinked(file1: str, file2: str) -> bool:
+def is_hardlink_to(file1: str, file2: str) -> bool:
     """
     Check if two files are already hard links to the same data.
 
@@ -1397,7 +1397,7 @@ def already_hardlinked(file1: str, file2: str) -> bool:
         return False
 
 
-def is_symlink_to_master(duplicate: str, master: str) -> bool:
+def is_symlink_to(duplicate: str, master: str) -> bool:
     """
     Check if a duplicate file is a symlink pointing to the master file.
 
@@ -1506,11 +1506,11 @@ def execute_action(
     master_path = Path(master)
 
     # Check if duplicate is a symlink pointing to master (skip if so)
-    if is_symlink_to_master(duplicate, master):
+    if is_symlink_to(duplicate, master):
         return (True, "symlink to master", "skipped")
 
     # Check if already hardlinked to master (skip if so for any action)
-    if already_hardlinked(duplicate, master):
+    if is_hardlink_to(duplicate, master):
         return (True, "hardlink to master", "skipped")
 
     # Execute the action

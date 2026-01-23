@@ -15,7 +15,7 @@ from unittest.mock import patch, MagicMock
 import logging
 
 from file_matcher import (
-    already_hardlinked,
+    is_hardlink_to,
     safe_replace_with_link,
     execute_action,
     execute_all_actions,
@@ -27,8 +27,8 @@ from file_matcher import (
 )
 
 
-class TestAlreadyHardlinked(unittest.TestCase):
-    """Tests for already_hardlinked() function."""
+class TestIsHardlinkTo(unittest.TestCase):
+    """Tests for is_hardlink_to() function."""
 
     def setUp(self):
         self.temp_dir = tempfile.mkdtemp()
@@ -42,22 +42,22 @@ class TestAlreadyHardlinked(unittest.TestCase):
         """Two separate files are not hardlinked."""
         self.master.write_text("content")
         self.duplicate.write_text("content")
-        self.assertFalse(already_hardlinked(str(self.master), str(self.duplicate)))
+        self.assertFalse(is_hardlink_to(str(self.master), str(self.duplicate)))
 
     def test_hardlinked_files_detected(self):
         """Files that share an inode are detected as hardlinked."""
         self.master.write_text("content")
         self.duplicate.hardlink_to(self.master)
-        self.assertTrue(already_hardlinked(str(self.master), str(self.duplicate)))
+        self.assertTrue(is_hardlink_to(str(self.master), str(self.duplicate)))
 
     def test_missing_file_returns_false(self):
         """Missing file returns False, not error."""
         self.master.write_text("content")
-        self.assertFalse(already_hardlinked(str(self.master), "/nonexistent/path"))
+        self.assertFalse(is_hardlink_to(str(self.master), "/nonexistent/path"))
 
     def test_both_files_missing_returns_false(self):
         """Both files missing returns False, not error."""
-        self.assertFalse(already_hardlinked("/nonexistent/path1", "/nonexistent/path2"))
+        self.assertFalse(is_hardlink_to("/nonexistent/path1", "/nonexistent/path2"))
 
 
 class TestSafeReplaceWithLink(unittest.TestCase):
@@ -78,7 +78,7 @@ class TestSafeReplaceWithLink(unittest.TestCase):
         success, error = safe_replace_with_link(self.duplicate, self.master, "hardlink")
         self.assertTrue(success)
         self.assertEqual(error, "")
-        self.assertTrue(already_hardlinked(str(self.master), str(self.duplicate)))
+        self.assertTrue(is_hardlink_to(str(self.master), str(self.duplicate)))
 
     def test_symlink_replaces_duplicate(self):
         """Symlink action replaces duplicate with symlink to master."""
@@ -160,7 +160,7 @@ class TestExecuteAction(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.temp_dir)
 
-    def test_skips_already_hardlinked(self):
+    def test_skips_is_hardlink_to(self):
         """Already hardlinked files are skipped."""
         self.master.write_text("content")
         self.duplicate.hardlink_to(self.master)
@@ -180,7 +180,7 @@ class TestExecuteAction(unittest.TestCase):
         )
         self.assertTrue(success)
         self.assertEqual(action_used, "hardlink")
-        self.assertTrue(already_hardlinked(str(self.master), str(self.duplicate)))
+        self.assertTrue(is_hardlink_to(str(self.master), str(self.duplicate)))
 
     def test_symlink_success(self):
         """Successful symlink execution."""

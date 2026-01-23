@@ -9,7 +9,7 @@ from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
-from file_matcher import main, execute_action, already_hardlinked
+from file_matcher import main, execute_action, is_hardlink_to
 from tests.test_base import BaseFileMatcherTest
 
 
@@ -151,7 +151,7 @@ class TestActionExecution(BaseFileMatcherTest):
         dup_file = os.path.join(self.test_dir2, "different_name.txt")
 
         # Verify they're not already hardlinked
-        self.assertFalse(already_hardlinked(master_file, dup_file))
+        self.assertFalse(is_hardlink_to(master_file, dup_file))
 
         with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
                                 '--action', 'hardlink',
@@ -161,7 +161,7 @@ class TestActionExecution(BaseFileMatcherTest):
 
         self.assertEqual(exit_code, 0)
         # Verify files are now hardlinked (check inode numbers match)
-        self.assertTrue(already_hardlinked(master_file, dup_file))
+        self.assertTrue(is_hardlink_to(master_file, dup_file))
 
     def test_execute_symlink_creates_links(self):
         """--execute with symlink creates symbolic links."""

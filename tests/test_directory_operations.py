@@ -5,7 +5,7 @@ import unittest
 
 from file_matcher import (
     index_directory, find_matching_files, get_file_hash,
-    is_symlink_to_master, execute_action, already_hardlinked
+    is_symlink_to, execute_action, is_hardlink_to
 )
 from tests.test_base import BaseFileMatcherTest
 
@@ -157,14 +157,14 @@ class TestSkipAlreadyLinked(unittest.TestCase):
         import shutil
         shutil.rmtree(self.temp_dir)
 
-    def test_is_symlink_to_master_true(self):
+    def test_is_symlink_to_true(self):
         """Symlink pointing to master file is detected."""
         symlink_path = os.path.join(self.dup_dir, "link.txt")
         os.symlink(self.master_file, symlink_path)
 
-        self.assertTrue(is_symlink_to_master(symlink_path, self.master_file))
+        self.assertTrue(is_symlink_to(symlink_path, self.master_file))
 
-    def test_is_symlink_to_master_false_different_target(self):
+    def test_is_symlink_to_false_different_target(self):
         """Symlink pointing to different file is not detected as symlink to master."""
         # Create another file
         other_file = os.path.join(self.master_dir, "other.txt")
@@ -175,15 +175,15 @@ class TestSkipAlreadyLinked(unittest.TestCase):
         symlink_path = os.path.join(self.dup_dir, "link.txt")
         os.symlink(other_file, symlink_path)
 
-        self.assertFalse(is_symlink_to_master(symlink_path, self.master_file))
+        self.assertFalse(is_symlink_to(symlink_path, self.master_file))
 
-    def test_is_symlink_to_master_false_regular_file(self):
+    def test_is_symlink_to_false_regular_file(self):
         """Regular file is not detected as symlink to master."""
         duplicate_path = os.path.join(self.dup_dir, "dup.txt")
         with open(duplicate_path, "w") as f:
             f.write("master content\n")
 
-        self.assertFalse(is_symlink_to_master(duplicate_path, self.master_file))
+        self.assertFalse(is_symlink_to(duplicate_path, self.master_file))
 
     def test_execute_action_skips_symlink_to_master(self):
         """execute_action skips symlinks pointing to master with correct reason."""
@@ -231,7 +231,7 @@ class TestSkipAlreadyLinked(unittest.TestCase):
 
         # Hardlink should still exist (not modified)
         self.assertTrue(os.path.exists(hardlink_path))
-        self.assertTrue(already_hardlinked(hardlink_path, self.master_file))
+        self.assertTrue(is_hardlink_to(hardlink_path, self.master_file))
 
 
 if __name__ == "__main__":
