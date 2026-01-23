@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.1 Deduplication** - Phases 1-4 (shipped 2026-01-20)
-- ✅ **v1.2 Output Rationalisation** - Phases 5-8 (shipped 2026-01-23)
+- 🚧 **v1.2 Output Rationalisation** - Phases 5-9
 
 ## Phases
 
@@ -48,10 +48,9 @@ Plans:
 
 </details>
 
-### ✅ v1.2 Output Rationalisation (Complete)
+### 🚧 v1.2 Output Rationalisation
 
 **Milestone Goal:** Unify output formatting across modes and add machine-readable JSON output for scripting and automation.
-**Completed:** 2026-01-23
 
 #### Phase 5: Formatter Abstraction ✓
 **Goal**: Create unified output abstraction layer without changing user-visible behavior
@@ -126,9 +125,23 @@ Plans:
 - [x] 08-02-PLAN.md — Add --color/--no-color CLI flags and integrate color into Text formatters
 - [x] 08-03-PLAN.md — Tests for color output and README documentation
 
+#### Phase 9: Unify Default and Action Output for Groups
+**Goal**: Unify output format between compare mode and action mode for duplicate groups
+**Depends on**: Phase 8
+**Success Criteria** (what must be TRUE):
+  1. Compare mode shows files with directory labels [dir1]/[dir2] instead of hash header
+  2. Compare mode uses hierarchical format (first file unindented, matches indented)
+  3. Hash displayed as trailing detail, not header
+  4. All tests pass with updated assertions
+  5. Action mode output unchanged
+**Plans**: 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md — Update TextCompareFormatter.format_match_group for hierarchical output
+
 ## Progress
 
-**Execution Order:** Phases execute in numeric order: 5 → 6 → 7 → 8
+**Execution Order:** Phases execute in numeric order: 5 → 6 → 7 → 8 → 9
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -140,6 +153,7 @@ Plans:
 | 6. JSON Output | v1.2 | 3/3 | Complete | 2026-01-23 |
 | 7. Output Unification | v1.2 | 4/4 | Complete | 2026-01-23 |
 | 8. Color Enhancement | v1.2 | 3/3 | Complete | 2026-01-23 |
+| 9. Unify Group Output | v1.2 | 0/1 | Planned | - |
 
 ---
-*Last updated: 2026-01-23 - v1.2 Output Rationalisation complete*
+*Last updated: 2026-01-23 - Phase 9 planning complete*
