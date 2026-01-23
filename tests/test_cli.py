@@ -66,13 +66,14 @@ class TestCLI(BaseFileMatcherTest):
             self.assertNotIn("Unmatched files summary:", output)
 
     def test_detailed_output_mode(self):
-        """Test detailed output format (default mode)."""
+        """Test detailed output format (default mode) with hierarchical structure."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
 
-            # Check that the output includes hash details and file listings
+            # Check that the output includes hash details and directory labels
             self.assertIn("Hash:", output)
-            self.assertIn("Files in", output)
+            # New hierarchical format uses [dir_name] labels instead of "Files in"
+            self.assertIn("[", output)  # Directory label format
 
         # Test with unmatched files option
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--show-unmatched']):
