@@ -27,39 +27,6 @@ from file_matcher import (
 )
 
 
-class TestIsHardlinkTo(unittest.TestCase):
-    """Tests for is_hardlink_to() function."""
-
-    def setUp(self):
-        self.temp_dir = tempfile.mkdtemp()
-        self.master = Path(self.temp_dir) / "master.txt"
-        self.duplicate = Path(self.temp_dir) / "duplicate.txt"
-
-    def tearDown(self):
-        shutil.rmtree(self.temp_dir)
-
-    def test_different_files_not_linked(self):
-        """Two separate files are not hardlinked."""
-        self.master.write_text("content")
-        self.duplicate.write_text("content")
-        self.assertFalse(is_hardlink_to(str(self.master), str(self.duplicate)))
-
-    def test_hardlinked_files_detected(self):
-        """Files that share an inode are detected as hardlinked."""
-        self.master.write_text("content")
-        self.duplicate.hardlink_to(self.master)
-        self.assertTrue(is_hardlink_to(str(self.master), str(self.duplicate)))
-
-    def test_missing_file_returns_false(self):
-        """Missing file returns False, not error."""
-        self.master.write_text("content")
-        self.assertFalse(is_hardlink_to(str(self.master), "/nonexistent/path"))
-
-    def test_both_files_missing_returns_false(self):
-        """Both files missing returns False, not error."""
-        self.assertFalse(is_hardlink_to("/nonexistent/path1", "/nonexistent/path2"))
-
-
 class TestSafeReplaceWithLink(unittest.TestCase):
     """Tests for safe_replace_with_link() function."""
 

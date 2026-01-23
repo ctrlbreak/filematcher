@@ -136,6 +136,46 @@ class TestDifferentNamesOnly(unittest.TestCase):
         self.assertEqual(len(matches), 2)
 
 
+class TestIsHardlinkTo(unittest.TestCase):
+    """Tests for is_hardlink_to() function."""
+
+    def setUp(self):
+        import tempfile
+        import shutil
+        self.temp_dir = tempfile.mkdtemp()
+        self.master_file = os.path.join(self.temp_dir, "master.txt")
+        self.duplicate_file = os.path.join(self.temp_dir, "duplicate.txt")
+        self._shutil = shutil
+
+    def tearDown(self):
+        self._shutil.rmtree(self.temp_dir)
+
+    def test_is_hardlink_to_false_different_files(self):
+        """Two separate files are not hardlinked."""
+        with open(self.master_file, "w") as f:
+            f.write("content")
+        with open(self.duplicate_file, "w") as f:
+            f.write("content")
+        self.assertFalse(is_hardlink_to(self.master_file, self.duplicate_file))
+
+    def test_is_hardlink_to_true(self):
+        """Files that share an inode are detected as hardlinked."""
+        with open(self.master_file, "w") as f:
+            f.write("content")
+        os.link(self.master_file, self.duplicate_file)
+        self.assertTrue(is_hardlink_to(self.master_file, self.duplicate_file))
+
+    def test_is_hardlink_to_missing_file_returns_false(self):
+        """Missing file returns False, not error."""
+        with open(self.master_file, "w") as f:
+            f.write("content")
+        self.assertFalse(is_hardlink_to(self.master_file, "/nonexistent/path"))
+
+    def test_is_hardlink_to_both_files_missing_returns_false(self):
+        """Both files missing returns False, not error."""
+        self.assertFalse(is_hardlink_to("/nonexistent/path1", "/nonexistent/path2"))
+
+
 class TestSkipAlreadyLinked(unittest.TestCase):
     """Tests for symlink and hardlink detection and skipping."""
 
