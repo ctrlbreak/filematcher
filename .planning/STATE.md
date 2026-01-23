@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-22)
 Phase: 7 of 8 (Output Unification)
 Plan: 4 of 4 complete (all plans done)
 Status: Phase 7 complete
-Last activity: 2026-01-23 - Completed 07-04-PLAN.md (tests and documentation)
+Last activity: 2026-01-23 - Completed quick task 001: Route edge case prints through formatters
 
 Progress: [████████░░] 75% (v1.1 complete: 4 phases, v1.2: 3/4 phases complete)
 
@@ -107,8 +107,13 @@ From research/SUMMARY.md:
 
 ### Pending Todos
 
-1. **Formatter abstraction edge cases** - 6 direct print() calls bypass formatters (see TODOS.md)
-2. **Check and refine behaviour if matched files are hardlinks or symlinks** (cli) - Edge case handling (future)
+1. **Check and refine behaviour if matched files are hardlinks or symlinks** (cli) - Edge case handling (future)
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 001 | Route edge case prints through formatters | 2026-01-23 | b27d735 | [001-route-edge-case-prints-through-formatter](./quick/001-route-edge-case-prints-through-formatter/) |
 
 ### Blockers/Concerns
 
@@ -121,7 +126,7 @@ From research/SUMMARY.md:
 - [x] README documentation for --quiet and output streams (plan 07-04)
 
 **Test Suite:**
-- Total tests: 179 (including 25 new output unification tests)
+- Total tests: 183 (179 + 4 formatter edge case tests)
 - All tests passing
 
 **Next steps:**
