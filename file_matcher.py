@@ -1718,9 +1718,9 @@ def main() -> int:
         master_path = Path(args.dir1).resolve()
 
     # Configure logging based on verbosity
-    # When --json is used, send log messages to stderr to keep stdout clean for JSON
+    # Always send log messages to stderr to keep stdout clean for data (Unix convention)
     log_level = logging.DEBUG if args.verbose else logging.INFO
-    log_stream = sys.stderr if args.json else sys.stdout
+    log_stream = sys.stderr  # Always stderr for progress/status (Unix convention)
     handler = logging.StreamHandler(log_stream)
     handler.setFormatter(logging.Formatter('%(message)s'))
     logger.handlers = [handler]
