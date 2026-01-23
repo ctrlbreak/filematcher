@@ -23,6 +23,18 @@ class TestCLI(BaseFileMatcherTest):
             main()
         return f.getvalue()
 
+    def run_main_capture_all(self, args: list[str]) -> tuple[str, str]:
+        """Helper to run main() and capture both stdout and stderr separately.
+
+        Returns:
+            Tuple of (stdout_output, stderr_output)
+        """
+        stdout_capture = io.StringIO()
+        stderr_capture = io.StringIO()
+        with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
+            main()
+        return stdout_capture.getvalue(), stderr_capture.getvalue()
+
     def test_summary_mode(self):
         """Test summary mode output with matched and unmatched files."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--summary', '--show-unmatched']):
@@ -73,45 +85,48 @@ class TestCLI(BaseFileMatcherTest):
     def test_hash_algorithm_option(self):
         """Test the hash algorithm command-line option."""
         # Test with MD5 (default)
+        # Logger messages go to stderr (Unix convention: status to stderr, data to stdout)
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
-            output = self.run_main_with_args([])
-            self.assertIn("Using MD5 hashing algorithm", output)
+            stdout, stderr = self.run_main_capture_all([])
+            self.assertIn("Using MD5 hashing algorithm", stderr)
 
         # Test with SHA256
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--hash', 'sha256']):
-            output = self.run_main_with_args([])
-            self.assertIn("Using SHA256 hashing algorithm", output)
+            stdout, stderr = self.run_main_capture_all([])
+            self.assertIn("Using SHA256 hashing algorithm", stderr)
 
     def test_fast_mode_option(self):
         """Test the fast mode command-line option."""
+        # Logger messages go to stderr (Unix convention: status to stderr, data to stdout)
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--fast']):
-            output = self.run_main_with_args([])
-            self.assertIn("Fast mode enabled", output)
+            stdout, stderr = self.run_main_capture_all([])
+            self.assertIn("Fast mode enabled", stderr)
 
     def test_verbose_mode_option(self):
         """Test the verbose mode command-line option."""
+        # Logger messages go to stderr (Unix convention: status to stderr, data to stdout)
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--verbose']):
-            output = self.run_main_with_args([])
+            stdout, stderr = self.run_main_capture_all([])
 
-            # Check for verbose mode indicators
-            self.assertIn("Verbose mode enabled", output)
-            self.assertIn("Found", output)
-            self.assertIn("files to process", output)
-            self.assertIn("Processing", output)
-            self.assertIn("Completed indexing", output)
+            # Check for verbose mode indicators (on stderr)
+            self.assertIn("Verbose mode enabled", stderr)
+            self.assertIn("Found", stderr)
+            self.assertIn("files to process", stderr)
+            self.assertIn("Processing", stderr)
+            self.assertIn("Completed indexing", stderr)
 
-            # Should show progress for each file
-            self.assertIn("[1/", output)  # Progress counter
-            self.assertIn("B)", output)   # File size
+            # Should show progress for each file (on stderr)
+            self.assertIn("[1/", stderr)  # Progress counter
+            self.assertIn("B)", stderr)   # File size
 
         # Test verbose mode with summary
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--verbose', '--summary']):
-            output = self.run_main_with_args([])
+            stdout, stderr = self.run_main_capture_all([])
 
-            # Should still show verbose progress with summary output
-            self.assertIn("Verbose mode enabled", output)
-            self.assertIn("Processing", output)
-            self.assertIn("Matched files summary:", output)
+            # Should still show verbose progress on stderr with summary on stdout
+            self.assertIn("Verbose mode enabled", stderr)
+            self.assertIn("Processing", stderr)
+            self.assertIn("Matched files summary:", stdout)
 
 
 class TestActionExecution(BaseFileMatcherTest):
