@@ -104,7 +104,11 @@ class TestCLI(BaseFileMatcherTest):
             self.assertIn("Fast mode enabled", stderr)
 
     def test_verbose_mode_option(self):
-        """Test the verbose mode command-line option."""
+        """Test the verbose mode command-line option.
+
+        Note: stderr in tests is not a TTY, so verbose progress uses multi-line fallback.
+        In actual terminal use, progress updates in-place on a single line.
+        """
         # Logger messages go to stderr (Unix convention: status to stderr, data to stdout)
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--verbose']):
             stdout, stderr = self.run_main_capture_all([])
