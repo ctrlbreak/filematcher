@@ -1693,6 +1693,8 @@ def main() -> int:
                         help='Only report files with identical content but different names (exclude same-name matches)')
     parser.add_argument('--json', '-j', action='store_true',
                         help='Output results in JSON format for scripting')
+    parser.add_argument('--quiet', '-q', action='store_true',
+                        help='Suppress progress, warnings, and headers - only output data')
 
     args = parser.parse_args()
 
@@ -1717,9 +1719,15 @@ def main() -> int:
     if args.action:
         master_path = Path(args.dir1).resolve()
 
-    # Configure logging based on verbosity
-    # Always send log messages to stderr to keep stdout clean for data (Unix convention)
-    log_level = logging.DEBUG if args.verbose else logging.INFO
+    # Configure logging based on verbosity and quiet mode
+    # --quiet suppresses all status messages (only errors get through)
+    if args.quiet:
+        log_level = logging.ERROR
+    elif args.verbose:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
     log_stream = sys.stderr  # Always stderr for progress/status (Unix convention)
     handler = logging.StreamHandler(log_stream)
     handler.setFormatter(logging.Formatter('%(message)s'))
