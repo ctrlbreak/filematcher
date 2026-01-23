@@ -445,6 +445,266 @@ class TestJsonOutput(BaseFileMatcherTest):
         # Fast mode message should be in stderr
         self.assertIn('Fast mode enabled', stderr)
 
+    # =========================================================================
+    # Action Type Tests (symlink, delete)
+    # =========================================================================
+
+    def test_json_action_symlink(self):
+        """--action symlink produces correct JSON with action='symlink'."""
+        data, stderr, exit_code = self.run_main_with_json(['--action', 'symlink'])
+        self.assertEqual(exit_code, 0)
+
+        self.assertEqual(data['action'], 'symlink')
+        self.assertEqual(data['mode'], 'preview')
+
+        # Verify duplicate objects have correct action
+        for group in data['duplicateGroups']:
+            for dup in group['duplicates']:
+                self.assertEqual(dup['action'], 'symlink')
+
+    def test_json_action_delete(self):
+        """--action delete produces correct JSON with action='delete'."""
+        data, stderr, exit_code = self.run_main_with_json(['--action', 'delete'])
+        self.assertEqual(exit_code, 0)
+
+        self.assertEqual(data['action'], 'delete')
+        self.assertEqual(data['mode'], 'preview')
+
+        # Verify duplicate objects have correct action
+        for group in data['duplicateGroups']:
+            for dup in group['duplicates']:
+                self.assertEqual(dup['action'], 'delete')
+
+    # =========================================================================
+    # Statistics Field Coverage
+    # =========================================================================
+
+    def test_json_statistics_all_fields(self):
+        """Statistics contains all expected fields including masterCount and crossFilesystemCount."""
+        data, stderr, exit_code = self.run_main_with_json(['--action', 'hardlink'])
+        self.assertEqual(exit_code, 0)
+
+        stats = data['statistics']
+        expected_fields = ['groupCount', 'duplicateCount', 'masterCount',
+                          'spaceSavingsBytes', 'crossFilesystemCount']
+        for field in expected_fields:
+            self.assertIn(field, stats, f"Missing statistics field: {field}")
+            self.assertIsInstance(stats[field], int, f"{field} should be int")
+
+    # =========================================================================
+    # Edge Case Tests
+    # =========================================================================
+
+    def test_json_empty_directories(self):
+        """Empty directories produce valid JSON with empty matches array."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as empty1:
+            with tempfile.TemporaryDirectory() as empty2:
+                args = ['filematcher', empty1, empty2, '--json']
+                stdout_capture = io.StringIO()
+                stderr_capture = io.StringIO()
+
+                with patch('sys.argv', args):
+                    with redirect_stdout(stdout_capture):
+                        with redirect_stderr(stderr_capture):
+                            exit_code = main()
+
+                self.assertEqual(exit_code, 0)
+                data = json.loads(stdout_capture.getvalue())
+
+                # Should have valid structure with empty matches
+                self.assertEqual(data['matches'], [])
+                self.assertEqual(data['summary']['matchCount'], 0)
+                self.assertEqual(data['summary']['matchedFilesDir1'], 0)
+                self.assertEqual(data['summary']['matchedFilesDir2'], 0)
+
+    def test_json_verbose_metadata_timestamp_format(self):
+        """Verbose mode metadata timestamps are in RFC 3339 format."""
+        data, stderr, exit_code = self.run_main_with_json(['--verbose'])
+        self.assertEqual(exit_code, 0)
+
+        self.assertIn('metadata', data)
+        rfc3339_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(\+\d{2}:\d{2}|Z)?$'
+
+        for filepath, info in data['metadata'].items():
+            modified = info['modified']
+            self.assertRegex(modified, rfc3339_pattern,
+                           f"Metadata timestamp not RFC 3339: {modified}")
+            # Verify it's parseable
+            try:
+                datetime.fromisoformat(modified.replace('Z', '+00:00'))
+            except ValueError:
+                self.fail(f"Metadata timestamp not parseable: {modified}")
+
+    def test_json_combined_flags(self):
+        """--json --verbose --show-unmatched together produces valid output."""
+        data, stderr, exit_code = self.run_main_with_json(['--verbose', '--show-unmatched'])
+        self.assertEqual(exit_code, 0)
+
+        # Should have all the features
+        self.assertIn('metadata', data)  # From --verbose
+        self.assertIn('unmatchedDir1', data)  # From --show-unmatched
+        self.assertIn('unmatchedDir2', data)
+
+        # Metadata should include unmatched files too
+        if data['unmatchedDir1'] or data['unmatchedDir2']:
+            # If there are unmatched files, they should have metadata
+            all_unmatched = data['unmatchedDir1'] + data['unmatchedDir2']
+            for filepath in all_unmatched:
+                self.assertIn(filepath, data['metadata'],
+                            f"Unmatched file missing from metadata: {filepath}")
+
+    def test_json_different_names_only_filters_results(self):
+        """--different-names-only actually filters out same-name matches."""
+        # Run without filter
+        data_all, _, _ = self.run_main_with_json()
+
+        # Run with filter
+        data_filtered, _, _ = self.run_main_with_json(['--different-names-only'])
+
+        # Both should have valid structure
+        self.assertIn('matches', data_all)
+        self.assertIn('matches', data_filtered)
+
+        # Count matches where all files have same basename
+        def has_same_name_match(matches):
+            for match in matches:
+                basenames1 = {os.path.basename(f) for f in match['filesDir1']}
+                basenames2 = {os.path.basename(f) for f in match['filesDir2']}
+                if basenames1 & basenames2:  # Intersection - same names
+                    return True
+            return False
+
+        # Filtered should not have any same-name matches
+        self.assertFalse(has_same_name_match(data_filtered['matches']),
+                        "Filtered results should not contain same-name matches")
+
+
+class TestJsonOutputMocked(BaseFileMatcherTest):
+    """Tests requiring mocking for edge cases."""
+
+    def test_json_cross_filesystem_detection(self):
+        """Cross-filesystem duplicates have crossFilesystem=true."""
+        # The JsonActionFormatter receives cross_fs_files set from the caller
+        # We test that it correctly populates the crossFilesystem field
+        from file_matcher import JsonActionFormatter
+
+        formatter = JsonActionFormatter(verbose=False, preview_mode=True)
+        formatter.set_directories('/master', '/duplicate')
+
+        # Simulate a duplicate group with one cross-filesystem file
+        cross_fs_files = {'/duplicate/file2.txt'}
+        formatter.format_duplicate_group(
+            master_file='/master/file.txt',
+            duplicates=['/duplicate/file1.txt', '/duplicate/file2.txt'],
+            action='hardlink',
+            file_sizes={'/duplicate/file1.txt': 100, '/duplicate/file2.txt': 100},
+            cross_fs_files=cross_fs_files
+        )
+
+        formatter.format_statistics(1, 2, 1, 200, 'hardlink', cross_fs_count=1)
+
+        # Capture output
+        stdout_capture = io.StringIO()
+        with redirect_stdout(stdout_capture):
+            formatter.finalize()
+
+        data = json.loads(stdout_capture.getvalue())
+
+        # Find the duplicates and check crossFilesystem flags
+        group = data['duplicateGroups'][0]
+        dups_by_path = {d['path']: d for d in group['duplicates']}
+
+        self.assertFalse(dups_by_path['/duplicate/file1.txt']['crossFilesystem'])
+        self.assertTrue(dups_by_path['/duplicate/file2.txt']['crossFilesystem'])
+
+        # Statistics should reflect cross-fs count
+        self.assertEqual(data['statistics']['crossFilesystemCount'], 1)
+
+    def test_json_execution_with_failures(self):
+        """Execution mode with failures includes failure details."""
+        from file_matcher import JsonActionFormatter
+
+        formatter = JsonActionFormatter(verbose=False, preview_mode=False)  # Execute mode
+        formatter.set_directories('/master', '/duplicate')
+
+        # Simulate a duplicate group
+        formatter.format_duplicate_group(
+            master_file='/master/file.txt',
+            duplicates=['/duplicate/file1.txt', '/duplicate/file2.txt'],
+            action='hardlink',
+            file_sizes={'/duplicate/file1.txt': 100, '/duplicate/file2.txt': 100}
+        )
+
+        formatter.format_statistics(1, 2, 1, 200, 'hardlink')
+
+        # Simulate execution with one failure
+        formatter.format_execution_summary(
+            success_count=1,
+            failure_count=1,
+            skipped_count=0,
+            space_saved=100,
+            log_path='/tmp/audit.log',
+            failed_list=[('/duplicate/file2.txt', 'Permission denied')]
+        )
+
+        # Capture output
+        stdout_capture = io.StringIO()
+        with redirect_stdout(stdout_capture):
+            formatter.finalize()
+
+        data = json.loads(stdout_capture.getvalue())
+
+        # Check execution summary
+        self.assertEqual(data['mode'], 'execute')
+        self.assertIn('execution', data)
+        exec_info = data['execution']
+
+        self.assertEqual(exec_info['successCount'], 1)
+        self.assertEqual(exec_info['failureCount'], 1)
+        self.assertEqual(exec_info['skippedCount'], 0)
+        self.assertEqual(exec_info['spaceSavedBytes'], 100)
+        self.assertEqual(exec_info['logPath'], '/tmp/audit.log')
+
+        # Check failures array
+        self.assertEqual(len(exec_info['failures']), 1)
+        failure = exec_info['failures'][0]
+        self.assertEqual(failure['path'], '/duplicate/file2.txt')
+        self.assertEqual(failure['error'], 'Permission denied')
+
+    def test_json_execution_failures_sorted(self):
+        """Execution failures are sorted by path for determinism."""
+        from file_matcher import JsonActionFormatter
+
+        formatter = JsonActionFormatter(verbose=False, preview_mode=False)
+        formatter.set_directories('/master', '/duplicate')
+
+        # Simulate execution with multiple failures (unsorted input)
+        formatter.format_execution_summary(
+            success_count=0,
+            failure_count=3,
+            skipped_count=0,
+            space_saved=0,
+            log_path='/tmp/audit.log',
+            failed_list=[
+                ('/z/file.txt', 'Error Z'),
+                ('/a/file.txt', 'Error A'),
+                ('/m/file.txt', 'Error M'),
+            ]
+        )
+
+        # Capture output
+        stdout_capture = io.StringIO()
+        with redirect_stdout(stdout_capture):
+            formatter.finalize()
+
+        data = json.loads(stdout_capture.getvalue())
+        failures = data['execution']['failures']
+
+        # Should be sorted by path
+        paths = [f['path'] for f in failures]
+        self.assertEqual(paths, sorted(paths))
+
 
 class TestJsonOutputSubprocess(BaseFileMatcherTest):
     """Test JSON output via subprocess for true integration testing."""
