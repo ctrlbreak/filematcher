@@ -463,6 +463,44 @@ class ActionFormatter(ABC):
         pass
 
     @abstractmethod
+    def format_compare_summary(
+        self,
+        match_count: int,
+        matched_files1: int,
+        matched_files2: int,
+        dir1_name: str,
+        dir2_name: str
+    ) -> None:
+        """Format and output compare mode summary (--summary flag).
+
+        Args:
+            match_count: Number of unique content hashes with matches
+            matched_files1: Number of files in dir1 with matches
+            matched_files2: Number of files in dir2 with matches
+            dir1_name: Label for first directory
+            dir2_name: Label for second directory
+        """
+        pass
+
+    @abstractmethod
+    def format_unmatched_section(
+        self,
+        dir1_label: str,
+        unmatched1: list[str],
+        dir2_label: str,
+        unmatched2: list[str]
+    ) -> None:
+        """Format and output the unmatched files section (--show-unmatched flag).
+
+        Args:
+            dir1_label: Label for first directory
+            unmatched1: List of file paths in dir1 with no matches
+            dir2_label: Label for second directory
+            unmatched2: List of file paths in dir2 with no matches
+        """
+        pass
+
+    @abstractmethod
     def finalize(self) -> None:
         """Finalize output (e.g., flush buffers, close files)."""
         pass
@@ -828,6 +866,8 @@ class JsonActionFormatter(ActionFormatter):
         self._action_type = ""
         # Track hash algorithm for compare mode JSON
         self._hash_algorithm = "md5"
+        # Track metadata for verbose mode (compare mode compatible)
+        self._metadata: dict[str, dict] = {}
 
     def format_banner(self) -> None:
         """Format banner - in JSON mode, this is a no-op (mode is in data structure)."""
@@ -906,6 +946,19 @@ class JsonActionFormatter(ActionFormatter):
         if file_hash:
             group["hash"] = file_hash
         self._data["duplicateGroups"].append(group)
+
+        # Collect metadata for verbose mode (compare mode compatible)
+        if self.verbose:
+            all_files = [master_file] + sorted_duplicates
+            for f in all_files:
+                try:
+                    stat = os.stat(f)
+                    self._metadata[f] = {
+                        "sizeBytes": stat.st_size,
+                        "modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
+                    }
+                except OSError:
+                    pass  # Skip files that can't be accessed
 
     def format_statistics(
         self,
@@ -991,6 +1044,53 @@ class JsonActionFormatter(ActionFormatter):
         """No-op for JSON - empty results represented in JSON structure."""
         pass
 
+    def format_compare_summary(
+        self,
+        match_count: int,
+        matched_files1: int,
+        matched_files2: int,
+        dir1_name: str,
+        dir2_name: str
+    ) -> None:
+        """Store compare mode summary data for JSON output."""
+        # Update summary with compare-specific counts
+        self._data["summary"] = {
+            "matchCount": match_count,
+            "matchedFilesDir1": matched_files1,
+            "matchedFilesDir2": matched_files2,
+            "unmatchedFilesDir1": 0,
+            "unmatchedFilesDir2": 0
+        }
+
+    def format_unmatched_section(
+        self,
+        dir1_label: str,
+        unmatched1: list[str],
+        dir2_label: str,
+        unmatched2: list[str]
+    ) -> None:
+        """Store unmatched files for JSON output."""
+        # Store sorted unmatched files for determinism
+        self._data["unmatchedDir1"] = sorted(unmatched1)
+        self._data["unmatchedDir2"] = sorted(unmatched2)
+        # Update summary counts
+        if "summary" not in self._data:
+            self._data["summary"] = {}
+        self._data["summary"]["unmatchedFilesDir1"] = len(unmatched1)
+        self._data["summary"]["unmatchedFilesDir2"] = len(unmatched2)
+
+        # Collect metadata for verbose mode (unmatched files too)
+        if self.verbose:
+            for f in unmatched1 + unmatched2:
+                try:
+                    stat = os.stat(f)
+                    self._metadata[f] = {
+                        "sizeBytes": stat.st_size,
+                        "modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
+                    }
+                except OSError:
+                    pass  # Skip files that can't be accessed
+
     def format_user_abort(self) -> None:
         """No-op for JSON - abort status represented in JSON structure."""
         pass
@@ -1020,6 +1120,7 @@ class JsonActionFormatter(ActionFormatter):
         if self._action == "compare":
             # Convert duplicateGroups to matches format for compare mode
             matches = []
+            total_files = 0
             for group in self._data.get("duplicateGroups", []):
                 master = group.get("masterFile", "")
                 duplicates = [d["path"] for d in group.get("duplicates", [])]
@@ -1030,11 +1131,12 @@ class JsonActionFormatter(ActionFormatter):
                     "filesDir2": sorted(duplicates)
                 }
                 matches.append(match_entry)
+                total_files += 1 + len(duplicates)  # master + duplicates
 
             # Sort matches by first file in filesDir1 for determinism
             matches.sort(key=lambda m: m["filesDir1"][0] if m["filesDir1"] else "")
 
-            compare_data = {
+            compare_data: dict = {
                 "timestamp": self._data["timestamp"],
                 "directories": {
                     "dir1": self._data["directories"].get("master", ""),
@@ -1042,10 +1144,29 @@ class JsonActionFormatter(ActionFormatter):
                 },
                 "hashAlgorithm": self._hash_algorithm,
                 "matches": matches,
-                "unmatchedDir1": [],
-                "unmatchedDir2": [],
+                "unmatchedDir1": self._data.get("unmatchedDir1", []),
+                "unmatchedDir2": self._data.get("unmatchedDir2", []),
                 "summary": self._convert_statistics_to_summary()
             }
+
+            # Update summary with unmatched counts if available
+            if "summary" in self._data and "unmatchedFilesDir1" in self._data["summary"]:
+                compare_data["summary"]["unmatchedFilesDir1"] = self._data["summary"]["unmatchedFilesDir1"]
+                compare_data["summary"]["unmatchedFilesDir2"] = self._data["summary"]["unmatchedFilesDir2"]
+
+            # Add metadata if verbose mode (compare mode compatible)
+            if self.verbose and self._metadata:
+                compare_data["metadata"] = self._metadata
+
+            # Add statistics (compare mode format)
+            group_count = len(matches)
+            compare_data["statistics"] = {
+                "duplicateGroups": group_count,
+                "totalFilesWithMatches": total_files,
+                "spaceReclaimable": 0,  # Compare mode doesn't compute space
+                "spaceReclaimableFormatted": None
+            }
+
             print(json.dumps(compare_data, indent=2))
             return
 
@@ -1257,7 +1378,43 @@ class TextActionFormatter(ActionFormatter):
 
     def format_empty_result(self) -> None:
         """Format message when no duplicates found."""
-        print("No duplicates found.")
+        if self._action == "compare":
+            print("No matching files found.")
+        else:
+            print("No duplicates found.")
+
+    def format_compare_summary(
+        self,
+        match_count: int,
+        matched_files1: int,
+        matched_files2: int,
+        dir1_name: str,
+        dir2_name: str
+    ) -> None:
+        """Format and output compare mode summary."""
+        print(f"\nMatched files summary:")
+        print(f"  Unique content hashes with matches: {match_count}")
+        print(f"  Files in {dir1_name} with matches in {dir2_name}: {matched_files1}")
+        print(f"  Files in {dir2_name} with matches in {dir1_name}: {matched_files2}")
+
+    def format_unmatched_section(
+        self,
+        dir1_label: str,
+        unmatched1: list[str],
+        dir2_label: str,
+        unmatched2: list[str]
+    ) -> None:
+        """Format and output the unmatched files section."""
+        print("\nFiles with no content matches:")
+        print("==============================")
+        if unmatched1:
+            print(f"\nUnique files in {dir1_label}:")
+            for f in sorted(unmatched1):
+                print(f"  {f}")
+        if unmatched2:
+            print(f"\nUnique files in {dir2_label}:")
+            for f in sorted(unmatched2):
+                print(f"  {f}")
 
     def format_user_abort(self) -> None:
         """Format message when user aborts execution."""
@@ -2415,9 +2572,10 @@ def main() -> int:
             for master_file, duplicates, reason, _ in master_results:
                 cross_fs_files.update(check_cross_filesystem(master_file, duplicates))
 
-        # Determine mode: preview (default when --action specified) or execute
-        preview_mode = args.action and not args.execute
-        execute_mode = args.action and args.execute
+        # Determine mode: preview (default) or execute
+        # For compare action, always preview mode (validation prevents --execute with compare)
+        preview_mode = not args.execute
+        execute_mode = args.action != 'compare' and args.execute
 
         # Create formatter for action mode (handles all actions including compare)
         if args.json:
@@ -2456,16 +2614,31 @@ def main() -> int:
 
             if args.summary:
                 # Summary mode: show only statistics (no file listing)
-                bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
-                cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
-                formatter.format_statistics(
-                    group_count=grp_count,
-                    duplicate_count=dup_count,
-                    master_count=len(master_results),
-                    space_savings=bytes_saved,
-                    action=args.action,
-                    cross_fs_count=cross_fs_count
-                )
+                if args.action == 'compare':
+                    # Compare mode: use compare-specific summary format
+                    formatter.format_compare_summary(
+                        match_count=len(matches),
+                        matched_files1=matched_files1,
+                        matched_files2=matched_files2,
+                        dir1_name=args.dir1,
+                        dir2_name=args.dir2
+                    )
+                    # Show unmatched summary if requested
+                    if args.show_unmatched and not args.json:
+                        print(f"\nUnmatched files summary:")
+                        print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
+                        print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
+                else:
+                    bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
+                    cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+                    formatter.format_statistics(
+                        group_count=grp_count,
+                        duplicate_count=dup_count,
+                        master_count=len(master_results),
+                        space_savings=bytes_saved,
+                        action=args.action,
+                        cross_fs_count=cross_fs_count
+                    )
             else:
                 # Detailed output
                 if not matches:
@@ -2498,7 +2671,17 @@ def main() -> int:
                         if i < len(sorted_results) - 1 and not args.json:
                             print()
 
-                    # Print statistics footer
+                # Optionally display unmatched files (compare mode) - outside matches check
+                if args.show_unmatched and args.action == 'compare':
+                    formatter.format_unmatched_section(
+                        dir1_label=args.dir1,
+                        unmatched1=unmatched1,
+                        dir2_label=args.dir2,
+                        unmatched2=unmatched2
+                    )
+
+                # Print statistics footer (only if there were matches)
+                if matches:
                     bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
                     cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
                     formatter.format_statistics(
