@@ -37,19 +37,27 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Test Suite
 
-- Total tests: 198
+- Total tests: 203
 - All passing
 - Coverage: file_matcher.py fully tested
 
+## Quick Tasks Completed
+
+### Quick 004: Skip Files Already Symlinked/Hardlinked (2026-01-23)
+
+- Added is_symlink_to_master() detection
+- Extended hardlink check to all actions
+- Specific skip reasons: "symlink to master", "hardlink to master"
+- 5 new tests added
+
 ## Pending Todos
 
-1. **Check and refine behaviour if matched files are hardlinks or symlinks** (cli) - Edge case handling (future)
-2. **Update JSON output header to object format** (output) - Consider `{"header": {"name": "filematcher"}}` (future)
+1. **Update JSON output header to object format** (output) - Consider `{"header": {"name": "filematcher"}}` (future)
 
 ## Session Continuity
 
-Last session: 2026-01-23 18:00
-Stopped at: v1.3 milestone archived
+Last session: 2026-01-23 23:34
+Stopped at: Completed quick task 004
 Resume file: None
 
 ## Next Steps
@@ -57,4 +65,4 @@ Resume file: None
 Run `/gsd:new-milestone` to start next milestone (questioning → research → requirements → roadmap)
 
 ---
-*Last updated: 2026-01-23 - v1.3 milestone complete*
+*Last updated: 2026-01-23 - Quick task 004 complete*
