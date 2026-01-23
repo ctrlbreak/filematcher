@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** Phase 6 - JSON Output
+**Current focus:** Phase 6 - JSON Output (COMPLETE)
 
 ## Current Position
 
-Phase: 6 of 8 (JSON Output)
-Plan: 2 of TBD complete
-Status: In progress
-Last activity: 2026-01-23 - Completed 06-02-PLAN.md (--json CLI flag and wiring)
+Phase: 6 of 8 (JSON Output) - COMPLETE
+Plan: 3 of 3 complete
+Status: Phase complete
+Last activity: 2026-01-23 - Completed 06-03-PLAN.md (tests and documentation)
 
-Progress: [██████░░░░] 58% (v1.1 complete: 4 phases, v1.2: 1/4 phases + 2 plans)
+Progress: [███████░░░] 65% (v1.1 complete: 4 phases, v1.2: 2/4 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 17 (v1.1: 12, v1.2: 5)
-- Phase 6 plan 2 duration: 3 min (3 tasks)
-- Total execution time: v1.1: 2 days, v1.2: ~20 min (so far)
+- Total plans completed: 18 (v1.1: 12, v1.2: 6)
+- Phase 6 plan 3 duration: 4 min (2 tasks)
+- Total execution time: v1.1: 2 days, v1.2: ~25 min (so far)
 
 **By Phase:**
 
@@ -32,7 +32,7 @@ Progress: [██████░░░░] 58% (v1.1 complete: 4 phases, v1.2: 1
 | 3. Deduplication | 4 | Complete (v1.1) |
 | 4. Audit Logging | 2 | Complete (v1.1) |
 | 5. Formatter Abstraction | 3 | Complete (v1.2) |
-| 6. JSON Output | 2/TBD | In progress |
+| 6. JSON Output | 3 | Complete (v1.2) |
 | 7. Output Unification | TBD | Not started |
 | 8. Color Enhancement | TBD | Not started |
 
@@ -42,6 +42,7 @@ Progress: [██████░░░░] 58% (v1.1 complete: 4 phases, v1.2: 1
 - 05-03 completed: 3 min (3 tasks, compare mode wiring + determinism tests)
 - 06-01 completed: 2 min (2 tasks, JSON formatter classes)
 - 06-02 completed: 3 min (3 tasks, --json flag and wiring)
+- 06-03 completed: 4 min (2 tasks, tests and documentation)
 
 ## Accumulated Context
 
@@ -75,6 +76,8 @@ Phase 6 decisions:
 | set_directories helper method | JsonActionFormatter needs master/duplicate paths explicitly | 06-01 |
 | Logger to stderr when --json | Keep stdout clean for JSON parsing; Unix convention | 06-02 |
 | --json --execute requires --yes | No interactive prompts possible when outputting JSON | 06-02 |
+| Test via subprocess and mock | Subprocess for true CLI behavior, mock for faster unit tests | 06-03 |
+| Schema documentation tables | Clear field/type/description presentation in README | 06-03 |
 
 ### Critical Research Insights
 
@@ -91,22 +94,24 @@ From research/SUMMARY.md:
 
 ### Blockers/Concerns
 
-**Phase 6 status (IN PROGRESS):**
+**Phase 6 status (COMPLETE):**
 - [x] JsonCompareFormatter implemented (plan 06-01)
 - [x] JsonActionFormatter implemented (plan 06-01)
 - [x] --json flag wiring in main() (plan 06-02)
 - [x] Flag interaction matrix verified (--json with --summary, --verbose, --action, --execute)
-- [ ] Tests for JSON output (plan 06-03 if needed)
+- [x] Tests for JSON output (plan 06-03) - 31 tests
+- [x] Documentation with schema and jq examples (plan 06-03)
 
 **Phase 7 considerations:**
-- JSON output is now available and stable
+- JSON output is now available and stable with full test coverage
+- README documents JSON schema for users
 - Ready to proceed with output unification
 
 ## Session Continuity
 
 Last session: 2026-01-23 (plan execution)
-Stopped at: Completed 06-02-PLAN.md
+Stopped at: Completed 06-03-PLAN.md - Phase 6 complete
 Resume file: None
 
 ---
-*Last updated: 2026-01-23 after 06-02 completion*
+*Last updated: 2026-01-23 after 06-03 completion*
