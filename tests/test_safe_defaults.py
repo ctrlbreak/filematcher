@@ -59,8 +59,8 @@ class TestFlagValidation(BaseFileMatcherTest):
         error_output = stderr_capture.getvalue()
         self.assertIn("invalid choice", error_output)
 
-    def test_execute_requires_action(self):
-        """--execute without --action should fail."""
+    def test_execute_with_compare_action_fails(self):
+        """--execute with compare action (default) should fail."""
         stderr_capture = io.StringIO()
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--execute']):
             with redirect_stderr(stderr_capture):
@@ -68,7 +68,7 @@ class TestFlagValidation(BaseFileMatcherTest):
                     main()
             self.assertEqual(cm.exception.code, 2)
         error_output = stderr_capture.getvalue()
-        self.assertIn("--execute requires --action", error_output)
+        self.assertIn("compare action doesn't modify files", error_output)
 
 
 class TestPreviewBanner(BaseFileMatcherTest):
