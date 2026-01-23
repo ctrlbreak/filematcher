@@ -2,6 +2,46 @@
 
 All notable changes to the File Matcher project will be documented in this file.
 
+## [1.3.0] - 2026-01-23
+
+### Changed
+- **Unified Action Model**: Compare mode is now `--action compare` (the default), unifying all modes under a single code path
+- **Simplified Codebase**: Removed 513 lines of duplicate code by eliminating separate CompareFormatter hierarchy
+
+### Technical Details
+- All modes (compare, hardlink, symlink, delete) now use the same ActionFormatter code path
+- `--action compare` is equivalent to not specifying `--action` (backward compatible)
+- file_matcher.py reduced from 2,951 to 2,438 lines
+- 198 unit tests, all passing
+
+## [1.2.0] - 2026-01-23
+
+### Added
+- **JSON Output**: Machine-readable output with `--json` flag for scripting and automation
+- **Color Output**: TTY-aware colored output highlighting masters (green), duplicates (yellow), and statistics (cyan)
+- **Quiet Mode**: `--quiet` flag suppresses progress messages while preserving data output
+- **Output Streams**: Progress to stderr, data to stdout (Unix convention)
+
+### Features
+- **`--json`**: Output results in JSON format with stable schema
+- **`--quiet`**: Suppress progress and status messages
+- **`--color`**: Force colored output (useful for `less -R`)
+- **`--no-color`**: Disable colored output
+- **`NO_COLOR`** environment variable: Standard way to disable color (https://no-color.org/)
+- **`FORCE_COLOR`** environment variable: Enable color in CI systems
+
+### Changed
+- Unified output structure between compare mode and action mode
+- Statistics footer now appears in all modes
+- Hierarchical output format: master file unindented, duplicates indented
+- Deterministic output ordering for reproducible results
+
+### Technical Details
+- Formatter abstraction layer (ActionFormatter ABC hierarchy)
+- JSON schema documented in README with jq examples
+- 16-color ANSI codes for maximum terminal compatibility
+- 198 unit tests covering all functionality
+
 ## [1.1.0] - 2026-01-20
 
 ### Added
