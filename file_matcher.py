@@ -520,7 +520,18 @@ class TextCompareFormatter(CompareFormatter):
 
         # Primary file: first from dir1 (green, unindented) - MASTER
         primary = sorted_dir1[0]
-        print(green(f"[MASTER] {primary}", self.cc))
+        # Count duplicates: all dir2 files + additional dir1 files (excluding primary)
+        dup_count = len(sorted_dir2) + len(sorted_dir1) - 1
+        if self.verbose:
+            # Get file size for verbose mode
+            try:
+                size = os.path.getsize(primary)
+                size_str = format_file_size(size)
+                print(green(f"[MASTER] {primary} ({dup_count} duplicates, {size_str})", self.cc))
+            except OSError:
+                print(green(f"[MASTER] {primary} ({dup_count} duplicates)", self.cc))
+        else:
+            print(green(f"[MASTER] {primary}", self.cc))
 
         # Additional dir1 files (indented, green) - also masters
         for f in sorted_dir1[1:]:
