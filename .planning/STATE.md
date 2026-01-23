@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.2 Complete - All phases finished
+**Current focus:** v1.2 Complete
 
 ## Current Position
 
-Phase: 8 of 8 (Color Enhancement)
-Plan: 3 of 3 complete
+Phase: 9 of 9 (Unify Default and Action Output for Groups)
+Plan: 1 of 1 (complete)
 Status: v1.2 Complete
-Last activity: 2026-01-23 - Completed 08-03-PLAN.md (tests and documentation)
+Last activity: 2026-01-23 - Phase 9 executed, v1.2 complete
 
-Progress: [██████████] 100% (v1.1 complete: 4 phases, v1.2 complete: 4 phases)
+Progress: [██████████] 100% (v1.1 complete: 4 phases, v1.2 complete: 5 phases)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 25 (v1.1: 12, v1.2: 13)
-- Phase 8 plan 3 duration: 2 min (3 tasks)
-- Total execution time: v1.1: 2 days, v1.2: ~59 min
+- Total plans completed: 26 (v1.1: 12, v1.2: 14)
+- Phase 9 plan 1 duration: 2 min (3 tasks)
+- Total execution time: v1.1: 2 days, v1.2: ~61 min
 
 **By Phase:**
 
@@ -35,6 +35,7 @@ Progress: [██████████] 100% (v1.1 complete: 4 phases, v1.2 c
 | 6. JSON Output | 3 | Complete (v1.2) |
 | 7. Output Unification | 4 | Complete (v1.2) |
 | 8. Color Enhancement | 3 | Complete (v1.2) |
+| 9. Unify Group Output | 1 | Complete (v1.2) |
 
 **Recent Trend:**
 - 05-01 completed: 6 min (3 tasks, ABC definitions)
@@ -50,6 +51,7 @@ Progress: [██████████] 100% (v1.1 complete: 4 phases, v1.2 c
 - 08-01 completed: 1 min (3 tasks, color infrastructure)
 - 08-02 completed: 4 min (4 tasks, CLI flags + formatter integration)
 - 08-03 completed: 2 min (3 tasks, tests and documentation)
+- 09-01 completed: 2 min (3 tasks, hierarchical output format)
 
 ## Accumulated Context
 
@@ -116,6 +118,15 @@ Phase 8 decisions:
 | ANSI regex pattern | r'\x1b\[[0-9;]*m' for code detection | 08-03 |
 | Content identity tests | strip_ansi() comparison validates no text changes | 08-03 |
 
+Phase 9 decisions:
+
+| Decision | Rationale | Phase |
+|----------|-----------|-------|
+| Green for dir1, yellow for dir2 | Consistent with action mode colors (green=master, yellow=duplicate) | 09-01 |
+| 4-space indent for secondary files | Matches action mode indentation pattern | 09-01 |
+| 2-space indent for hash line | Distinguishes hash from file lines | 09-01 |
+| Hash truncated to 10 chars with "..." | Readable while preserving information | 09-01 |
+
 ### Critical Research Insights
 
 From research/SUMMARY.md:
@@ -134,9 +145,9 @@ From research/SUMMARY.md:
 |---|-------------|------|--------|-----------|
 | 001 | Route edge case prints through formatters | 2026-01-23 | b27d735 | [001-route-edge-case-prints-through-formatter](./quick/001-route-edge-case-prints-through-formatter/) |
 
-### v1.2 Completion Summary
+### v1.2 Complete
 
-All v1.2 features implemented and tested:
+All phases complete:
 
 **Phase 5 - Formatter Abstraction:**
 - CompareFormatter and ActionFormatter ABCs
@@ -160,15 +171,25 @@ All v1.2 features implemented and tested:
 - 16-color ANSI codes for terminal compatibility
 - JSON never colored
 
+**Phase 9 - Unify Group Output:**
+- Hierarchical format with [dir1]/[dir2] labels
+- Primary file unindented, secondary files indented
+- Hash as trailing detail
+- Visual consistency with action mode
+
 **Test Suite:**
 - Total tests: 198
 - All tests passing
 
+## Roadmap Evolution
+
+- **2026-01-23**: Phase 9 complete, v1.2 finished
+
 ## Session Continuity
 
-Last session: 2026-01-23 (plan execution)
-Stopped at: Completed 08-03-PLAN.md (v1.2 complete)
+Last session: 2026-01-23 (v1.2 complete)
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-01-23 after 08-03 completion (v1.2 complete)*
+*Last updated: 2026-01-23 - v1.2 complete*
