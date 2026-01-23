@@ -1255,6 +1255,54 @@ def select_master_file(file_paths: list[str], master_dir: Path | None) -> tuple[
         return oldest, duplicates, "oldest file"
 
 
+def format_group_lines(
+    primary_file: str,
+    secondary_files: list[tuple[str, str]],
+    primary_label: str = "MASTER",
+    verbose: bool = False,
+    file_sizes: dict[str, int] | None = None,
+    dup_count: int | None = None,
+    cross_fs_files: set[str] | None = None
+) -> list[str]:
+    """
+    Format group lines with unified visual structure.
+
+    This is the shared helper for both compare mode and action mode group output.
+    Callers apply colors after receiving lines.
+
+    Args:
+        primary_file: Path to the primary file (shown unindented)
+        secondary_files: List of (path, label) tuples for secondary files
+        primary_label: Label for the primary file (default: "MASTER")
+        verbose: If True, show file size and dup count on primary line
+        file_sizes: Dict mapping paths to file sizes (for verbose mode)
+        dup_count: Number of duplicates (for verbose mode display)
+        cross_fs_files: Set of paths on different filesystems (adds [!cross-fs] marker)
+
+    Returns:
+        List of formatted lines:
+        - Primary line: [PRIMARY_LABEL] path (optional: dup count, size)
+        - Secondary lines: 4-space indent [LABEL] path
+    """
+    lines = []
+
+    # Format primary line
+    if verbose and file_sizes:
+        size = file_sizes.get(primary_file, 0)
+        size_str = format_file_size(size)
+        effective_dup_count = dup_count if dup_count is not None else len(secondary_files)
+        lines.append(f"[{primary_label}] {primary_file} ({effective_dup_count} duplicates, {size_str})")
+    else:
+        lines.append(f"[{primary_label}] {primary_file}")
+
+    # Format secondary lines (4-space indent, sorted alphabetically by path for determinism)
+    for path, label in sorted(secondary_files, key=lambda x: x[0]):
+        cross_fs_marker = " [!cross-fs]" if cross_fs_files and path in cross_fs_files else ""
+        lines.append(f"    [{label}] {path}{cross_fs_marker}")
+
+    return lines
+
+
 def format_duplicate_group(
     master_file: str,
     duplicates: list[str],
@@ -1279,18 +1327,6 @@ def format_duplicate_group(
     Returns:
         List of formatted lines for this group
     """
-    lines = []
-
-    # Format master line
-    if verbose and file_sizes:
-        size = file_sizes.get(master_file, 0)
-        size_str = format_file_size(size)
-        dup_count = len(duplicates)
-        lines.append(f"[MASTER] {master_file} ({dup_count} duplicates, {size_str})")
-    else:
-        lines.append(f"[MASTER] {master_file}")
-
-    # Format duplicate lines (sorted alphabetically, 4-space indent)
     # Determine action label based on preview_mode
     if action and preview_mode:
         # Preview mode: use "WOULD X" labels
@@ -1306,11 +1342,19 @@ def format_duplicate_group(
     else:
         action_label = "DUP:?"
 
-    for dup in sorted(duplicates):
-        cross_fs_marker = " [!cross-fs]" if cross_fs_files and dup in cross_fs_files else ""
-        lines.append(f"    [{action_label}] {dup}{cross_fs_marker}")
+    # Build secondary files list with labels
+    secondary_files = [(dup, action_label) for dup in duplicates]
 
-    return lines
+    # Delegate to shared helper
+    return format_group_lines(
+        primary_file=master_file,
+        secondary_files=secondary_files,
+        primary_label="MASTER",
+        verbose=verbose,
+        file_sizes=file_sizes,
+        dup_count=len(duplicates),
+        cross_fs_files=cross_fs_files
+    )
 
 
 PREVIEW_BANNER = "=== PREVIEW MODE - Use --execute to apply changes ==="
