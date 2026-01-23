@@ -79,10 +79,12 @@ Plans:
   3. JSON includes rich metadata (file sizes, hashes, timestamps, action types)
   4. `--json` works correctly with all existing flags (--summary, --verbose, --action, --execute)
   5. Text output remains unchanged (no breaking changes to default format)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 06-01: TBD
+- [ ] 06-01-PLAN.md — Implement JsonCompareFormatter and JsonActionFormatter classes
+- [ ] 06-02-PLAN.md — Add --json CLI flag and wire formatters into main()
+- [ ] 06-03-PLAN.md — JSON output tests and README schema documentation
 
 #### Phase 7: Output Unification
 **Goal**: Consistent output structure across compare and action modes with statistics in all modes
@@ -126,9 +128,9 @@ Plans:
 | 3. Deduplication | v1.1 | 4/4 | Complete | 2026-01-20 |
 | 4. Audit Logging | v1.1 | 2/2 | Complete | 2026-01-20 |
 | 5. Formatter Abstraction | v1.2 | 3/3 | Complete | 2026-01-22 |
-| 6. JSON Output | v1.2 | 0/? | Not started | - |
+| 6. JSON Output | v1.2 | 0/3 | Planned | - |
 | 7. Output Unification | v1.2 | 0/? | Not started | - |
 | 8. Color Enhancement | v1.2 | 0/? | Not started | - |
 
 ---
-*Last updated: 2026-01-22 - Phase 5 complete*
+*Last updated: 2026-01-23 - Phase 6 planned*
