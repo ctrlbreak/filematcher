@@ -185,6 +185,29 @@ def bold_yellow(text: str, cc: ColorConfig) -> str:
     return colorize(text, BOLD_YELLOW, cc)
 
 
+def determine_color_mode(args) -> ColorMode:
+    """Determine color mode from CLI arguments.
+
+    Args:
+        args: Parsed command-line arguments
+
+    Returns:
+        ColorMode based on flags (AUTO if no flags, ALWAYS for --color, NEVER for --no-color)
+    """
+    # --json implies no color (JSON must never have ANSI codes)
+    if args.json:
+        return ColorMode.NEVER
+
+    # Explicit flag takes precedence
+    if args.color_mode == 'always':
+        return ColorMode.ALWAYS
+    elif args.color_mode == 'never':
+        return ColorMode.NEVER
+
+    # Default to AUTO (TTY detection)
+    return ColorMode.AUTO
+
+
 # ============================================================================
 # Output Formatter ABCs
 # ============================================================================
@@ -2053,6 +2076,14 @@ def main() -> int:
                         help='Output results in JSON format for scripting')
     parser.add_argument('--quiet', '-q', action='store_true',
                         help='Suppress progress, warnings, and headers - only output data')
+    # Color output control
+    parser.add_argument('--color', dest='color_mode', action='store_const',
+                        const='always',
+                        help='Force color output (even when piped)')
+    parser.add_argument('--no-color', dest='color_mode', action='store_const',
+                        const='never',
+                        help='Disable color output')
+    # Default is None (auto mode - color on TTY, no color when piped)
 
     args = parser.parse_args()
 
