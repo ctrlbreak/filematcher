@@ -23,9 +23,9 @@ Requirements for output rationalisation milestone. Each maps to roadmap phases.
 
 ### Enhanced UX
 
-- [ ] **UX-01**: Color output for terminal (TTY-aware, automatically disabled in pipes)
-- [ ] **UX-02**: Color highlights key information (masters, duplicates, warnings, stats)
-- [ ] **UX-03**: `--no-color` flag to explicitly disable colors
+- [x] **UX-01**: Color output for terminal (TTY-aware, automatically disabled in pipes)
+- [x] **UX-02**: Color highlights key information (masters, duplicates, warnings, stats)
+- [x] **UX-03**: `--no-color` flag to explicitly disable colors
 
 ## Future Requirements
 
@@ -71,9 +71,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | JSON-02 | Phase 6 | Complete |
 | JSON-03 | Phase 6 | Complete |
 | JSON-04 | Phase 6 | Complete |
-| UX-01 | Phase 8 | Pending |
-| UX-02 | Phase 8 | Pending |
-| UX-03 | Phase 8 | Pending |
+| UX-01 | Phase 8 | Complete |
+| UX-02 | Phase 8 | Complete |
+| UX-03 | Phase 8 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 11 total
@@ -91,4 +91,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-22*
-*Last updated: 2026-01-23 - OUT-01 through OUT-03 complete (Phase 7)*
+*Last updated: 2026-01-23 - v1.2 complete (all 11 requirements implemented)*

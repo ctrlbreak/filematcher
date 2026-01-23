@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.1 Deduplication** - Phases 1-4 (shipped 2026-01-20)
-- 🚧 **v1.2 Output Rationalisation** - Phases 5-8 (in progress)
+- ✅ **v1.2 Output Rationalisation** - Phases 5-8 (shipped 2026-01-23)
 
 ## Phases
 
@@ -48,9 +48,10 @@ Plans:
 
 </details>
 
-### 🚧 v1.2 Output Rationalisation (In Progress)
+### ✅ v1.2 Output Rationalisation (Complete)
 
 **Milestone Goal:** Unify output formatting across modes and add machine-readable JSON output for scripting and automation.
+**Completed:** 2026-01-23
 
 #### Phase 5: Formatter Abstraction ✓
 **Goal**: Create unified output abstraction layer without changing user-visible behavior
@@ -106,7 +107,7 @@ Plans:
 - [x] 07-03-PLAN.md — Statistics footer in compare mode
 - [x] 07-04-PLAN.md — Tests for output unification and README updates
 
-#### Phase 8: Color Enhancement
+#### Phase 8: Color Enhancement ✓
 **Goal**: TTY-aware color output highlighting key information
 **Depends on**: Phase 7
 **Requirements**: UX-01, UX-02, UX-03
@@ -117,10 +118,13 @@ Plans:
   4. `--no-color` flag explicitly disables colors
   5. NO_COLOR environment variable is respected
   6. Text content is identical with or without color (only ANSI codes added)
-**Plans**: TBD
+**Plans**: 3 plans
+**Completed**: 2026-01-23
 
 Plans:
-- [ ] 08-01: TBD
+- [x] 08-01-PLAN.md — ColorConfig class, ANSI constants, and colorize helper functions
+- [x] 08-02-PLAN.md — Add --color/--no-color CLI flags and integrate color into Text formatters
+- [x] 08-03-PLAN.md — Tests for color output and README documentation
 
 ## Progress
 
@@ -135,7 +139,7 @@ Plans:
 | 5. Formatter Abstraction | v1.2 | 3/3 | Complete | 2026-01-22 |
 | 6. JSON Output | v1.2 | 3/3 | Complete | 2026-01-23 |
 | 7. Output Unification | v1.2 | 4/4 | Complete | 2026-01-23 |
-| 8. Color Enhancement | v1.2 | 0/? | Not started | - |
+| 8. Color Enhancement | v1.2 | 3/3 | Complete | 2026-01-23 |
 
 ---
-*Last updated: 2026-01-23 - Phase 7 complete*
+*Last updated: 2026-01-23 - v1.2 Output Rationalisation complete*
