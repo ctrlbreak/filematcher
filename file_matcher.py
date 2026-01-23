@@ -26,6 +26,27 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================================
+# ANSI Color Constants (16-color for compatibility)
+# ============================================================================
+
+# Reset
+RESET = "\033[0m"
+
+# Foreground colors (per 08-CONTEXT.md color palette)
+GREEN = "\033[32m"      # Masters (protected files)
+YELLOW = "\033[33m"     # Duplicates (removal candidates)
+RED = "\033[31m"        # Warnings and errors
+CYAN = "\033[36m"       # Statistics and summaries
+
+# Styles
+BOLD = "\033[1m"        # Emphasis
+DIM = "\033[2m"         # De-emphasis (hash values)
+
+# Compound styles
+BOLD_YELLOW = "\033[1;33m"  # PREVIEW MODE banner
+
+
+# ============================================================================
 # Output Formatter ABCs
 # ============================================================================
 
