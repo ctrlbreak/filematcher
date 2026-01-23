@@ -280,6 +280,17 @@ class TextCompareFormatter(CompareFormatter):
         print(f"  Files in {self.dir1_name} with matches in {self.dir2_name}: {matched_files1}")
         print(f"  Files in {self.dir2_name} with matches in {self.dir1_name}: {matched_files2}")
 
+    def format_statistics(self, group_count: int, file_count: int, space_savings: int) -> None:
+        """Format statistics footer matching action mode format."""
+        print()
+        print("--- Statistics ---")
+        print(f"Duplicate groups: {group_count}")
+        print(f"Total files with matches: {file_count}")
+        if space_savings > 0:
+            print(f"Space reclaimable: {format_file_size(space_savings)}")
+        else:
+            print("Space reclaimable: (run with --action to calculate)")
+
     def finalize(self) -> None:
         """Finalize output. Text output is immediate, so nothing to do."""
         pass
@@ -315,6 +326,8 @@ class JsonCompareFormatter(CompareFormatter):
         }
         # Track metadata for verbose mode
         self._metadata: dict[str, dict] = {}
+        # Track statistics (set by format_statistics)
+        self._statistics: dict | None = None
 
     def format_header(self, dir1: str, dir2: str, hash_algo: str) -> None:
         """Format comparison header by storing directory and algorithm info.
@@ -405,6 +418,15 @@ class JsonCompareFormatter(CompareFormatter):
             "unmatchedFilesDir2": unmatched2
         }
 
+    def format_statistics(self, group_count: int, file_count: int, space_savings: int) -> None:
+        """Store statistics data for JSON output."""
+        self._statistics = {
+            "duplicateGroups": group_count,
+            "totalFilesWithMatches": file_count,
+            "spaceReclaimable": space_savings,
+            "spaceReclaimableFormatted": format_file_size(space_savings) if space_savings > 0 else None
+        }
+
     def finalize(self) -> None:
         """Finalize output by sorting collections and printing JSON."""
         # Sort matches by (first file in dir1, hash) for determinism
@@ -415,6 +437,10 @@ class JsonCompareFormatter(CompareFormatter):
         # Add metadata if verbose mode
         if self.verbose and self._metadata:
             self._data["metadata"] = self._metadata
+
+        # Add statistics if set
+        if self._statistics:
+            self._data["statistics"] = self._statistics
 
         # Output JSON
         print(json.dumps(self._data, indent=2))
