@@ -18,7 +18,8 @@ import logging
 import os
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
+import json
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -266,6 +267,141 @@ class TextCompareFormatter(CompareFormatter):
     def finalize(self) -> None:
         """Finalize output. Text output is immediate, so nothing to do."""
         pass
+
+
+class JsonCompareFormatter(CompareFormatter):
+    """JSON output formatter for compare mode (no action specified).
+
+    Implements accumulator pattern - collects data during format_* calls,
+    then serializes to JSON in finalize().
+    """
+
+    def __init__(self, verbose: bool = False, dir1_name: str = "dir1", dir2_name: str = "dir2"):
+        """Initialize the formatter with configuration.
+
+        Args:
+            verbose: If True, include per-file metadata in output
+            dir1_name: Label for first directory (default: "dir1")
+            dir2_name: Label for second directory (default: "dir2")
+        """
+        super().__init__(verbose, dir1_name, dir2_name)
+        self._data: dict = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "directories": {
+                "dir1": "",
+                "dir2": ""
+            },
+            "hashAlgorithm": "",
+            "matches": [],
+            "unmatchedDir1": [],
+            "unmatchedDir2": [],
+            "summary": {}
+        }
+        # Track metadata for verbose mode
+        self._metadata: dict[str, dict] = {}
+
+    def format_header(self, dir1: str, dir2: str, hash_algo: str) -> None:
+        """Format comparison header by storing directory and algorithm info.
+
+        Args:
+            dir1: First directory path (stored as absolute)
+            dir2: Second directory path (stored as absolute)
+            hash_algo: Hash algorithm used (md5, sha256)
+        """
+        self._data["directories"]["dir1"] = str(Path(dir1).resolve())
+        self._data["directories"]["dir2"] = str(Path(dir2).resolve())
+        self._data["hashAlgorithm"] = hash_algo
+
+    def format_match_group(self, file_hash: str, files_dir1: list[str], files_dir2: list[str]) -> None:
+        """Accumulate a group of matching files.
+
+        Args:
+            file_hash: Content hash for this group
+            files_dir1: List of file paths from first directory
+            files_dir2: List of file paths from second directory
+        """
+        # Sort file lists for determinism (OUT-04)
+        sorted_files1 = sorted(files_dir1)
+        sorted_files2 = sorted(files_dir2)
+
+        match_group = {
+            "hash": file_hash,
+            "filesDir1": sorted_files1,
+            "filesDir2": sorted_files2
+        }
+        self._data["matches"].append(match_group)
+
+        # Collect metadata for verbose mode
+        if self.verbose:
+            for f in sorted_files1 + sorted_files2:
+                try:
+                    stat = os.stat(f)
+                    self._metadata[f] = {
+                        "sizeBytes": stat.st_size,
+                        "modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
+                    }
+                except OSError:
+                    pass  # Skip files that can't be accessed
+
+    def format_unmatched(self, dir_label: str, files: list[str]) -> None:
+        """Accumulate unmatched files for a directory.
+
+        Args:
+            dir_label: Label for the directory (used to determine which list)
+            files: List of file paths with no matches
+        """
+        # Sort for determinism (OUT-04)
+        sorted_files = sorted(files)
+
+        # Determine which list to append to based on dir_label
+        if dir_label == self.dir1_name:
+            self._data["unmatchedDir1"] = sorted_files
+        else:
+            self._data["unmatchedDir2"] = sorted_files
+
+        # Collect metadata for verbose mode
+        if self.verbose:
+            for f in sorted_files:
+                try:
+                    stat = os.stat(f)
+                    self._metadata[f] = {
+                        "sizeBytes": stat.st_size,
+                        "modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
+                    }
+                except OSError:
+                    pass  # Skip files that can't be accessed
+
+    def format_summary(self, match_count: int, matched_files1: int, matched_files2: int, unmatched1: int, unmatched2: int) -> None:
+        """Accumulate comparison summary statistics.
+
+        Args:
+            match_count: Number of unique content hashes with matches
+            matched_files1: Number of files in dir1 with matches
+            matched_files2: Number of files in dir2 with matches
+            unmatched1: Number of unmatched files in dir1
+            unmatched2: Number of unmatched files in dir2
+        """
+        self._data["summary"] = {
+            "matchCount": match_count,
+            "matchedFilesDir1": matched_files1,
+            "matchedFilesDir2": matched_files2,
+            "unmatchedFilesDir1": unmatched1,
+            "unmatchedFilesDir2": unmatched2
+        }
+
+    def finalize(self) -> None:
+        """Finalize output by sorting collections and printing JSON."""
+        # Sort matches by (first file in dir1, hash) for determinism
+        self._data["matches"].sort(
+            key=lambda m: (m["filesDir1"][0] if m["filesDir1"] else "", m["hash"])
+        )
+
+        # Add metadata if verbose mode
+        if self.verbose and self._metadata:
+            self._data["metadata"] = self._metadata
+
+        # Output JSON
+        print(json.dumps(self._data, indent=2))
 
 
 class TextActionFormatter(ActionFormatter):
