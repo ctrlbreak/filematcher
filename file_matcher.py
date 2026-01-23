@@ -22,6 +22,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -1920,7 +1921,8 @@ def index_directory(directory: str | Path, hash_algorithm: str = 'md5', fast_mod
         total_files = sum(1 for filepath in directory_path.rglob('*') if filepath.is_file())
         processed_files = 0
         logger.debug(f"Found {total_files} files to process in {directory}")
-    
+        is_tty = hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()
+
     for filepath in directory_path.rglob('*'):
         if filepath.is_file():
             try:
@@ -1928,7 +1930,18 @@ def index_directory(directory: str | Path, hash_algorithm: str = 'md5', fast_mod
                     processed_files += 1
                     file_size = os.path.getsize(filepath)
                     size_str = format_file_size(file_size)
-                    logger.debug(f"[{processed_files}/{total_files}] Processing {filepath.name} ({size_str})")
+                    if is_tty:
+                        # Single-line progress update (overwrite previous)
+                        progress_line = f"\r[{processed_files}/{total_files}] Processing {filepath.name} ({size_str})"
+                        # Truncate to terminal width and pad to clear previous line
+                        term_width = shutil.get_terminal_size().columns
+                        if len(progress_line) > term_width:
+                            progress_line = progress_line[:term_width-3] + "..."
+                        sys.stderr.write(progress_line.ljust(term_width) + '\r')
+                        sys.stderr.flush()
+                    else:
+                        # Multi-line for non-TTY (logs, pipes)
+                        logger.debug(f"[{processed_files}/{total_files}] Processing {filepath.name} ({size_str})")
 
                 file_hash = get_file_hash(filepath, hash_algorithm, fast_mode)
                 # Store full resolved path (resolve() handles symlinks for consistent comparison)
@@ -1939,8 +1952,12 @@ def index_directory(directory: str | Path, hash_algorithm: str = 'md5', fast_mod
                     processed_files += 1
 
     if verbose:
+        if is_tty:
+            # Clear progress line and move to new line
+            sys.stderr.write('\r' + ' ' * shutil.get_terminal_size().columns + '\r')
+            sys.stderr.flush()
         logger.debug(f"Completed indexing {directory}: {len(hash_to_files)} unique file contents found")
-    
+
     return hash_to_files
 
 
