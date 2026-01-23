@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-01-22)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** Phase 7 - Output Unification (IN PROGRESS)
+**Current focus:** Phase 7 - Output Unification (COMPLETE)
 
 ## Current Position
 
 Phase: 7 of 8 (Output Unification)
-Plan: 3 of 3 complete (with 07-02 running in parallel)
-Status: Phase 7 nearing completion
-Last activity: 2026-01-23 - Completed 07-03-PLAN.md (statistics footer)
+Plan: 3 of 3 complete (all plans done)
+Status: Phase 7 complete
+Last activity: 2026-01-23 - Completed 07-02-PLAN.md (unified header format)
 
-Progress: [████████░░] 80% (v1.1 complete: 4 phases, v1.2: 2.8/4 phases complete)
+Progress: [█████████░] 87.5% (v1.1 complete: 4 phases, v1.2: 3/4 phases complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 21 (v1.1: 12, v1.2: 9)
-- Phase 7 plan 3 duration: 8 min (3 tasks)
-- Total execution time: v1.1: 2 days, v1.2: ~45 min (so far)
+- Total plans completed: 22 (v1.1: 12, v1.2: 10)
+- Phase 7 plan 2 duration: 4 min (3 tasks)
+- Total execution time: v1.1: 2 days, v1.2: ~50 min
 
 **By Phase:**
 
@@ -33,7 +33,7 @@ Progress: [████████░░] 80% (v1.1 complete: 4 phases, v1.2: 2
 | 4. Audit Logging | 2 | Complete (v1.1) |
 | 5. Formatter Abstraction | 3 | Complete (v1.2) |
 | 6. JSON Output | 3 | Complete (v1.2) |
-| 7. Output Unification | 3 | 3/3 complete (07-02 parallel) |
+| 7. Output Unification | 3 | Complete (v1.2) |
 | 8. Color Enhancement | TBD | Not started |
 
 **Recent Trend:**
@@ -44,6 +44,7 @@ Progress: [████████░░] 80% (v1.1 complete: 4 phases, v1.2: 2
 - 06-02 completed: 3 min (3 tasks, --json flag and wiring)
 - 06-03 completed: 4 min (2 tasks, tests and documentation)
 - 07-01 completed: 5 min (3 tasks, stderr routing + --quiet flag)
+- 07-02 completed: 4 min (3 tasks, unified header format)
 - 07-03 completed: 8 min (3 tasks, statistics footer)
 
 ## Accumulated Context
@@ -88,6 +89,9 @@ Phase 7 decisions:
 | stderr for all modes | Unix convention: status/progress to stderr, data to stdout | 07-01 |
 | --quiet uses ERROR level | Only errors get through; suppresses INFO/DEBUG | 07-01 |
 | --quiet precedence over --verbose | Explicit user intent for silence | 07-01 |
+| format_summary_line separate from format_statistics | Summary line is one-liner after header, statistics is detailed footer | 07-02 |
+| PREVIEW/EXECUTING state in header | Clear mode indicator in unified header | 07-02 |
+| --quiet preserves banner | Safety: keep PREVIEW MODE warning visible | 07-02 |
 | format_statistics distinct from format_summary | Statistics is footer block, summary is aggregate counts | 07-03 |
 | Compare mode 0 space savings with message | Directs users to --action mode for space calculations | 07-03 |
 
@@ -101,26 +105,25 @@ From research/SUMMARY.md:
 
 ### Pending Todos
 
-1. **Rationalise output from compare mode and action mode** (cli) - Being addressed in v1.2 Phases 5-7
-2. **Check and refine behaviour if matched files are hardlinks or symlinks** (cli) - Edge case handling
+1. **Rationalise output from compare mode and action mode** (cli) - DONE in Phase 7
+2. **Check and refine behaviour if matched files are hardlinks or symlinks** (cli) - Edge case handling (future)
 
 ### Blockers/Concerns
 
-**Phase 7 status (NEAR COMPLETE):**
+**Phase 7 status (COMPLETE):**
 - [x] Stream separation: logger to stderr in all modes (plan 07-01)
 - [x] --quiet/-q flag implemented (plan 07-01)
-- [x] Unified header system (plan 07-02, running parallel)
+- [x] Unified header system (plan 07-02)
 - [x] Summary statistics unification (plan 07-03)
 
 **Next steps:**
-- Verify 07-02 completion
-- Begin Phase 8: Color Enhancement
+- Begin Phase 8: Color Enhancement (optional polish)
 
 ## Session Continuity
 
 Last session: 2026-01-23 (plan execution)
-Stopped at: Completed 07-03-PLAN.md
+Stopped at: Completed 07-02-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-01-23 after 07-03 completion*
+*Last updated: 2026-01-23 after 07-02 completion*
