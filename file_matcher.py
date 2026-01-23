@@ -1017,6 +1017,7 @@ class TextActionFormatter(ActionFormatter):
         self,
         verbose: bool = False,
         preview_mode: bool = True,
+        action: str | None = None,
         color_config: ColorConfig | None = None
     ):
         """Initialize the formatter with configuration.
@@ -1024,13 +1025,16 @@ class TextActionFormatter(ActionFormatter):
         Args:
             verbose: If True, show additional details in output
             preview_mode: If True, format for preview; if False, format for execution
+            action: Action type (compare, hardlink, symlink, delete)
             color_config: Color configuration (default: no color)
         """
-        super().__init__(verbose, preview_mode)
+        super().__init__(verbose, preview_mode, action)
         self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
 
     def format_banner(self) -> None:
         """Format and output the mode banner (PREVIEW or EXECUTE)."""
+        if self._action == "compare":
+            return  # Compare mode doesn't show PREVIEW/EXECUTING banner
         if self.preview_mode:
             # PREVIEW banner in bold yellow (attention-grabbing safety warning)
             print(bold_yellow(format_preview_banner(), self.cc))
@@ -1040,8 +1044,12 @@ class TextActionFormatter(ActionFormatter):
 
     def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
         """Format unified header showing mode, state, action and directories."""
-        state = "PREVIEW" if self.preview_mode else "EXECUTING"
-        header = f"Action mode ({state}): {action} {dir1} vs {dir2}"
+        if action == "compare":
+            # Compare mode: no (PREVIEW)/(EXECUTING) state indicator
+            header = f"Compare mode: {dir1} vs {dir2}"
+        else:
+            state = "PREVIEW" if self.preview_mode else "EXECUTING"
+            header = f"Action mode ({state}): {action} {dir1} vs {dir2}"
         print(cyan(header, self.cc))
 
     def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
