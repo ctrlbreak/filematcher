@@ -4,6 +4,7 @@
 
 - ✅ **v1.1 Deduplication** - Phases 1-4 (shipped 2026-01-20)
 - ✅ **v1.2 Output Rationalisation** - Phases 5-9 (shipped 2026-01-23)
+- ✅ **v1.3 Code Unification** - Phase 10 (shipped 2026-01-23)
 
 ## Phases
 
@@ -140,7 +141,7 @@ Plans:
 Plans:
 - [x] 09-01-PLAN.md — Update TextCompareFormatter.format_match_group for hierarchical output
 
-#### Phase 10: Unify Compare as Action
+#### Phase 10: Unify Compare as Action ✓
 **Goal**: Refactor default compare mode into a "compare" action that reuses the action code path, eliminating duplicate code paths
 **Depends on**: Phase 9
 **Success Criteria** (what must be TRUE):
@@ -151,12 +152,13 @@ Plans:
   5. All existing tests pass without modification
   6. JSON output schema unchanged for compare mode
 **Plans**: 4 plans
+**Completed**: 2026-01-23
 
 Plans:
-- [ ] 10-01-PLAN.md — Add compare to action choices with default and validation
-- [ ] 10-02-PLAN.md — Extend ActionFormatter classes to handle compare action
-- [ ] 10-03-PLAN.md — Unify main() to use action path for all modes
-- [ ] 10-04-PLAN.md — Delete CompareFormatter hierarchy and dead code
+- [x] 10-01-PLAN.md — Add compare to action choices with default and validation
+- [x] 10-02-PLAN.md — Extend ActionFormatter classes to handle compare action
+- [x] 10-03-PLAN.md — Unify main() to use action path for all modes
+- [x] 10-04-PLAN.md — Delete CompareFormatter hierarchy and dead code
 
 ## Progress
 
@@ -173,7 +175,7 @@ Plans:
 | 7. Output Unification | v1.2 | 4/4 | Complete | 2026-01-23 |
 | 8. Color Enhancement | v1.2 | 3/3 | Complete | 2026-01-23 |
 | 9. Unify Group Output | v1.2 | 1/1 | Complete | 2026-01-23 |
-| 10. Unify Compare as Action | v1.2 | 0/4 | Ready | - |
+| 10. Unify Compare as Action | v1.3 | 4/4 | Complete | 2026-01-23 |
 
 ---
-*Last updated: 2026-01-23 - Phase 10 planned (4 plans)*
+*Last updated: 2026-01-23 - Phase 10 complete (v1.3 shipped)*
