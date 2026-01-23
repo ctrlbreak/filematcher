@@ -256,6 +256,11 @@ class ActionFormatter(ABC):
         pass
 
     @abstractmethod
+    def format_empty_result(self) -> None:
+        """Format message when no duplicates found in dedup mode."""
+        pass
+
+    @abstractmethod
     def format_user_abort(self) -> None:
         """Format message when user aborts execution."""
         pass
@@ -716,6 +721,10 @@ class JsonActionFormatter(ActionFormatter):
         self._data["directories"]["master"] = str(Path(master_dir).resolve())
         self._data["directories"]["duplicate"] = str(Path(duplicate_dir).resolve())
 
+    def format_empty_result(self) -> None:
+        """No-op for JSON - empty results represented in JSON structure."""
+        pass
+
     def format_user_abort(self) -> None:
         """No-op for JSON - abort status represented in JSON structure."""
         pass
@@ -878,6 +887,10 @@ class TextActionFormatter(ActionFormatter):
             print("Failed files:")
             for path, error in sorted(failed_list):  # Sorted for determinism (OUT-04)
                 print(f"  - {path}: {error}")
+
+    def format_empty_result(self) -> None:
+        """Format message when no duplicates found."""
+        print("No duplicates found.")
 
     def format_user_abort(self) -> None:
         """Format message when user aborts execution."""
@@ -2008,8 +2021,7 @@ def main() -> int:
             else:
                 # Detailed output
                 if not matches:
-                    if not args.json:
-                        print("No duplicates found.")
+                    formatter.format_empty_result()
                 else:
                     # Print warnings first
                     formatter.format_warnings(warnings)
@@ -2143,17 +2155,19 @@ def main() -> int:
                 # Text mode: show preview first, then execute
                 # First show preview so user sees what will happen
                 print_preview_output(action_formatter, show_banner=True)
-                print()
+                action_formatter.format_execute_prompt_separator()
 
                 # Then show execute banner and prompt for confirmation
-                print(format_execute_banner())
+                banner_line = action_formatter.format_execute_banner_line()
+                if banner_line:
+                    print(banner_line)
 
                 # Calculate space savings for confirmation prompt
                 bytes_saved, dup_count, _ = calculate_space_savings(master_results)
                 cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
                 prompt = format_confirmation_prompt(dup_count, args.action, bytes_saved, cross_fs_count if args.fallback_symlink else 0)
                 if not confirm_execution(skip_confirm=args.yes, prompt=prompt):
-                    print("Aborted. No changes made.")
+                    action_formatter.format_user_abort()
                     return 0
 
                 # Show EXECUTING header after confirmation (unless --quiet)
@@ -2255,8 +2269,7 @@ def main() -> int:
         else:
             # Detailed output
             if not matches:
-                if not args.json:
-                    print("No matching files found.")
+                compare_formatter.format_empty_result(mode="compare")
             else:
                 # Sort hash keys for deterministic output (OUT-04)
                 for file_hash in sorted(matches.keys()):
@@ -2265,9 +2278,7 @@ def main() -> int:
 
             # Optionally display unmatched files (detailed mode)
             if args.show_unmatched:
-                if not args.json:
-                    print("\nFiles with no content matches:")
-                    print("==============================")
+                compare_formatter.format_unmatched_header()
                 compare_formatter.format_unmatched(args.dir1, unmatched1)
                 compare_formatter.format_unmatched(args.dir2, unmatched2)
 
