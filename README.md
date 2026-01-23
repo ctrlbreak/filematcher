@@ -243,13 +243,16 @@ filematcher dir1 dir2 --action hardlink --execute --yes --json | \
 ### Default Output
 
 ```
-Found 2 hashes with matching files:
+Compare mode: dir1 vs dir2
+Found 2 duplicate groups (3 files, 0 B reclaimable)
 
-Hash: e853edac47...
-  Files in dir1:
-    /path/dir1/file1.txt
-  Files in dir2:
-    /path/dir2/different_name.txt
+[dir1] /path/dir1/file1.txt
+    [dir2] /path/dir2/different_name.txt
+  Hash: e853edac47...
+
+--- Statistics ---
+Duplicate groups: 2
+Total files with matches: 3
 ```
 
 ### Action Mode Output
