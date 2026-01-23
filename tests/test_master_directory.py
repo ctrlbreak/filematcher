@@ -29,8 +29,9 @@ class TestCompareMode(BaseFileMatcherTest):
         """Test that tool works without --action (compare mode)."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
-            # Original output format should have "Hash:" prefix
-            self.assertIn("Hash:", output)
+            # Output uses [MASTER]/[DUPLICATE] labels
+            self.assertIn("[MASTER]", output)
+            self.assertIn("[DUPLICATE]", output)
 
 
 class TestMasterDirectoryOutput(BaseFileMatcherTest):
@@ -62,10 +63,12 @@ class TestMasterDirectoryOutput(BaseFileMatcherTest):
                 self.assertIn('test_dir1', line)
 
     def test_no_action_preserves_compare_format(self):
-        """Test that without --action, output has Hash: format."""
+        """Test that without --action, output uses hierarchical format."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
-            self.assertIn("Hash:", output)
+            # Compare mode uses [MASTER]/[DUPLICATE] labels like action mode
+            self.assertIn("[MASTER]", output)
+            self.assertIn("[DUPLICATE]", output)
 
     def test_action_summary_shows_counts(self):
         """Test that --summary shows master files and duplicates counts."""

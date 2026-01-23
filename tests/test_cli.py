@@ -70,10 +70,10 @@ class TestCLI(BaseFileMatcherTest):
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
 
-            # Check that the output includes hash details and directory labels
-            self.assertIn("Hash:", output)
-            # New hierarchical format uses [dir_name] labels instead of "Files in"
-            self.assertIn("[", output)  # Directory label format
+            # Check that the output includes directory labels (Hash only in verbose)
+            # New hierarchical format uses [MASTER]/[DUPLICATE] labels
+            self.assertIn("[MASTER]", output)
+            self.assertIn("[DUPLICATE]", output)
 
         # Test with unmatched files option
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--show-unmatched']):

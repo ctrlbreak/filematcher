@@ -33,8 +33,9 @@ class TestStreamSeparation(unittest.TestCase):
         )
         # Logger messages should be on stderr
         self.assertIn("Using MD5", result.stderr)
-        # Data should be on stdout
-        self.assertIn("Hash:", result.stdout)
+        # Data should be on stdout (MASTER/DUPLICATE labels, Hash only in verbose)
+        self.assertIn("[MASTER]", result.stdout)
+        self.assertIn("[DUPLICATE]", result.stdout)
         # Logger messages should NOT be on stdout
         self.assertNotIn("Using MD5", result.stdout)
 
@@ -73,14 +74,15 @@ class TestStreamSeparation(unittest.TestCase):
         self.assertEqual(result.returncode, 1)
 
     def test_data_output_on_stdout(self):
-        """Verify data (hash groups, statistics) go to stdout."""
+        """Verify data (file groups, statistics) go to stdout."""
         result = subprocess.run(
             [sys.executable, "file_matcher.py", self.test_dir1, self.test_dir2],
             capture_output=True,
             text=True
         )
-        # Data should be on stdout
-        self.assertIn("Hash:", result.stdout)
+        # Data should be on stdout (MASTER/DUPLICATE labels)
+        self.assertIn("[MASTER]", result.stdout)
+        self.assertIn("[DUPLICATE]", result.stdout)
         self.assertIn("--- Statistics ---", result.stdout)
         self.assertIn("Duplicate groups:", result.stdout)
 
@@ -103,8 +105,8 @@ class TestQuietFlag(unittest.TestCase):
         # Should not have logger messages
         self.assertNotIn("Using MD5", result.stderr)
         self.assertNotIn("Indexing", result.stderr)
-        # Should still have data
-        self.assertIn("Hash:", result.stdout)
+        # Should still have data (MASTER/DUPLICATE labels)
+        self.assertIn("[MASTER]", result.stdout)
 
     def test_quiet_short_flag(self):
         """-q should work same as --quiet."""
@@ -122,8 +124,8 @@ class TestQuietFlag(unittest.TestCase):
             capture_output=True,
             text=True
         )
-        # Data output should still appear
-        self.assertIn("Hash:", result.stdout)
+        # Data output should still appear (MASTER/DUPLICATE labels)
+        self.assertIn("[MASTER]", result.stdout)
         self.assertIn("--- Statistics ---", result.stdout)
 
     def test_quiet_still_shows_errors(self):

@@ -528,8 +528,9 @@ class TextCompareFormatter(CompareFormatter):
         for f in sorted_dir2:
             print(yellow(f"    [DUPLICATE] {f}", self.cc))
 
-        # Hash as de-emphasized trailing detail
-        print(dim(f"  Hash: {file_hash[:10]}...", self.cc))
+        # Hash as de-emphasized trailing detail (verbose only)
+        if self.verbose:
+            print(dim(f"  Hash: {file_hash[:10]}...", self.cc))
         print()
 
     def format_unmatched(self, dir_label: str, files: list[str]) -> None:

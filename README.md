@@ -248,11 +248,18 @@ Found 2 duplicate groups (3 files, 0 B reclaimable)
 
 [MASTER] /path/dir1/file1.txt
     [DUPLICATE] /path/dir2/different_name.txt
-  Hash: e853edac47...
 
 --- Statistics ---
 Duplicate groups: 2
 Total files with matches: 3
+```
+
+Use `--verbose` to see hash details:
+
+```
+[MASTER] /path/dir1/file1.txt
+    [DUPLICATE] /path/dir2/different_name.txt
+  Hash: e853edac47...
 ```
 
 ### Action Mode Output
