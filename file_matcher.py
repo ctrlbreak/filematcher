@@ -1910,6 +1910,13 @@ def main() -> int:
 
         # Helper function to print preview output
         def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
+            # Output unified header and summary line (unless --quiet)
+            if not args.quiet:
+                formatter.format_unified_header(args.action, args.dir1, args.dir2)
+                # Calculate space savings for summary line
+                bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
+                formatter.format_summary_line(grp_count, dup_count, bytes_saved)
+
             if show_banner:
                 formatter.format_banner()
 
@@ -2076,6 +2083,12 @@ def main() -> int:
                     print("Aborted. No changes made.")
                     return 0
 
+                # Show EXECUTING header after confirmation (unless --quiet)
+                if not args.quiet:
+                    action_formatter_exec_header = TextActionFormatter(verbose=args.verbose, preview_mode=False)
+                    action_formatter_exec_header.format_unified_header(args.action, args.dir1, args.dir2)
+                    print()
+
                 # Create audit logger
                 log_path = Path(args.log) if args.log else None
                 audit_logger, actual_log_path = create_audit_logger(log_path)
@@ -2142,6 +2155,15 @@ def main() -> int:
                 dir1_name=args.dir1,
                 dir2_name=args.dir2
             )
+            # Output unified header (unless --quiet)
+            if not args.quiet:
+                compare_formatter.format_header(args.dir1, args.dir2, hash_algo)
+                # Summary line with 0 space savings (compare mode doesn't compute it)
+                compare_formatter.format_summary_line(
+                    group_count=len(matches),
+                    duplicate_count=matched_files1 + matched_files2,
+                    space_savings=0
+                )
 
         if args.summary:
             # Summary mode: only show statistics
@@ -2163,8 +2185,6 @@ def main() -> int:
                 if not args.json:
                     print("No matching files found.")
             else:
-                if not args.json:
-                    print(f"\nFound {len(matches)} hashes with matching files:\n")
                 # Sort hash keys for deterministic output (OUT-04)
                 for file_hash in sorted(matches.keys()):
                     files1, files2 = matches[file_hash]
