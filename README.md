@@ -350,6 +350,34 @@ filematcher dir1 dir2 --quiet
 filematcher dir1 dir2 --json --quiet
 ```
 
+### Color Output
+
+File Matcher supports colored output to highlight key information:
+- **Green**: Master files (protected, preserved)
+- **Yellow**: Duplicate files (candidates for action)
+- **Cyan**: Headers and statistics
+- **Bold Yellow**: PREVIEW MODE banner
+
+Color behavior:
+- **Automatic**: Color enabled when output is a terminal (TTY), disabled when piped
+- `--color` - Force color output (useful for `less -R` or colored logs)
+- `--no-color` - Disable color output
+
+Environment variables:
+- `NO_COLOR` - Set to any value to disable color (standard: https://no-color.org/)
+- `FORCE_COLOR` - Set to any value to enable color in non-TTY contexts (CI systems)
+
+Flag precedence (last wins):
+```bash
+# --no-color wins (specified last)
+filematcher dir1 dir2 --color --no-color
+
+# --color wins (specified last)
+filematcher dir1 dir2 --no-color --color
+```
+
+Note: JSON output (`--json`) never includes color codes regardless of flags.
+
 ## Testing
 
 ```bash
