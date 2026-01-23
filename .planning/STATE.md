@@ -144,6 +144,7 @@ From research/SUMMARY.md:
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 001 | Route edge case prints through formatters | 2026-01-23 | b27d735 | [001-route-edge-case-prints-through-formatter](./quick/001-route-edge-case-prints-through-formatter/) |
+| 002 | Refactor group output reduce duplication | 2026-01-23 | f9695f3 | [002-refactor-group-output-reduce-duplication](./quick/002-refactor-group-output-reduce-duplication/) |
 
 ### v1.2 Complete
 
@@ -187,9 +188,9 @@ All phases complete:
 
 ## Session Continuity
 
-Last session: 2026-01-23 (v1.2 complete)
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-01-23 (quick task 002 complete)
+Stopped at: Completed quick-002-PLAN.md
 Resume file: None
 
 ---
-*Last updated: 2026-01-23 - v1.2 complete*
+*Last updated: 2026-01-23 - quick task 002 complete*
