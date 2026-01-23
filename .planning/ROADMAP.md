@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.1 Deduplication** - Phases 1-4 (shipped 2026-01-20)
-- 🚧 **v1.2 Output Rationalisation** - Phases 5-9
+- ✅ **v1.2 Output Rationalisation** - Phases 5-9 (shipped 2026-01-23)
 
 ## Phases
 
@@ -125,7 +125,7 @@ Plans:
 - [x] 08-02-PLAN.md — Add --color/--no-color CLI flags and integrate color into Text formatters
 - [x] 08-03-PLAN.md — Tests for color output and README documentation
 
-#### Phase 9: Unify Default and Action Output for Groups
+#### Phase 9: Unify Default and Action Output for Groups ✓
 **Goal**: Unify output format between compare mode and action mode for duplicate groups
 **Depends on**: Phase 8
 **Success Criteria** (what must be TRUE):
@@ -135,9 +135,10 @@ Plans:
   4. All tests pass with updated assertions
   5. Action mode output unchanged
 **Plans**: 1 plan
+**Completed**: 2026-01-23
 
 Plans:
-- [ ] 09-01-PLAN.md — Update TextCompareFormatter.format_match_group for hierarchical output
+- [x] 09-01-PLAN.md — Update TextCompareFormatter.format_match_group for hierarchical output
 
 ## Progress
 
@@ -153,7 +154,7 @@ Plans:
 | 6. JSON Output | v1.2 | 3/3 | Complete | 2026-01-23 |
 | 7. Output Unification | v1.2 | 4/4 | Complete | 2026-01-23 |
 | 8. Color Enhancement | v1.2 | 3/3 | Complete | 2026-01-23 |
-| 9. Unify Group Output | v1.2 | 0/1 | Planned | - |
+| 9. Unify Group Output | v1.2 | 1/1 | Complete | 2026-01-23 |
 
 ---
-*Last updated: 2026-01-23 - Phase 9 planning complete*
+*Last updated: 2026-01-23 - v1.2 complete*
