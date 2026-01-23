@@ -24,6 +24,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
+.logs_test/
 
 # Virtual environments
 venv/
