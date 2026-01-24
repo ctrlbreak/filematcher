@@ -23,6 +23,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import re
 import shutil
 
 logger = logging.getLogger(__name__)
@@ -139,6 +140,60 @@ class ColorConfig:
             return self.stream.isatty()
         except AttributeError:
             return False
+
+
+# ============================================================================
+# Terminal Helper Functions
+# ============================================================================
+
+# Regex pattern for ANSI escape sequences
+_ANSI_ESCAPE_PATTERN = re.compile(r'\x1b\[[0-9;]*m')
+
+
+def strip_ansi(text: str) -> str:
+    """Strip ANSI escape sequences from text.
+
+    Args:
+        text: Text that may contain ANSI color codes
+
+    Returns:
+        Text with all ANSI escape sequences removed
+    """
+    return _ANSI_ESCAPE_PATTERN.sub('', text)
+
+
+def visible_len(text: str) -> int:
+    """Calculate visible length of text, excluding ANSI codes.
+
+    Args:
+        text: Text that may contain ANSI color codes
+
+    Returns:
+        Number of visible characters (excluding escape sequences)
+    """
+    return len(strip_ansi(text))
+
+
+def terminal_rows_for_line(text: str, term_width: int) -> int:
+    """Calculate how many terminal rows a line will occupy.
+
+    When a line exceeds terminal width, it wraps to additional rows.
+    This is needed for cursor movement calculations in TTY mode.
+
+    Args:
+        text: Line of text (may contain ANSI codes)
+        term_width: Terminal width in columns
+
+    Returns:
+        Number of terminal rows this line occupies (minimum 1)
+    """
+    if term_width <= 0:
+        return 1
+    vis_len = visible_len(text)
+    if vis_len == 0:
+        return 1
+    # Ceiling division: how many rows needed
+    return (vis_len + term_width - 1) // term_width
 
 
 # ============================================================================
@@ -858,7 +913,7 @@ class TextActionFormatter(ActionFormatter):
         """
         super().__init__(verbose, preview_mode, action)
         self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
-        self._prev_group_line_count = 0  # Track lines for inline TTY updates
+        self._prev_group_row_count = 0  # Track terminal rows for inline TTY updates
 
     def format_banner(self) -> None:
         """Format and output the mode banner (PREVIEW or EXECUTE)."""
@@ -956,11 +1011,14 @@ class TextActionFormatter(ActionFormatter):
 
         # In TTY inline mode: clear previous group, add progress prefix
         if inline_progress:
-            # Move cursor up and clear previous group lines (if not first group)
-            if self._prev_group_line_count > 0:
-                # Move up N lines and clear each
-                for _ in range(self._prev_group_line_count):
-                    sys.stdout.write('\033[A')  # Move up one line
+            # Get terminal width for row calculation
+            term_width = shutil.get_terminal_size().columns
+
+            # Move cursor up and clear previous group rows (if not first group)
+            if self._prev_group_row_count > 0:
+                # Move up N rows and clear each
+                for _ in range(self._prev_group_row_count):
+                    sys.stdout.write('\033[A')  # Move up one row
                     sys.stdout.write('\033[K')  # Clear line
                 sys.stdout.flush()
 
@@ -969,14 +1027,19 @@ class TextActionFormatter(ActionFormatter):
                 lines[0].prefix = f"[{group_index}/{total_groups}] "
 
         # Output lines using render_group_line for clean color application
-        line_count = 0
+        row_count = 0
         for line in lines:
-            print(render_group_line(line, self.cc))
-            line_count += 1
+            rendered = render_group_line(line, self.cc)
+            print(rendered)
+            # In TTY mode, count terminal rows (accounts for line wrapping)
+            if inline_progress:
+                row_count += terminal_rows_for_line(rendered, term_width)
+            else:
+                row_count += 1
 
-        # Track line count for next group (TTY mode only)
+        # Track row count for next group (TTY mode only)
         if inline_progress:
-            self._prev_group_line_count = line_count
+            self._prev_group_row_count = row_count
 
     def format_statistics(
         self,
