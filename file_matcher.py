@@ -160,6 +160,17 @@ class GroupLine:
     indent: str = ""   # "    " for duplicates or empty
 
 
+@dataclass
+class SpaceInfo:
+    """Space savings calculation results.
+
+    Replaces tuple unpacking with named fields for clarity.
+    """
+    bytes_saved: int
+    duplicate_count: int
+    group_count: int
+
+
 # ============================================================================
 # Color Helper Functions
 # ============================================================================
@@ -1204,6 +1215,37 @@ def build_file_sizes(paths: list[str]) -> dict[str, int]:
     return sizes
 
 
+def build_log_flags(
+    base_flags: list[str],
+    verbose: bool = False,
+    yes: bool = False,
+    fallback_symlink: bool = False,
+    log_path: str | None = None
+) -> list[str]:
+    """Build flags list for audit log header.
+
+    Args:
+        base_flags: Starting flags (e.g., ['--execute'] or ['--execute', '--json', '--yes'])
+        verbose: Include --verbose flag
+        yes: Include --yes flag
+        fallback_symlink: Include --fallback-symlink flag
+        log_path: Include --log with path if provided
+
+    Returns:
+        Complete list of flags for logging
+    """
+    flags = list(base_flags)
+    if verbose:
+        flags.append('--verbose')
+    if yes:
+        flags.append('--yes')
+    if fallback_symlink:
+        flags.append('--fallback-symlink')
+    if log_path:
+        flags.append(f'--log {log_path}')
+    return flags
+
+
 def select_master_file(file_paths: list[str], master_dir: Path | None) -> tuple[str, list[str], str]:
     """
     Select which file should be considered the master from a list of duplicates.
@@ -1471,7 +1513,7 @@ def format_statistics_footer(
 
 def calculate_space_savings(
     duplicate_groups: list[tuple[str, list[str], str, str]]
-) -> tuple[int, int, int]:
+) -> SpaceInfo:
     """
     Calculate space that would be saved by deduplication.
 
@@ -1480,10 +1522,10 @@ def calculate_space_savings(
                          (matches output from select_master_file with hash)
 
     Returns:
-        Tuple of (total_bytes_saved, total_duplicate_count, group_count)
+        SpaceInfo with bytes_saved, duplicate_count, group_count
     """
     if not duplicate_groups:
-        return (0, 0, 0)
+        return SpaceInfo(0, 0, 0)
 
     total_bytes = 0
     total_duplicates = 0
@@ -1498,7 +1540,7 @@ def calculate_space_savings(
         total_duplicates += len(duplicates)
         groups_with_duplicates += 1
 
-    return (total_bytes, total_duplicates, groups_with_duplicates)
+    return SpaceInfo(total_bytes, total_duplicates, groups_with_duplicates)
 
 
 def get_device_id(path: str) -> int:
@@ -2396,8 +2438,9 @@ def main() -> int:
             # Output unified header and summary line (unless --quiet)
             if not args.quiet:
                 formatter.format_unified_header(args.action, args.dir1, args.dir2)
-                bytes_saved, dup_count, grp_count = space_info
-                formatter.format_summary_line(grp_count, dup_count, bytes_saved)
+                formatter.format_summary_line(
+                    space_info.group_count, space_info.duplicate_count, space_info.bytes_saved
+                )
 
             if show_banner:
                 formatter.format_banner()
@@ -2419,13 +2462,12 @@ def main() -> int:
                         print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
                         print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
                 else:
-                    bytes_saved, dup_count, grp_count = space_info
                     cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
                     formatter.format_statistics(
-                        group_count=grp_count,
-                        duplicate_count=dup_count,
+                        group_count=space_info.group_count,
+                        duplicate_count=space_info.duplicate_count,
                         master_count=len(master_results),
-                        space_savings=bytes_saved,
+                        space_savings=space_info.bytes_saved,
                         action=args.action,
                         cross_fs_count=cross_fs_count
                     )
@@ -2478,14 +2520,12 @@ def main() -> int:
 
                 # Print statistics footer (only if there were matches)
                 if matches:
-                    if space_info:
-                        bytes_saved, dup_count, grp_count = space_info
                     cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
                     formatter.format_statistics(
-                        group_count=grp_count,
-                        duplicate_count=dup_count,
+                        group_count=space_info.group_count,
+                        duplicate_count=space_info.duplicate_count,
                         master_count=len(master_results),
-                        space_savings=bytes_saved,
+                        space_savings=space_info.bytes_saved,
                         action=args.action,
                         cross_fs_count=cross_fs_count
                     )
@@ -2504,13 +2544,12 @@ def main() -> int:
                 audit_logger, actual_log_path = create_audit_logger(log_path)
 
                 # Build flags list for log header
-                flags = ['--execute', '--json', '--yes']
-                if args.verbose:
-                    flags.append('--verbose')
-                if args.fallback_symlink:
-                    flags.append('--fallback-symlink')
-                if args.log:
-                    flags.append(f'--log {args.log}')
+                flags = build_log_flags(
+                    ['--execute', '--json', '--yes'],
+                    verbose=args.verbose,
+                    fallback_symlink=args.fallback_symlink,
+                    log_path=args.log
+                )
 
                 # Write log header
                 write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
@@ -2554,13 +2593,13 @@ def main() -> int:
                     print()
 
                 # Add statistics
-                bytes_saved_preview, dup_count, grp_count = calculate_space_savings(master_results)
+                preview_space_info = calculate_space_savings(master_results)
                 cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
                 action_formatter.format_statistics(
-                    group_count=grp_count,
-                    duplicate_count=dup_count,
+                    group_count=preview_space_info.group_count,
+                    duplicate_count=preview_space_info.duplicate_count,
                     master_count=len(master_results),
-                    space_savings=bytes_saved_preview,
+                    space_savings=preview_space_info.bytes_saved,
                     action=args.action,
                     cross_fs_count=cross_fs_count
                 )
@@ -2590,9 +2629,12 @@ def main() -> int:
                     print(banner_line)
 
                 # Calculate space savings for confirmation prompt
-                bytes_saved, dup_count, _ = calculate_space_savings(master_results)
+                confirm_space_info = calculate_space_savings(master_results)
                 cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
-                prompt = format_confirmation_prompt(dup_count, args.action, bytes_saved, cross_fs_count if args.fallback_symlink else 0)
+                prompt = format_confirmation_prompt(
+                    confirm_space_info.duplicate_count, args.action,
+                    confirm_space_info.bytes_saved, cross_fs_count if args.fallback_symlink else 0
+                )
                 if not confirm_execution(skip_confirm=args.yes, prompt=prompt):
                     action_formatter.format_user_abort()
                     return 0
@@ -2613,15 +2655,13 @@ def main() -> int:
                 audit_logger, actual_log_path = create_audit_logger(log_path)
 
                 # Build flags list for log header
-                flags = ['--execute']
-                if args.verbose:
-                    flags.append('--verbose')
-                if args.yes:
-                    flags.append('--yes')
-                if args.fallback_symlink:
-                    flags.append('--fallback-symlink')
-                if args.log:
-                    flags.append(f'--log {args.log}')
+                flags = build_log_flags(
+                    ['--execute'],
+                    verbose=args.verbose,
+                    yes=args.yes,
+                    fallback_symlink=args.fallback_symlink,
+                    log_path=args.log
+                )
 
                 # Write log header
                 write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
