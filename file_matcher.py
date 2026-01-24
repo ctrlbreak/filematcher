@@ -2393,12 +2393,11 @@ def main() -> int:
 
                         # Print blank line between groups (non-TTY text mode only)
                         # In TTY mode with progress, groups overwrite each other
-                        is_tty_inline = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-                        if i < len(sorted_results) - 1 and not args.json and not is_tty_inline:
+                        if i < len(sorted_results) - 1 and not args.json and not color_config.is_tty:
                             print()
 
                     # Add blank line after last group in TTY inline mode
-                    if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty():
+                    if color_config.is_tty:
                         print()
 
                 # Optionally display unmatched files (compare mode) - outside matches check
@@ -2492,7 +2491,7 @@ def main() -> int:
                     )
 
                 # Add blank line after last group in TTY inline mode
-                if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty():
+                if color_config.is_tty:
                     print()
 
                 # Add statistics
