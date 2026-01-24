@@ -87,6 +87,7 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 1. **Update JSON output header to object format** (output) - Consider `{"header": {"name": "filematcher"}}` (future)
 2. **Improve verbose output during execution mode** (cli) - Show file details during action execution, not just "Processing x/y"
+3. **Fix execute mode showing PREVIEW labels incorrectly** (cli) - Output shows "WOULD" and "Use --execute" even when --execute is active
 
 ## Session Continuity
 
