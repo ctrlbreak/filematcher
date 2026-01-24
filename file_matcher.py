@@ -1398,8 +1398,11 @@ def format_statistics_footer(
     else:
         lines.append(f"Space to be reclaimed: {space_str}")
 
-    # Add hint about --execute in preview mode
-    if action != 'compare' and preview_mode:
+    # Add hint about next steps
+    if action == 'compare':
+        lines.append("")
+        lines.append("Use --action to deduplicate (hardlink, symlink, or delete)")
+    elif preview_mode:
         lines.append("")
         lines.append("Use --execute to apply changes")
 
