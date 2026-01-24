@@ -1383,28 +1383,13 @@ def format_statistics_footer(
     lines = []
     lines.append("")  # Blank line before statistics
     lines.append("--- Statistics ---")
+    lines.append(f"Total files with matches: {master_count + duplicate_count}")
     lines.append(f"Duplicate groups: {group_count}")
 
-    # Compare mode: show total files, not master/duplicate breakdown
-    if action == 'compare':
-        total_files = master_count + duplicate_count
-        lines.append(f"Total files with matches: {total_files}")
-        lines.append("Space reclaimable: (run with --action to calculate)")
-        return lines
-
-    # Action modes: show master/duplicate breakdown
-    lines.append(f"Master files preserved: {master_count}")
-    lines.append(f"Duplicate files: {duplicate_count}")
-
-    # Action-specific messaging
-    if action == 'hardlink':
-        lines.append(f"Files to become hard links: {duplicate_count}")
-        if cross_fs_count > 0:
-            lines.append(f"  Warning: {cross_fs_count} files on different filesystem (cannot hardlink)")
-    elif action == 'symlink':
-        lines.append(f"Files to become symbolic links: {duplicate_count}")
-    elif action == 'delete':
-        lines.append(f"Files to be deleted: {duplicate_count}")
+    if action != 'compare':
+        # Action modes: show master/duplicate breakdown
+        lines.append(f"Master files preserved: {master_count}")
+        lines.append(f"Duplicate files: {duplicate_count}")
 
     # Space to be reclaimed
     space_str = format_file_size(space_savings)
@@ -1414,7 +1399,7 @@ def format_statistics_footer(
         lines.append(f"Space to be reclaimed: {space_str}")
 
     # Add hint about --execute in preview mode
-    if preview_mode:
+    if action != 'compare' and preview_mode:
         lines.append("")
         lines.append("Use --execute to apply changes")
 
@@ -2343,21 +2328,13 @@ def main() -> int:
         # Helper function to print preview output
         def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
             # Pre-calculate space savings once for non-compare actions
-            space_info = None
-            if args.action != 'compare':
-                space_info = calculate_space_savings(master_results)
+            space_info = calculate_space_savings(master_results)
 
             # Output unified header and summary line (unless --quiet)
             if not args.quiet:
                 formatter.format_unified_header(args.action, args.dir1, args.dir2)
-                # Compare mode: show 0 space savings and total matched files count
-                if args.action == 'compare':
-                    # For compare mode, show total files (master + duplicates) and 0 space
-                    total_files = matched_files1 + matched_files2
-                    formatter.format_summary_line(len(matches), total_files, 0)
-                else:
-                    bytes_saved, dup_count, grp_count = space_info
-                    formatter.format_summary_line(grp_count, dup_count, bytes_saved)
+                bytes_saved, dup_count, grp_count = space_info
+                formatter.format_summary_line(grp_count, dup_count, bytes_saved)
 
             if show_banner:
                 formatter.format_banner()
@@ -2441,9 +2418,6 @@ def main() -> int:
                 if matches:
                     if space_info:
                         bytes_saved, dup_count, grp_count = space_info
-                    else:
-                        # Compare mode: space_info is None, use 0 for space savings
-                        bytes_saved, dup_count, grp_count = 0, total_duplicates, len(master_results)
                     cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
                     formatter.format_statistics(
                         group_count=grp_count,

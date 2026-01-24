@@ -230,8 +230,8 @@ class TestCrossFilesystemWarnings(BaseFileMatcherTest):
                 # Should show [!cross-fs] marker
                 self.assertIn("[!cross-fs]", output)
 
-    def test_cross_fs_count_in_statistics(self):
-        """Statistics should show count of cross-fs files when present."""
+    def test_cross_fs_marker_in_output(self):
+        """Cross-filesystem files should show [!cross-fs] marker in output."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             with patch('file_matcher.check_cross_filesystem') as mock_check:
                 # Return all duplicates as cross-filesystem
@@ -239,9 +239,8 @@ class TestCrossFilesystemWarnings(BaseFileMatcherTest):
                     return set(duplicates)
                 mock_check.side_effect = mock_cross_fs
                 output = self.run_main_with_args([])
-                # Should show warning in statistics
-                self.assertIn("Warning:", output)
-                self.assertIn("cannot hardlink", output)
+                # Should show [!cross-fs] marker on affected files
+                self.assertIn("[!cross-fs]", output)
 
     def test_no_cross_fs_warning_without_hardlink(self):
         """Cross-filesystem warning should not appear for symlink/delete actions."""

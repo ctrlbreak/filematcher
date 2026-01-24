@@ -297,15 +297,15 @@ class TestCompareStatisticsFooter(unittest.TestCase):
         self.assertIn("statistics", data)
         self.assertIn("duplicateGroups", data["statistics"])
 
-    def test_statistics_shows_reclaimable_message(self):
-        """Compare mode statistics should mention --action for space calculations."""
+    def test_statistics_shows_reclaimable_space(self):
+        """Compare mode statistics should show space to be reclaimed."""
         result = subprocess.run(
             [sys.executable, "file_matcher.py", self.test_dir1, self.test_dir2],
             capture_output=True,
             text=True
         )
-        # Should indicate that --action is needed for space calculations
-        self.assertIn("--action", result.stdout)
+        # Should show space to be reclaimed
+        self.assertIn("Space to be reclaimed:", result.stdout)
 
 
 class TestStreamSeparationWithJson(unittest.TestCase):
