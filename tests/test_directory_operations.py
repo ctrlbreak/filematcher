@@ -5,7 +5,8 @@ import unittest
 
 from file_matcher import (
     index_directory, find_matching_files, get_file_hash,
-    is_symlink_to, execute_action, is_hardlink_to
+    is_symlink_to, execute_action, is_hardlink_to,
+    filter_hardlinked_duplicates
 )
 from tests.test_base import BaseFileMatcherTest
 
@@ -280,6 +281,82 @@ class TestSkipAlreadyLinked(unittest.TestCase):
         # Hardlink should still exist (not modified)
         self.assertTrue(os.path.exists(hardlink_path))
         self.assertTrue(is_hardlink_to(hardlink_path, self.master_file))
+
+
+class TestFilterHardlinkedDuplicates(unittest.TestCase):
+    """Tests for filter_hardlinked_duplicates() function."""
+
+    def setUp(self):
+        import tempfile
+        import shutil
+        self._shutil = shutil
+        self.temp_dir = tempfile.mkdtemp()
+        self.master_file = os.path.join(self.temp_dir, "master.txt")
+        self.dup1 = os.path.join(self.temp_dir, "dup1.txt")
+        self.dup2 = os.path.join(self.temp_dir, "dup2.txt")
+        self.hardlink_dup = os.path.join(self.temp_dir, "hardlink_dup.txt")
+
+    def tearDown(self):
+        self._shutil.rmtree(self.temp_dir)
+
+    def test_filter_separates_hardlinked_from_regular(self):
+        """Hardlinked duplicates should be separated from regular duplicates."""
+        # Create master and two regular duplicates
+        with open(self.master_file, "w") as f:
+            f.write("content")
+        with open(self.dup1, "w") as f:
+            f.write("content")
+        with open(self.dup2, "w") as f:
+            f.write("content")
+        # Create hardlink to master
+        os.link(self.master_file, self.hardlink_dup)
+
+        duplicates = [self.dup1, self.dup2, self.hardlink_dup]
+        actionable, hardlinked = filter_hardlinked_duplicates(self.master_file, duplicates)
+
+        self.assertEqual(len(actionable), 2)
+        self.assertIn(self.dup1, actionable)
+        self.assertIn(self.dup2, actionable)
+        self.assertEqual(len(hardlinked), 1)
+        self.assertIn(self.hardlink_dup, hardlinked)
+
+    def test_filter_all_hardlinked(self):
+        """When all duplicates are hardlinked, actionable list is empty."""
+        with open(self.master_file, "w") as f:
+            f.write("content")
+        os.link(self.master_file, self.dup1)
+        os.link(self.master_file, self.dup2)
+
+        duplicates = [self.dup1, self.dup2]
+        actionable, hardlinked = filter_hardlinked_duplicates(self.master_file, duplicates)
+
+        self.assertEqual(len(actionable), 0)
+        self.assertEqual(len(hardlinked), 2)
+
+    def test_filter_no_hardlinked(self):
+        """When no duplicates are hardlinked, hardlinked list is empty."""
+        with open(self.master_file, "w") as f:
+            f.write("content")
+        with open(self.dup1, "w") as f:
+            f.write("content")
+        with open(self.dup2, "w") as f:
+            f.write("content")
+
+        duplicates = [self.dup1, self.dup2]
+        actionable, hardlinked = filter_hardlinked_duplicates(self.master_file, duplicates)
+
+        self.assertEqual(len(actionable), 2)
+        self.assertEqual(len(hardlinked), 0)
+
+    def test_filter_empty_duplicates(self):
+        """Empty duplicates list returns two empty lists."""
+        with open(self.master_file, "w") as f:
+            f.write("content")
+
+        actionable, hardlinked = filter_hardlinked_duplicates(self.master_file, [])
+
+        self.assertEqual(actionable, [])
+        self.assertEqual(hardlinked, [])
 
 
 if __name__ == "__main__":

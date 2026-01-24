@@ -1701,6 +1701,37 @@ def is_symlink_to(duplicate: str, master: str) -> bool:
         return False
 
 
+def filter_hardlinked_duplicates(
+    master_file: str, duplicates: list[str]
+) -> tuple[list[str], list[str]]:
+    """
+    Separate duplicates that are already hardlinked to master from those that aren't.
+
+    Files that are already hardlinks to the master share the same inode, meaning
+    they occupy no additional disk space. These should not be counted as
+    "reclaimable" duplicates.
+
+    Args:
+        master_file: Path to the master file
+        duplicates: List of paths to potential duplicate files
+
+    Returns:
+        Tuple of (actionable_duplicates, already_hardlinked)
+        - actionable_duplicates: Duplicates that are not hardlinked (need action)
+        - already_hardlinked: Duplicates that are already hardlinked (skip)
+    """
+    actionable = []
+    hardlinked = []
+
+    for dup in duplicates:
+        if is_hardlink_to(master_file, dup):
+            hardlinked.append(dup)
+        else:
+            actionable.append(dup)
+
+    return actionable, hardlinked
+
+
 def safe_replace_with_link(duplicate: Path, master: Path, action: str) -> tuple[bool, str]:
     """
     Safely replace duplicate file with a link to master using temp-rename pattern.
@@ -2449,6 +2480,7 @@ def main() -> int:
         master_results = []
         total_masters = 0
         total_duplicates = 0
+        total_already_hardlinked = 0
         warnings = []
 
         for file_hash, (files1, files2) in matches.items():
@@ -2461,9 +2493,20 @@ def main() -> int:
                 warnings.append(f"Warning: Multiple files in master directory have identical content: {', '.join(master_files_in_group)}")
 
             master_file, duplicates, reason = select_master_file(all_files, master_path)
-            master_results.append((master_file, duplicates, reason, file_hash))
-            total_masters += 1
-            total_duplicates += len(duplicates)
+
+            # Filter out duplicates already hardlinked to master (same inode = no space savings)
+            actionable_dups, hardlinked_dups = filter_hardlinked_duplicates(master_file, duplicates)
+            total_already_hardlinked += len(hardlinked_dups)
+
+            # Only add to results if there are actionable duplicates
+            if actionable_dups:
+                master_results.append((master_file, actionable_dups, reason, file_hash))
+                total_masters += 1
+                total_duplicates += len(actionable_dups)
+
+        # Log skipped hardlinks (helpful for users to understand why counts may differ)
+        if total_already_hardlinked > 0:
+            logger.info(f"Skipped {total_already_hardlinked} files already hardlinked to master (no space savings)")
 
         # Check cross-filesystem for hardlink action
         cross_fs_files = set()

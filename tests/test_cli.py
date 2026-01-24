@@ -339,6 +339,64 @@ class TestActionExecution(BaseFileMatcherTest):
         error_output = stderr_capture.getvalue()
         self.assertIn("--log requires --execute", error_output)
 
+    def test_already_hardlinked_files_not_shown_as_duplicates(self):
+        """Files already hardlinked to master should not appear as duplicates."""
+        # Create a hardlink from test_dir2 to a file in test_dir1
+        master_file = os.path.join(self.test_dir1, "file1.txt")
+        hardlink_in_dir2 = os.path.join(self.test_dir2, "hardlinked_to_master.txt")
+
+        # Create the hardlink
+        if os.path.exists(hardlink_in_dir2):
+            os.unlink(hardlink_in_dir2)
+        os.link(master_file, hardlink_in_dir2)
+
+        # Verify they're the same inode
+        self.assertTrue(is_hardlink_to(master_file, hardlink_in_dir2))
+
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2]):
+            with patch('sys.stdin.isatty', return_value=False):
+                output, exit_code = self.run_main_capture_output()
+
+        # The hardlinked file should NOT appear as a duplicate
+        self.assertNotIn("hardlinked_to_master.txt", output)
+        # Should log that some files were skipped
+        # (Note: this test may show other duplicates, but our hardlink should be filtered)
+
+        # Clean up
+        os.unlink(hardlink_in_dir2)
+
+    def test_already_hardlinked_logged_as_skipped(self):
+        """Should log count of already-hardlinked files that were skipped."""
+        import io
+        from contextlib import redirect_stderr
+
+        # Create a file in dir1 and hardlink it in dir2
+        master_file = os.path.join(self.test_dir1, "unique_content_for_hardlink_test.txt")
+        hardlink_in_dir2 = os.path.join(self.test_dir2, "linked_file.txt")
+
+        # Create files
+        with open(master_file, 'w') as f:
+            f.write("unique content for hardlink test 123")
+
+        if os.path.exists(hardlink_in_dir2):
+            os.unlink(hardlink_in_dir2)
+        os.link(master_file, hardlink_in_dir2)
+
+        stderr_capture = io.StringIO()
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2]):
+            with patch('sys.stdin.isatty', return_value=False):
+                with redirect_stderr(stderr_capture):
+                    output, exit_code = self.run_main_capture_output()
+
+        stderr_output = stderr_capture.getvalue()
+        # Should log that file was skipped as already hardlinked
+        self.assertIn("Skipped", stderr_output)
+        self.assertIn("already hardlinked", stderr_output)
+
+        # Clean up
+        os.unlink(hardlink_in_dir2)
+        os.unlink(master_file)
+
 
 class TestFormatterEdgeCases(BaseFileMatcherTest):
     """Tests for edge case formatter methods added for output unification."""
