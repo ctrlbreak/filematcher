@@ -2322,14 +2322,9 @@ def main() -> int:
                         if i < len(sorted_results) - 1 and not args.json and not is_tty_inline:
                             print()
 
-                    # Clear inline progress after all groups (TTY only)
-                    if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty() and hasattr(formatter, '_prev_group_line_count'):
-                        # Clear the last displayed group
-                        for _ in range(formatter._prev_group_line_count):
-                            sys.stdout.write('\033[A')  # Move up one line
-                            sys.stdout.write('\033[K')  # Clear line
-                        sys.stdout.flush()
-                        formatter._prev_group_line_count = 0
+                    # Add blank line after last group in TTY inline mode
+                    if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty():
+                        print()
 
                 # Optionally display unmatched files (compare mode) - outside matches check
                 if args.show_unmatched and args.action == 'compare':
@@ -2421,13 +2416,9 @@ def main() -> int:
                         total_groups=len(sorted_results)
                     )
 
-                # Clear inline progress after all groups (TTY only)
-                if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty() and hasattr(action_formatter, '_prev_group_line_count'):
-                    for _ in range(action_formatter._prev_group_line_count):
-                        sys.stdout.write('\033[A')  # Move up one line
-                        sys.stdout.write('\033[K')  # Clear line
-                    sys.stdout.flush()
-                    action_formatter._prev_group_line_count = 0
+                # Add blank line after last group in TTY inline mode
+                if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty():
+                    print()
 
                 # Add statistics
                 bytes_saved_preview, dup_count, grp_count = calculate_space_savings(master_results)
