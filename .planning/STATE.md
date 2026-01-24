@@ -43,6 +43,14 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Quick Tasks Completed
 
+### Quick 007: Refactor Output Formatting for Modularity (2026-01-24)
+
+- GroupLine dataclass separates structure from presentation
+- render_group_line() applies colors based on line_type
+- ColorConfig.is_tty centralizes stdout TTY detection
+- Eliminated string parsing for "MASTER:" and "[!cross-fs]"
+- All 206 tests pass
+
 ### Quick 006: Inline Progress for Group Output (2026-01-24)
 
 - TTY-aware [n/m] progress indicator on group output
@@ -72,8 +80,8 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Session Continuity
 
-Last session: 2026-01-24 00:07
-Stopped at: Completed quick task 006
+Last session: 2026-01-24 00:42
+Stopped at: Completed quick task 007
 Resume file: None
 
 ## Next Steps
@@ -81,4 +89,4 @@ Resume file: None
 Run `/gsd:new-milestone` to start next milestone (questioning -> research -> requirements -> roadmap)
 
 ---
-*Last updated: 2026-01-24 - Quick task 006 complete*
+*Last updated: 2026-01-24 - Quick task 007 complete*
