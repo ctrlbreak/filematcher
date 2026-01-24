@@ -37,11 +37,19 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Test Suite
 
-- Total tests: 204
+- Total tests: 206
 - All passing
 - Coverage: file_matcher.py fully tested
 
 ## Quick Tasks Completed
+
+### Quick 006: Inline Progress for Group Output (2026-01-24)
+
+- TTY-aware [n/m] progress indicator during group output
+- Progress writes to stderr, clears after loop completion
+- Path truncation for terminal width
+- Non-TTY mode unchanged (no progress pollution)
+- 2 new tests added
 
 ### Quick 005: Clean Up Test Logs (2026-01-23)
 
@@ -63,13 +71,13 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Session Continuity
 
-Last session: 2026-01-23 23:55
-Stopped at: Completed quick task 005
+Last session: 2026-01-24 00:07
+Stopped at: Completed quick task 006
 Resume file: None
 
 ## Next Steps
 
-Run `/gsd:new-milestone` to start next milestone (questioning → research → requirements → roadmap)
+Run `/gsd:new-milestone` to start next milestone (questioning -> research -> requirements -> roadmap)
 
 ---
-*Last updated: 2026-01-23 - Quick task 005 complete*
+*Last updated: 2026-01-24 - Quick task 006 complete*
