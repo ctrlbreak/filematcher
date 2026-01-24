@@ -275,7 +275,9 @@ class ActionFormatter(ABC):
         action: str,
         file_hash: str | None = None,
         file_sizes: dict[str, int] | None = None,
-        cross_fs_files: set[str] | None = None
+        cross_fs_files: set[str] | None = None,
+        group_index: int | None = None,
+        total_groups: int | None = None
     ) -> None:
         """Format and output a duplicate group showing master and duplicates.
 
@@ -286,6 +288,8 @@ class ActionFormatter(ABC):
             file_hash: Content hash for this group (for verbose mode)
             file_sizes: Optional dict mapping paths to file sizes (for verbose mode)
             cross_fs_files: Optional set of duplicates on different filesystem
+            group_index: Current group number for progress display (1-indexed)
+            total_groups: Total number of groups for progress display
         """
         pass
 
@@ -465,7 +469,9 @@ class JsonActionFormatter(ActionFormatter):
         action: str,
         file_hash: str | None = None,
         file_sizes: dict[str, int] | None = None,
-        cross_fs_files: set[str] | None = None
+        cross_fs_files: set[str] | None = None,
+        group_index: int | None = None,
+        total_groups: int | None = None
     ) -> None:
         """Accumulate a duplicate group.
 
@@ -476,6 +482,8 @@ class JsonActionFormatter(ActionFormatter):
             file_hash: Content hash for this group (included in JSON)
             file_sizes: Optional dict mapping paths to file sizes
             cross_fs_files: Optional set of duplicates on different filesystem
+            group_index: Ignored for JSON (no inline progress)
+            total_groups: Ignored for JSON (no inline progress)
         """
         # Store action type for later use
         self._action_type = action
@@ -770,6 +778,7 @@ class TextActionFormatter(ActionFormatter):
         """
         super().__init__(verbose, preview_mode, action)
         self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
+        self._prev_group_line_count = 0  # Track lines for inline TTY updates
 
     def format_banner(self) -> None:
         """Format and output the mode banner (PREVIEW or EXECUTE)."""
@@ -840,21 +849,11 @@ class TextActionFormatter(ActionFormatter):
             group_index: Current group number (1-indexed) for progress display
             total_groups: Total number of groups for progress display
         """
-        # TTY progress indicator (write to stderr before group output)
-        is_tty = hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()
-        if is_tty and group_index is not None and total_groups is not None:
-            # Truncate master path for display
-            display_path = master_file
-            progress_prefix = f"[{group_index}/{total_groups}] "
-            term_width = shutil.get_terminal_size().columns
-            max_path = term_width - len(progress_prefix) - 1
-            if len(display_path) > max_path:
-                display_path = "..." + display_path[-(max_path - 3):]
-            progress_line = f"\r{progress_prefix}{display_path}"
-            sys.stderr.write(progress_line.ljust(term_width) + '\r')
-            sys.stderr.flush()
+        # Check for TTY inline progress mode
+        is_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+        inline_progress = is_tty and group_index is not None and total_groups is not None
+
         # DELEGATE to existing format_duplicate_group function
-        # Note: format_duplicate_group already sorts duplicates (line 144: sorted(duplicates))
         lines = format_duplicate_group(
             master_file=master_file,
             duplicates=duplicates,
@@ -864,26 +863,46 @@ class TextActionFormatter(ActionFormatter):
             cross_fs_files=cross_fs_files,
             preview_mode=self.preview_mode
         )
+
+        # Add hash line if verbose
+        if self.verbose and file_hash:
+            lines.append(f"  Hash: {file_hash[:10]}...")
+
+        # In TTY inline mode: clear previous group, add progress prefix
+        if inline_progress:
+            # Move cursor up and clear previous group lines (if not first group)
+            if self._prev_group_line_count > 0:
+                # Move up N lines and clear each
+                for _ in range(self._prev_group_line_count):
+                    sys.stdout.write('\033[A')  # Move up one line
+                    sys.stdout.write('\033[K')  # Clear line
+                sys.stdout.flush()
+
+            # Add progress prefix to first line
+            progress_prefix = f"[{group_index}/{total_groups}] "
+            lines[0] = progress_prefix + lines[0]
+
+        # Output lines with colors
+        line_count = 0
         for line in lines:
-            if line.startswith("[MASTER]"):
-                # Master file path in green (protected)
+            if "[MASTER]" in line:
                 print(green(line, self.cc))
             elif line.startswith("    ["):
-                # Duplicate file path in yellow (removal candidate)
-                # Check for cross-fs warning and color that part red
                 if "[!cross-fs]" in line:
-                    # Split and color the warning part red
                     main_part = line.replace(" [!cross-fs]", "")
                     warning_part = " [!cross-fs]"
                     print(yellow(main_part, self.cc) + red(warning_part, self.cc))
                 else:
                     print(yellow(line, self.cc))
+            elif line.startswith("  Hash:"):
+                print(dim(line, self.cc))
             else:
                 print(line)
+            line_count += 1
 
-        # Hash as de-emphasized trailing detail (verbose only)
-        if self.verbose and file_hash:
-            print(dim(f"  Hash: {file_hash[:10]}...", self.cc))
+        # Track line count for next group (TTY mode only)
+        if inline_progress:
+            self._prev_group_line_count = line_count
 
     def format_statistics(
         self,
@@ -2297,14 +2316,20 @@ def main() -> int:
                             total_groups=len(sorted_results)
                         )
 
-                        # Print blank line between groups (but not after the last one) - text mode only
-                        if i < len(sorted_results) - 1 and not args.json:
+                        # Print blank line between groups (non-TTY text mode only)
+                        # In TTY mode with progress, groups overwrite each other
+                        is_tty_inline = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+                        if i < len(sorted_results) - 1 and not args.json and not is_tty_inline:
                             print()
 
-                    # Clear progress line (TTY only)
-                    if hasattr(sys.stderr, 'isatty') and sys.stderr.isatty():
-                        sys.stderr.write('\r' + ' ' * shutil.get_terminal_size().columns + '\r')
-                        sys.stderr.flush()
+                    # Clear inline progress after all groups (TTY only)
+                    if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty() and hasattr(formatter, '_prev_group_line_count'):
+                        # Clear the last displayed group
+                        for _ in range(formatter._prev_group_line_count):
+                            sys.stdout.write('\033[A')  # Move up one line
+                            sys.stdout.write('\033[K')  # Clear line
+                        sys.stdout.flush()
+                        formatter._prev_group_line_count = 0
 
                 # Optionally display unmatched files (compare mode) - outside matches check
                 if args.show_unmatched and args.action == 'compare':
@@ -2396,10 +2421,13 @@ def main() -> int:
                         total_groups=len(sorted_results)
                     )
 
-                # Clear progress line (TTY only)
-                if hasattr(sys.stderr, 'isatty') and sys.stderr.isatty():
-                    sys.stderr.write('\r' + ' ' * shutil.get_terminal_size().columns + '\r')
-                    sys.stderr.flush()
+                # Clear inline progress after all groups (TTY only)
+                if hasattr(sys.stdout, 'isatty') and sys.stdout.isatty() and hasattr(action_formatter, '_prev_group_line_count'):
+                    for _ in range(action_formatter._prev_group_line_count):
+                        sys.stdout.write('\033[A')  # Move up one line
+                        sys.stdout.write('\033[K')  # Clear line
+                    sys.stdout.flush()
+                    action_formatter._prev_group_line_count = 0
 
                 # Add statistics
                 bytes_saved_preview, dup_count, grp_count = calculate_space_savings(master_results)
