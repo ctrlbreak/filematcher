@@ -1115,6 +1115,35 @@ def confirm_execution(skip_confirm: bool = False, prompt: str = "Proceed? [y/N] 
     return response in ('y', 'yes')
 
 
+def is_in_directory(filepath: str, directory: str) -> bool:
+    """Check if a file path is within a directory.
+
+    Handles both exact match and subdirectory containment.
+
+    Args:
+        filepath: The file path to check
+        directory: The directory to check against
+
+    Returns:
+        True if filepath is in or under directory
+    """
+    return filepath.startswith(directory + os.sep) or filepath.startswith(directory)
+
+
+def select_oldest(file_paths: list[str]) -> tuple[str, list[str]]:
+    """Select the oldest file by mtime and return it with remaining files.
+
+    Args:
+        file_paths: Non-empty list of file paths
+
+    Returns:
+        Tuple of (oldest_file, list_of_other_files)
+    """
+    oldest = min(file_paths, key=lambda p: os.path.getmtime(p))
+    others = [f for f in file_paths if f != oldest]
+    return oldest, others
+
+
 def select_master_file(file_paths: list[str], master_dir: Path | None) -> tuple[str, list[str], str]:
     """
     Select which file should be considered the master from a list of duplicates.
@@ -1139,27 +1168,24 @@ def select_master_file(file_paths: list[str], master_dir: Path | None) -> tuple[
     if master_dir:
         master_dir_str = str(master_dir)
         # Separate files into master directory files and others
-        master_files = [f for f in file_paths if f.startswith(master_dir_str + os.sep) or f.startswith(master_dir_str)]
+        master_files = [f for f in file_paths if is_in_directory(f, master_dir_str)]
         other_files = [f for f in file_paths if f not in master_files]
 
         if master_files:
             # Select oldest file in master directory
             if len(master_files) == 1:
-                return master_files[0], other_files + [], "only file in master directory"
+                return master_files[0], other_files, "only file in master directory"
             else:
                 # Multiple files in master - pick oldest by mtime
-                oldest_master = min(master_files, key=lambda p: os.path.getmtime(p))
-                other_master_files = [f for f in master_files if f != oldest_master]
+                oldest_master, other_master_files = select_oldest(master_files)
                 return oldest_master, other_master_files + other_files, "oldest in master directory"
         else:
             # No files in master directory - pick oldest overall
-            oldest = min(file_paths, key=lambda p: os.path.getmtime(p))
-            duplicates = [f for f in file_paths if f != oldest]
+            oldest, duplicates = select_oldest(file_paths)
             return oldest, duplicates, "oldest file (none in master directory)"
     else:
         # No master directory set - pick oldest overall
-        oldest = min(file_paths, key=lambda p: os.path.getmtime(p))
-        duplicates = [f for f in file_paths if f != oldest]
+        oldest, duplicates = select_oldest(file_paths)
         return oldest, duplicates, "oldest file"
 
 
@@ -1945,29 +1971,44 @@ def write_log_footer(
     audit_logger.info("=" * 80)
 
 
+def create_hasher(hash_algorithm: str = 'md5') -> hashlib._Hash:
+    """Create a hash object for the specified algorithm.
+
+    Args:
+        hash_algorithm: 'md5' or 'sha256'
+
+    Returns:
+        Hash object ready for update() calls
+
+    Raises:
+        ValueError: If hash_algorithm is not supported
+    """
+    if hash_algorithm == 'md5':
+        return hashlib.md5()
+    elif hash_algorithm == 'sha256':
+        return hashlib.sha256()
+    else:
+        raise ValueError(f"Unsupported hash algorithm: {hash_algorithm}")
+
+
 def get_file_hash(filepath: str | Path, hash_algorithm: str = 'md5', fast_mode: bool = False, size_threshold: int = 100*1024*1024) -> str:
     """
     Calculate hash of file content using the specified algorithm.
-    
+
     Args:
         filepath: Path to the file to hash
         hash_algorithm: Hashing algorithm to use ('md5' or 'sha256')
         fast_mode: If True, use faster methods for large files
         size_threshold: Size threshold (in bytes) for when to apply fast methods
-    
+
     Returns:
         Hexadecimal digest of the hash
     """
     file_size = os.path.getsize(filepath)
-    
+
     # For small files or when fast_mode is disabled, use the standard method
     if not fast_mode or file_size < size_threshold:
-        if hash_algorithm == 'md5':
-            h = hashlib.md5()  # Faster but less secure
-        elif hash_algorithm == 'sha256':
-            h = hashlib.sha256()  # Slower but more secure
-        else:
-            raise ValueError(f"Unsupported hash algorithm: {hash_algorithm}")
+        h = create_hasher(hash_algorithm)
             
         with open(filepath, 'rb') as f:
             # Read file in chunks to handle large files efficiently
@@ -1994,14 +2035,8 @@ def get_sparse_hash(filepath: str | Path, hash_algorithm: str = 'md5', file_size
     Returns:
         Hexadecimal digest of the hash
     """
-    # Create the appropriate hasher
-    if hash_algorithm == 'md5':
-        h = hashlib.md5()
-    elif hash_algorithm == 'sha256':
-        h = hashlib.sha256()
-    else:
-        raise ValueError(f"Unsupported hash algorithm: {hash_algorithm}")
-    
+    h = create_hasher(hash_algorithm)
+
     if file_size is None:
         file_size = os.path.getsize(filepath)
     
@@ -2278,8 +2313,7 @@ def main() -> int:
             master_dir_str = str(master_path)
 
             # Check for multiple files in master directory (warning case)
-            master_files_in_group = [f for f in all_files
-                                     if f.startswith(master_dir_str + os.sep) or f.startswith(master_dir_str)]
+            master_files_in_group = [f for f in all_files if is_in_directory(f, master_dir_str)]
             if len(master_files_in_group) > 1:
                 warnings.append(f"Warning: Multiple files in master directory have identical content: {', '.join(master_files_in_group)}")
 
