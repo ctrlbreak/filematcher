@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import argparse
+from dataclasses import dataclass
 from enum import Enum
 import hashlib
 import logging
@@ -131,6 +132,33 @@ class ColorConfig:
         """Reset cached enabled state (for testing)."""
         self._enabled = None
 
+    @property
+    def is_tty(self) -> bool:
+        """Check if output stream is a TTY."""
+        try:
+            return self.stream.isatty()
+        except AttributeError:
+            return False
+
+
+# ============================================================================
+# Structured Output Types
+# ============================================================================
+
+@dataclass
+class GroupLine:
+    """Structured line for group output, enabling clean color application.
+
+    This separates data structure from presentation, allowing colors to be
+    applied based on line_type rather than string parsing.
+    """
+    line_type: str  # "master", "duplicate", "hash", "other"
+    label: str      # "MASTER:", "WOULD DELETE:", etc.
+    path: str       # File path or hash value
+    warning: str = ""  # "[!cross-fs]" or empty
+    prefix: str = ""   # "[1/3] " progress prefix or empty
+    indent: str = ""   # "    " for duplicates or empty
+
 
 # ============================================================================
 # Color Helper Functions
@@ -190,6 +218,41 @@ def bold_yellow(text: str, cc: ColorConfig) -> str:
 def bold_green(text: str, cc: ColorConfig) -> str:
     """Bold green text (master labels)."""
     return colorize(text, BOLD_GREEN, cc)
+
+
+def render_group_line(line: GroupLine, cc: ColorConfig) -> str:
+    """Render a GroupLine to a string with appropriate colors.
+
+    Applies colors based on line_type, separating structure from presentation.
+
+    Args:
+        line: GroupLine with structured data
+        cc: ColorConfig for color decisions
+
+    Returns:
+        Formatted string with colors applied
+    """
+    if line.line_type == "master":
+        # Master line: bold green label, green path
+        label_colored = bold_green(line.label, cc)
+        path_colored = green(line.path, cc)
+        return f"{line.prefix}{line.indent}{label_colored}{path_colored}"
+
+    elif line.line_type == "duplicate":
+        # Duplicate line: bold yellow label, yellow path, red warning
+        label_colored = bold_yellow(line.label, cc)
+        path_colored = yellow(line.path, cc)
+        warning_colored = red(line.warning, cc) if line.warning else ""
+        return f"{line.prefix}{line.indent}{label_colored}{path_colored}{warning_colored}"
+
+    elif line.line_type == "hash":
+        # Hash line: all dim
+        full_line = f"{line.indent}{line.label}{line.path}"
+        return dim(full_line, cc)
+
+    else:
+        # Other: no color
+        return f"{line.prefix}{line.indent}{line.label}{line.path}"
 
 
 def determine_color_mode(args) -> ColorMode:
@@ -1138,12 +1201,12 @@ def format_group_lines(
     file_sizes: dict[str, int] | None = None,
     dup_count: int | None = None,
     cross_fs_files: set[str] | None = None
-) -> list[str]:
+) -> list[GroupLine]:
     """
     Format group lines with unified visual structure.
 
     This is the shared helper for both compare mode and action mode group output.
-    Callers apply colors after receiving lines.
+    Returns structured GroupLine objects for clean color application.
 
     Args:
         primary_file: Path to the primary file (shown unindented)
@@ -1155,25 +1218,37 @@ def format_group_lines(
         cross_fs_files: Set of paths on different filesystems (adds [!cross-fs] marker)
 
     Returns:
-        List of formatted lines:
-        - Primary line: [PRIMARY_LABEL] path (optional: dup count, size)
-        - Secondary lines: 4-space indent LABEL: path
+        List of GroupLine objects:
+        - Primary line: line_type="master", label, path (with optional verbose suffix)
+        - Secondary lines: line_type="duplicate", indent="    ", label, path, warning
     """
-    lines = []
+    lines: list[GroupLine] = []
 
-    # Format primary line (LABEL: path format, label will be bolded by caller)
+    # Format primary line (LABEL: path format)
     if verbose and file_sizes:
         size = file_sizes.get(primary_file, 0)
         size_str = format_file_size(size)
         effective_dup_count = dup_count if dup_count is not None else len(secondary_files)
-        lines.append(f"{primary_label}: {primary_file} ({effective_dup_count} duplicates, {size_str})")
+        path_with_info = f"{primary_file} ({effective_dup_count} duplicates, {size_str})"
     else:
-        lines.append(f"{primary_label}: {primary_file}")
+        path_with_info = primary_file
+
+    lines.append(GroupLine(
+        line_type="master",
+        label=f"{primary_label}: ",
+        path=path_with_info
+    ))
 
     # Format secondary lines (4-space indent, sorted alphabetically by path for determinism)
     for path, label in sorted(secondary_files, key=lambda x: x[0]):
-        cross_fs_marker = " [!cross-fs]" if cross_fs_files and path in cross_fs_files else ""
-        lines.append(f"    {label}: {path}{cross_fs_marker}")
+        warning = " [!cross-fs]" if cross_fs_files and path in cross_fs_files else ""
+        lines.append(GroupLine(
+            line_type="duplicate",
+            label=f"{label}: ",
+            path=path,
+            warning=warning,
+            indent="    "
+        ))
 
     return lines
 
@@ -1186,7 +1261,7 @@ def format_duplicate_group(
     file_sizes: dict[str, int] | None = None,
     cross_fs_files: set[str] | None = None,
     preview_mode: bool = True
-) -> list[str]:
+) -> list[GroupLine]:
     """
     Format a duplicate group for display.
 
@@ -1200,7 +1275,7 @@ def format_duplicate_group(
         preview_mode: If True and action is set, use "WOULD X" labels; if False, use "[DUP:action]"
 
     Returns:
-        List of formatted lines for this group
+        List of GroupLine objects for this group
     """
     # Determine action label based on preview_mode and action type
     if action == "compare":
