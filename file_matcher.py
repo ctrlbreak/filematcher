@@ -818,7 +818,9 @@ class TextActionFormatter(ActionFormatter):
         action: str,
         file_hash: str | None = None,
         file_sizes: dict[str, int] | None = None,
-        cross_fs_files: set[str] | None = None
+        cross_fs_files: set[str] | None = None,
+        group_index: int | None = None,
+        total_groups: int | None = None
     ) -> None:
         """Format and output a duplicate group.
 
@@ -835,7 +837,22 @@ class TextActionFormatter(ActionFormatter):
             file_hash: Content hash for this group (for verbose mode)
             file_sizes: Optional dict mapping paths to file sizes (for verbose mode)
             cross_fs_files: Optional set of duplicates on different filesystem
+            group_index: Current group number (1-indexed) for progress display
+            total_groups: Total number of groups for progress display
         """
+        # TTY progress indicator (write to stderr before group output)
+        is_tty = hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()
+        if is_tty and group_index is not None and total_groups is not None:
+            # Truncate master path for display
+            display_path = master_file
+            progress_prefix = f"[{group_index}/{total_groups}] "
+            term_width = shutil.get_terminal_size().columns
+            max_path = term_width - len(progress_prefix) - 1
+            if len(display_path) > max_path:
+                display_path = "..." + display_path[-(max_path - 3):]
+            progress_line = f"\r{progress_prefix}{display_path}"
+            sys.stderr.write(progress_line.ljust(term_width) + '\r')
+            sys.stderr.flush()
         # DELEGATE to existing format_duplicate_group function
         # Note: format_duplicate_group already sorts duplicates (line 144: sorted(duplicates))
         lines = format_duplicate_group(
