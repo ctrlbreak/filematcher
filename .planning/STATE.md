@@ -43,6 +43,15 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Quick Tasks Completed
 
+### Quick 008: Eliminate Code Duplication (2026-01-24)
+
+- create_hasher(): centralizes hash algorithm selection for get_file_hash/get_sparse_hash
+- is_in_directory(): replaces repeated startswith + os.sep pattern
+- select_oldest(): extracts min-by-mtime logic with remaining files
+- Inlined banner wrapper functions (use constants directly)
+- Consolidated calculate_space_savings() calls (pre-calculate once)
+- All 206 tests pass
+
 ### Quick 007: Refactor Output Formatting for Modularity (2026-01-24)
 
 - GroupLine dataclass separates structure from presentation
@@ -80,8 +89,8 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Session Continuity
 
-Last session: 2026-01-24 00:42
-Stopped at: Completed quick task 007
+Last session: 2026-01-24 00:57
+Stopped at: Completed quick task 008
 Resume file: None
 
 ## Next Steps
@@ -89,4 +98,4 @@ Resume file: None
 Run `/gsd:new-milestone` to start next milestone (questioning -> research -> requirements -> roadmap)
 
 ---
-*Last updated: 2026-01-24 - Quick task 007 complete*
+*Last updated: 2026-01-24 - Quick task 008 complete*
