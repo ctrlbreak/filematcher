@@ -34,8 +34,8 @@ class TestStreamSeparation(unittest.TestCase):
         # Logger messages should be on stderr
         self.assertIn("Using MD5", result.stderr)
         # Data should be on stdout (MASTER/DUPLICATE labels, Hash only in verbose)
-        self.assertIn("[MASTER]", result.stdout)
-        self.assertIn("[DUPLICATE]", result.stdout)
+        self.assertIn("MASTER:", result.stdout)
+        self.assertIn("DUPLICATE:", result.stdout)
         # Logger messages should NOT be on stdout
         self.assertNotIn("Using MD5", result.stdout)
 
@@ -81,8 +81,8 @@ class TestStreamSeparation(unittest.TestCase):
             text=True
         )
         # Data should be on stdout (MASTER/DUPLICATE labels)
-        self.assertIn("[MASTER]", result.stdout)
-        self.assertIn("[DUPLICATE]", result.stdout)
+        self.assertIn("MASTER:", result.stdout)
+        self.assertIn("DUPLICATE:", result.stdout)
         self.assertIn("--- Statistics ---", result.stdout)
         self.assertIn("Duplicate groups:", result.stdout)
 
@@ -106,7 +106,7 @@ class TestQuietFlag(unittest.TestCase):
         self.assertNotIn("Using MD5", result.stderr)
         self.assertNotIn("Indexing", result.stderr)
         # Should still have data (MASTER/DUPLICATE labels)
-        self.assertIn("[MASTER]", result.stdout)
+        self.assertIn("MASTER:", result.stdout)
 
     def test_quiet_short_flag(self):
         """-q should work same as --quiet."""
@@ -125,7 +125,7 @@ class TestQuietFlag(unittest.TestCase):
             text=True
         )
         # Data output should still appear (MASTER/DUPLICATE labels)
-        self.assertIn("[MASTER]", result.stdout)
+        self.assertIn("MASTER:", result.stdout)
         self.assertIn("--- Statistics ---", result.stdout)
 
     def test_quiet_still_shows_errors(self):

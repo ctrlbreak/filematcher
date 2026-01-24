@@ -882,18 +882,42 @@ class TextActionFormatter(ActionFormatter):
             progress_prefix = f"[{group_index}/{total_groups}] "
             lines[0] = progress_prefix + lines[0]
 
-        # Output lines with colors
+        # Output lines with colors (label bold, path colored)
         line_count = 0
         for line in lines:
-            if "[MASTER]" in line:
-                print(green(line, self.cc))
-            elif line.startswith("    ["):
-                if "[!cross-fs]" in line:
-                    main_part = line.replace(" [!cross-fs]", "")
-                    warning_part = " [!cross-fs]"
-                    print(yellow(main_part, self.cc) + red(warning_part, self.cc))
+            if "MASTER:" in line:
+                # Master line: bold label, green path
+                # Handle progress prefix: [1/3] MASTER: path
+                if line.startswith("["):
+                    # Has progress prefix
+                    bracket_end = line.index("] ") + 2
+                    prefix = line[:bracket_end]
+                    rest = line[bracket_end:]
+                    label_end = rest.index(": ") + 2
+                    label = rest[:label_end]
+                    path = rest[label_end:]
+                    print(prefix + bold(label, self.cc) + green(path, self.cc))
                 else:
-                    print(yellow(line, self.cc))
+                    label_end = line.index(": ") + 2
+                    label = line[:label_end]
+                    path = line[label_end:]
+                    print(bold(label, self.cc) + green(path, self.cc))
+            elif line.startswith("    ") and ": " in line:
+                # Secondary line: bold label, yellow path
+                indent = "    "
+                rest = line[4:]
+                if "[!cross-fs]" in rest:
+                    rest_clean = rest.replace(" [!cross-fs]", "")
+                    warning_part = " [!cross-fs]"
+                    label_end = rest_clean.index(": ") + 2
+                    label = rest_clean[:label_end]
+                    path = rest_clean[label_end:]
+                    print(indent + bold(label, self.cc) + yellow(path, self.cc) + red(warning_part, self.cc))
+                else:
+                    label_end = rest.index(": ") + 2
+                    label = rest[:label_end]
+                    path = rest[label_end:]
+                    print(indent + bold(label, self.cc) + yellow(path, self.cc))
             elif line.startswith("  Hash:"):
                 print(dim(line, self.cc))
             else:
@@ -1127,23 +1151,23 @@ def format_group_lines(
     Returns:
         List of formatted lines:
         - Primary line: [PRIMARY_LABEL] path (optional: dup count, size)
-        - Secondary lines: 4-space indent [LABEL] path
+        - Secondary lines: 4-space indent LABEL: path
     """
     lines = []
 
-    # Format primary line
+    # Format primary line (LABEL: path format, label will be bolded by caller)
     if verbose and file_sizes:
         size = file_sizes.get(primary_file, 0)
         size_str = format_file_size(size)
         effective_dup_count = dup_count if dup_count is not None else len(secondary_files)
-        lines.append(f"[{primary_label}] {primary_file} ({effective_dup_count} duplicates, {size_str})")
+        lines.append(f"{primary_label}: {primary_file} ({effective_dup_count} duplicates, {size_str})")
     else:
-        lines.append(f"[{primary_label}] {primary_file}")
+        lines.append(f"{primary_label}: {primary_file}")
 
     # Format secondary lines (4-space indent, sorted alphabetically by path for determinism)
     for path, label in sorted(secondary_files, key=lambda x: x[0]):
         cross_fs_marker = " [!cross-fs]" if cross_fs_files and path in cross_fs_files else ""
-        lines.append(f"    [{label}] {path}{cross_fs_marker}")
+        lines.append(f"    {label}: {path}{cross_fs_marker}")
 
     return lines
 

@@ -29,9 +29,9 @@ class TestCompareMode(BaseFileMatcherTest):
         """Test that tool works without --action (compare mode)."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
-            # Output uses [MASTER]/[DUPLICATE] labels
-            self.assertIn("[MASTER]", output)
-            self.assertIn("[DUPLICATE]", output)
+            # Output uses MASTER:/DUPLICATE: labels
+            self.assertIn("MASTER:", output)
+            self.assertIn("DUPLICATE:", output)
 
 
 class TestMasterDirectoryOutput(BaseFileMatcherTest):
@@ -45,19 +45,19 @@ class TestMasterDirectoryOutput(BaseFileMatcherTest):
         return f.getvalue()
 
     def test_action_output_format(self):
-        """Test that output uses [MASTER]/[WOULD ...] format when --action set."""
+        """Test that output uses MASTER:/[WOULD ...] format when --action set."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
-            # New format should have [MASTER] and [WOULD HARDLINK] prefixes
-            self.assertIn("[MASTER]", output)
-            self.assertIn("[WOULD HARDLINK]", output)
+            # New format should have MASTER: and WOULD HARDLINK: prefixes
+            self.assertIn("MASTER:", output)
+            self.assertIn("WOULD HARDLINK:", output)
 
     def test_master_output_master_first(self):
-        """Test that [MASTER] lines contain files from first directory."""
+        """Test that MASTER: lines contain files from first directory."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
-            # Find lines with [MASTER] - should be from test_dir1
-            master_lines = [line for line in output.split('\n') if '[MASTER]' in line]
+            # Find lines with MASTER: - should be from test_dir1
+            master_lines = [line for line in output.split('\n') if 'MASTER:' in line]
             for line in master_lines:
                 # Master file should be from test_dir1
                 self.assertIn('test_dir1', line)
@@ -66,9 +66,9 @@ class TestMasterDirectoryOutput(BaseFileMatcherTest):
         """Test that without --action, output uses hierarchical format."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
-            # Compare mode uses [MASTER]/[DUPLICATE] labels like action mode
-            self.assertIn("[MASTER]", output)
-            self.assertIn("[DUPLICATE]", output)
+            # Compare mode uses MASTER:/DUPLICATE: labels like action mode
+            self.assertIn("MASTER:", output)
+            self.assertIn("DUPLICATE:", output)
 
     def test_action_summary_shows_counts(self):
         """Test that --summary shows master files and duplicates counts."""
@@ -81,10 +81,10 @@ class TestMasterDirectoryOutput(BaseFileMatcherTest):
         """Test that --verbose shows duplicate count and file size."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink', '--verbose']):
             output = self.run_main_with_args([])
-            # Verbose mode should show duplicate count and size in [MASTER] line
+            # Verbose mode should show duplicate count and size in MASTER: line
             self.assertIn("duplicates", output.lower())
-            # Should still have the [MASTER] format
-            self.assertIn("[MASTER]", output)
+            # Should still have the MASTER: format
+            self.assertIn("MASTER:", output)
 
 
 class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
@@ -125,25 +125,25 @@ class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             # The older file (dup_a.txt) should be selected as master
-            # It should appear in a [MASTER] line, with dup_b.txt as [WOULD HARDLINK]
-            master_lines = [line for line in output.split('\n') if '[MASTER]' in line and 'dup_' in line]
+            # It should appear in a MASTER: line, with dup_b.txt as WOULD HARDLINK:
+            master_lines = [line for line in output.split('\n') if 'MASTER:' in line and 'dup_' in line]
             self.assertTrue(any('dup_a.txt' in line for line in master_lines),
                             "dup_a.txt (oldest) should be selected as master")
             # dup_b.txt should be a duplicate
-            dup_lines = [line for line in output.split('\n') if '[WOULD HARDLINK]' in line and 'dup_b.txt' in line]
+            dup_lines = [line for line in output.split('\n') if 'WOULD HARDLINK:' in line and 'dup_b.txt' in line]
             self.assertTrue(len(dup_lines) > 0, "dup_b.txt should appear as a duplicate")
 
     def test_duplicate_group_has_correct_structure(self):
-        """Verify duplicate groups have [MASTER] followed by indented lines."""
+        """Verify duplicate groups have MASTER: followed by indented lines."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
             lines = output.split('\n')
-            # Find groups - [MASTER] should be followed by indented lines
+            # Find groups - MASTER: should be followed by indented lines
             for i, line in enumerate(lines):
-                if '[MASTER]' in line:
+                if 'MASTER:' in line:
                     # Check that next non-empty lines are indented
                     j = i + 1
-                    while j < len(lines) and lines[j].strip() and '[MASTER]' not in lines[j]:
+                    while j < len(lines) and lines[j].strip() and 'MASTER:' not in lines[j]:
                         if lines[j].strip():
                             self.assertTrue(lines[j].startswith('    '),
                                             f"DUP lines should be indented: {lines[j]}")
@@ -174,14 +174,14 @@ class TestMasterDirectoryTimestamp(BaseFileMatcherTest):
 
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
-            # Find the [MASTER] line with newer_master.txt - it should be from test_dir1
-            master_lines = [line for line in output.split('\n') if '[MASTER]' in line and 'newer_master.txt' in line]
-            self.assertTrue(len(master_lines) > 0, "newer_master.txt should be a [MASTER]")
+            # Find the MASTER: line with newer_master.txt - it should be from test_dir1
+            master_lines = [line for line in output.split('\n') if 'MASTER:' in line and 'newer_master.txt' in line]
+            self.assertTrue(len(master_lines) > 0, "newer_master.txt should be a MASTER:")
             for line in master_lines:
                 # Master should be from test_dir1
                 self.assertIn('test_dir1', line)
-            # very_old.txt should be a [WOULD HARDLINK]
-            dup_lines = [line for line in output.split('\n') if '[WOULD HARDLINK]' in line and 'very_old.txt' in line]
+            # very_old.txt should be a WOULD HARDLINK:
+            dup_lines = [line for line in output.split('\n') if 'WOULD HARDLINK:' in line and 'very_old.txt' in line]
             self.assertTrue(len(dup_lines) > 0, "very_old.txt should appear as duplicate")
 
 

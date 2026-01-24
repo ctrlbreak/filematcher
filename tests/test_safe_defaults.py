@@ -97,10 +97,10 @@ class TestPreviewBanner(BaseFileMatcherTest):
                     banner_index = i
                     break
             self.assertIsNotNone(banner_index, "Banner should appear in output")
-            # Banner should appear before any [MASTER] or [DUP] lines
+            # Banner should appear before any MASTER: or DUP: lines
             first_master_index = None
             for i, line in enumerate(lines):
-                if '[MASTER]' in line:
+                if 'MASTER:' in line:
                     first_master_index = i
                     break
             if first_master_index is not None:
@@ -171,8 +171,8 @@ class TestPreviewStatistics(BaseFileMatcherTest):
             # Verify stats present
             self.assertIn("Statistics", output)
             self.assertIn("Duplicate groups:", output)
-            # Verify no [MASTER] lines (summary mode hides file listing)
-            self.assertNotIn("[MASTER]", output)
+            # Verify no MASTER: lines (summary mode hides file listing)
+            self.assertNotIn("MASTER:", output)
             # Verify no WOULD labels (summary mode hides file listing)
             self.assertNotIn("[WOULD", output)
 
@@ -188,22 +188,22 @@ class TestPreviewActionLabels(BaseFileMatcherTest):
         return f.getvalue()
 
     def test_hardlink_action_label(self):
-        """With --action hardlink, duplicates show [WOULD HARDLINK]."""
+        """With --action hardlink, duplicates show WOULD HARDLINK:."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
-            self.assertIn("[WOULD HARDLINK]", output)
+            self.assertIn("WOULD HARDLINK:", output)
 
     def test_symlink_action_label(self):
-        """With --action symlink, duplicates show [WOULD SYMLINK]."""
+        """With --action symlink, duplicates show WOULD SYMLINK:."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'symlink']):
             output = self.run_main_with_args([])
-            self.assertIn("[WOULD SYMLINK]", output)
+            self.assertIn("WOULD SYMLINK:", output)
 
     def test_delete_action_label(self):
-        """With --action delete, duplicates show [WOULD DELETE]."""
+        """With --action delete, duplicates show WOULD DELETE:."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'delete']):
             output = self.run_main_with_args([])
-            self.assertIn("[WOULD DELETE]", output)
+            self.assertIn("WOULD DELETE:", output)
 
 class TestCrossFilesystemWarnings(BaseFileMatcherTest):
     """Tests for cross-filesystem warnings."""
