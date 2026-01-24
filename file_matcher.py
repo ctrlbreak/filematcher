@@ -902,7 +902,10 @@ class TextActionFormatter(ActionFormatter):
     ) -> None:
         """Format and output a duplicate group.
 
-        Delegates to existing format_duplicate_group function and applies colors:
+        Uses structured GroupLine objects and render_group_line for clean
+        color application without string parsing.
+
+        Colors applied based on line_type:
         - Master file paths in green (protected)
         - Duplicate file paths in yellow (removal candidates)
         - Cross-filesystem warnings in red
@@ -918,12 +921,11 @@ class TextActionFormatter(ActionFormatter):
             group_index: Current group number (1-indexed) for progress display
             total_groups: Total number of groups for progress display
         """
-        # Check for TTY inline progress mode
-        is_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
-        inline_progress = is_tty and group_index is not None and total_groups is not None
+        # Check for TTY inline progress mode using centralized TTY detection
+        inline_progress = self.cc.is_tty and group_index is not None and total_groups is not None
 
-        # DELEGATE to existing format_duplicate_group function
-        lines = format_duplicate_group(
+        # Get structured GroupLine objects from format_duplicate_group
+        lines: list[GroupLine] = format_duplicate_group(
             master_file=master_file,
             duplicates=duplicates,
             action=action,
@@ -933,9 +935,13 @@ class TextActionFormatter(ActionFormatter):
             preview_mode=self.preview_mode
         )
 
-        # Add hash line if verbose
+        # Add hash line as GroupLine if verbose
         if self.verbose and file_hash:
-            lines.append(f"  Hash: {file_hash[:10]}...")
+            lines.append(GroupLine(
+                line_type="hash",
+                label="  Hash: ",
+                path=f"{file_hash[:10]}..."
+            ))
 
         # In TTY inline mode: clear previous group, add progress prefix
         if inline_progress:
@@ -948,49 +954,13 @@ class TextActionFormatter(ActionFormatter):
                 sys.stdout.flush()
 
             # Add progress prefix to first line
-            progress_prefix = f"[{group_index}/{total_groups}] "
-            lines[0] = progress_prefix + lines[0]
+            if lines:
+                lines[0].prefix = f"[{group_index}/{total_groups}] "
 
-        # Output lines with colors (label and path same color, label bold)
+        # Output lines using render_group_line for clean color application
         line_count = 0
         for line in lines:
-            if "MASTER:" in line:
-                # Master line: bold green label, green path
-                # Handle progress prefix: [1/3] MASTER: path
-                if line.startswith("["):
-                    # Has progress prefix
-                    bracket_end = line.index("] ") + 2
-                    prefix = line[:bracket_end]
-                    rest = line[bracket_end:]
-                    label_end = rest.index(": ") + 2
-                    label = rest[:label_end]
-                    path = rest[label_end:]
-                    print(prefix + bold_green(label, self.cc) + green(path, self.cc))
-                else:
-                    label_end = line.index(": ") + 2
-                    label = line[:label_end]
-                    path = line[label_end:]
-                    print(bold_green(label, self.cc) + green(path, self.cc))
-            elif line.startswith("    ") and ": " in line:
-                # Secondary line: bold yellow label, yellow path
-                indent = "    "
-                rest = line[4:]
-                if "[!cross-fs]" in rest:
-                    rest_clean = rest.replace(" [!cross-fs]", "")
-                    warning_part = " [!cross-fs]"
-                    label_end = rest_clean.index(": ") + 2
-                    label = rest_clean[:label_end]
-                    path = rest_clean[label_end:]
-                    print(indent + bold_yellow(label, self.cc) + yellow(path, self.cc) + red(warning_part, self.cc))
-                else:
-                    label_end = rest.index(": ") + 2
-                    label = rest[:label_end]
-                    path = rest[label_end:]
-                    print(indent + bold_yellow(label, self.cc) + yellow(path, self.cc))
-            elif line.startswith("  Hash:"):
-                print(dim(line, self.cc))
-            else:
-                print(line)
+            print(render_group_line(line, self.cc))
             line_count += 1
 
         # Track line count for next group (TTY mode only)
