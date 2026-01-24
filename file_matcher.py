@@ -1144,6 +1144,66 @@ def select_oldest(file_paths: list[str]) -> tuple[str, list[str]]:
     return oldest, others
 
 
+def build_file_hash_lookup(matches: dict[str, tuple[list[str], list[str]]]) -> dict[str, str]:
+    """Build a mapping of file paths to their content hashes.
+
+    Args:
+        matches: Dict mapping hash -> (files_in_dir1, files_in_dir2)
+
+    Returns:
+        Dict mapping file_path -> hash
+    """
+    lookup: dict[str, str] = {}
+    for file_hash, (files1, files2) in matches.items():
+        for f in files1 + files2:
+            lookup[f] = file_hash
+    return lookup
+
+
+def get_cross_fs_for_hardlink(action: str, cross_fs_files: set[str]) -> set[str] | None:
+    """Return cross-filesystem files set only for hardlink action.
+
+    Args:
+        action: The action being performed
+        cross_fs_files: Set of files on different filesystems
+
+    Returns:
+        cross_fs_files if action is hardlink, None otherwise
+    """
+    return cross_fs_files if action == 'hardlink' else None
+
+
+def get_cross_fs_count(action: str, cross_fs_files: set[str]) -> int:
+    """Return count of cross-filesystem files only for hardlink action.
+
+    Args:
+        action: The action being performed
+        cross_fs_files: Set of files on different filesystems
+
+    Returns:
+        Count of cross_fs_files if action is hardlink, 0 otherwise
+    """
+    return len(cross_fs_files) if action == 'hardlink' else 0
+
+
+def build_file_sizes(paths: list[str]) -> dict[str, int]:
+    """Build dict of file sizes with graceful error handling.
+
+    Args:
+        paths: List of file paths
+
+    Returns:
+        Dict mapping path -> size (0 if file inaccessible)
+    """
+    sizes: dict[str, int] = {}
+    for p in paths:
+        try:
+            sizes[p] = os.path.getsize(p)
+        except OSError:
+            sizes[p] = 0
+    return sizes
+
+
 def select_master_file(file_paths: list[str], master_dir: Path | None) -> tuple[str, list[str], str]:
     """
     Select which file should be considered the master from a list of duplicates.
@@ -2360,7 +2420,7 @@ def main() -> int:
                         print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
                 else:
                     bytes_saved, dup_count, grp_count = space_info
-                    cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+                    cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
                     formatter.format_statistics(
                         group_count=grp_count,
                         duplicate_count=dup_count,
@@ -2384,11 +2444,10 @@ def main() -> int:
                         # Build file_sizes dict for verbose mode (JSON always needs sizes)
                         file_sizes = None
                         if args.verbose or args.json:
-                            all_paths = [master_file] + duplicates
-                            file_sizes = {p: os.path.getsize(p) for p in all_paths}
+                            file_sizes = build_file_sizes([master_file] + duplicates)
 
                         # Format group
-                        cross_fs_to_show = cross_fs_files if args.action == 'hardlink' else None
+                        cross_fs_to_show = get_cross_fs_for_hardlink(args.action, cross_fs_files)
                         formatter.format_duplicate_group(
                             master_file, duplicates,
                             action=args.action,
@@ -2421,7 +2480,7 @@ def main() -> int:
                 if matches:
                     if space_info:
                         bytes_saved, dup_count, grp_count = space_info
-                    cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+                    cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
                     formatter.format_statistics(
                         group_count=grp_count,
                         duplicate_count=dup_count,
@@ -2457,10 +2516,7 @@ def main() -> int:
                 write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
 
                 # Build hash lookup for logging
-                file_hash_lookup: dict[str, str] = {}
-                for file_hash, (files1, files2) in matches.items():
-                    for f in files1 + files2:
-                        file_hash_lookup[f] = file_hash
+                file_hash_lookup = build_file_hash_lookup(matches)
 
                 # Execute actions with logging
                 success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
@@ -2481,14 +2537,8 @@ def main() -> int:
                 for i, (master_file, duplicates, reason, file_hash) in enumerate(sorted_results):
                     file_sizes = None
                     if args.verbose or args.json:
-                        all_paths = [master_file] + duplicates
-                        file_sizes = {}
-                        for p in all_paths:
-                            try:
-                                file_sizes[p] = os.path.getsize(p)
-                            except OSError:
-                                file_sizes[p] = 0  # File may have been deleted/replaced
-                    cross_fs_to_show = cross_fs_files if args.action == 'hardlink' else None
+                        file_sizes = build_file_sizes([master_file] + duplicates)
+                    cross_fs_to_show = get_cross_fs_for_hardlink(args.action, cross_fs_files)
                     action_formatter.format_duplicate_group(
                         master_file, duplicates,
                         action=args.action,
@@ -2505,7 +2555,7 @@ def main() -> int:
 
                 # Add statistics
                 bytes_saved_preview, dup_count, grp_count = calculate_space_savings(master_results)
-                cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+                cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
                 action_formatter.format_statistics(
                     group_count=grp_count,
                     duplicate_count=dup_count,
@@ -2541,7 +2591,7 @@ def main() -> int:
 
                 # Calculate space savings for confirmation prompt
                 bytes_saved, dup_count, _ = calculate_space_savings(master_results)
-                cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
+                cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
                 prompt = format_confirmation_prompt(dup_count, args.action, bytes_saved, cross_fs_count if args.fallback_symlink else 0)
                 if not confirm_execution(skip_confirm=args.yes, prompt=prompt):
                     action_formatter.format_user_abort()
@@ -2577,10 +2627,7 @@ def main() -> int:
                 write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
 
                 # Build hash lookup for logging
-                file_hash_lookup: dict[str, str] = {}
-                for file_hash, (files1, files2) in matches.items():
-                    for f in files1 + files2:
-                        file_hash_lookup[f] = file_hash
+                file_hash_lookup = build_file_hash_lookup(matches)
 
                 # Execute actions with logging
                 success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
