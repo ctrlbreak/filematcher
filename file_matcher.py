@@ -2292,12 +2292,19 @@ def main() -> int:
                             action=args.action,
                             file_hash=file_hash,
                             file_sizes=file_sizes,
-                            cross_fs_files=cross_fs_to_show
+                            cross_fs_files=cross_fs_to_show,
+                            group_index=i + 1,
+                            total_groups=len(sorted_results)
                         )
 
                         # Print blank line between groups (but not after the last one) - text mode only
                         if i < len(sorted_results) - 1 and not args.json:
                             print()
+
+                    # Clear progress line (TTY only)
+                    if hasattr(sys.stderr, 'isatty') and sys.stderr.isatty():
+                        sys.stderr.write('\r' + ' ' * shutil.get_terminal_size().columns + '\r')
+                        sys.stderr.flush()
 
                 # Optionally display unmatched files (compare mode) - outside matches check
                 if args.show_unmatched and args.action == 'compare':
@@ -2368,7 +2375,7 @@ def main() -> int:
                 # Collect duplicate groups for JSON (need to rebuild since execution may have changed files)
                 # Sort master_results for determinism
                 sorted_results = sorted(master_results, key=lambda x: x[0])
-                for master_file, duplicates, reason, file_hash in sorted_results:
+                for i, (master_file, duplicates, reason, file_hash) in enumerate(sorted_results):
                     file_sizes = None
                     if args.verbose or args.json:
                         all_paths = [master_file] + duplicates
@@ -2384,8 +2391,15 @@ def main() -> int:
                         action=args.action,
                         file_hash=file_hash,
                         file_sizes=file_sizes,
-                        cross_fs_files=cross_fs_to_show
+                        cross_fs_files=cross_fs_to_show,
+                        group_index=i + 1,
+                        total_groups=len(sorted_results)
                     )
+
+                # Clear progress line (TTY only)
+                if hasattr(sys.stderr, 'isatty') and sys.stderr.isatty():
+                    sys.stderr.write('\r' + ' ' * shutil.get_terminal_size().columns + '\r')
+                    sys.stderr.flush()
 
                 # Add statistics
                 bytes_saved_preview, dup_count, grp_count = calculate_space_savings(master_results)
