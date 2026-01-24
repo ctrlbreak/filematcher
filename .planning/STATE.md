@@ -45,10 +45,11 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ### Quick 006: Inline Progress for Group Output (2026-01-24)
 
-- TTY-aware [n/m] progress indicator during group output
-- Progress writes to stderr, clears after loop completion
-- Path truncation for terminal width
-- Non-TTY mode unchanged (no progress pollution)
+- TTY-aware [n/m] progress indicator on group output
+- Groups update in-situ (ANSI cursor control), last group stays visible
+- Changed label format from [LABEL] to bold LABEL: (less visual clutter)
+- Labels match path colors (bold green MASTER:, bold yellow actions)
+- Non-TTY mode outputs all groups normally
 - 2 new tests added
 
 ### Quick 005: Clean Up Test Logs (2026-01-23)
