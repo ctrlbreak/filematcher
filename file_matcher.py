@@ -45,7 +45,8 @@ BOLD = "\033[1m"        # Emphasis
 DIM = "\033[2m"         # De-emphasis (hash values)
 
 # Compound styles
-BOLD_YELLOW = "\033[1;33m"  # PREVIEW MODE banner
+BOLD_GREEN = "\033[1;32m"   # Master labels
+BOLD_YELLOW = "\033[1;33m"  # PREVIEW MODE banner, duplicate labels
 
 
 # ============================================================================
@@ -182,8 +183,13 @@ def bold(text: str, cc: ColorConfig) -> str:
 
 
 def bold_yellow(text: str, cc: ColorConfig) -> str:
-    """Bold yellow text (PREVIEW MODE banner)."""
+    """Bold yellow text (PREVIEW MODE banner, duplicate labels)."""
     return colorize(text, BOLD_YELLOW, cc)
+
+
+def bold_green(text: str, cc: ColorConfig) -> str:
+    """Bold green text (master labels)."""
+    return colorize(text, BOLD_GREEN, cc)
 
 
 def determine_color_mode(args) -> ColorMode:
@@ -882,11 +888,11 @@ class TextActionFormatter(ActionFormatter):
             progress_prefix = f"[{group_index}/{total_groups}] "
             lines[0] = progress_prefix + lines[0]
 
-        # Output lines with colors (label bold, path colored)
+        # Output lines with colors (label and path same color, label bold)
         line_count = 0
         for line in lines:
             if "MASTER:" in line:
-                # Master line: bold label, green path
+                # Master line: bold green label, green path
                 # Handle progress prefix: [1/3] MASTER: path
                 if line.startswith("["):
                     # Has progress prefix
@@ -896,14 +902,14 @@ class TextActionFormatter(ActionFormatter):
                     label_end = rest.index(": ") + 2
                     label = rest[:label_end]
                     path = rest[label_end:]
-                    print(prefix + bold(label, self.cc) + green(path, self.cc))
+                    print(prefix + bold_green(label, self.cc) + green(path, self.cc))
                 else:
                     label_end = line.index(": ") + 2
                     label = line[:label_end]
                     path = line[label_end:]
-                    print(bold(label, self.cc) + green(path, self.cc))
+                    print(bold_green(label, self.cc) + green(path, self.cc))
             elif line.startswith("    ") and ": " in line:
-                # Secondary line: bold label, yellow path
+                # Secondary line: bold yellow label, yellow path
                 indent = "    "
                 rest = line[4:]
                 if "[!cross-fs]" in rest:
@@ -912,12 +918,12 @@ class TextActionFormatter(ActionFormatter):
                     label_end = rest_clean.index(": ") + 2
                     label = rest_clean[:label_end]
                     path = rest_clean[label_end:]
-                    print(indent + bold(label, self.cc) + yellow(path, self.cc) + red(warning_part, self.cc))
+                    print(indent + bold_yellow(label, self.cc) + yellow(path, self.cc) + red(warning_part, self.cc))
                 else:
                     label_end = rest.index(": ") + 2
                     label = rest[:label_end]
                     path = rest[label_end:]
-                    print(indent + bold(label, self.cc) + yellow(path, self.cc))
+                    print(indent + bold_yellow(label, self.cc) + yellow(path, self.cc))
             elif line.startswith("  Hash:"):
                 print(dim(line, self.cc))
             else:
