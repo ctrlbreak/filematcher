@@ -855,9 +855,9 @@ class TextActionFormatter(ActionFormatter):
             return  # Compare mode doesn't show PREVIEW/EXECUTING banner
         if self.preview_mode:
             # PREVIEW banner in bold yellow (attention-grabbing safety warning)
-            print(bold_yellow(format_preview_banner(), self.cc))
+            print(bold_yellow(PREVIEW_BANNER, self.cc))
         else:
-            print(format_execute_banner())
+            print(EXECUTE_BANNER)
         print()
 
     def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
@@ -1088,7 +1088,7 @@ class TextActionFormatter(ActionFormatter):
 
     def format_execute_banner_line(self) -> str:
         """Return the execute banner text."""
-        return format_execute_banner()
+        return EXECUTE_BANNER
 
     def finalize(self) -> None:
         """Finalize output. Text output is immediate, so nothing to do."""
@@ -1308,16 +1308,6 @@ def format_duplicate_group(
 
 PREVIEW_BANNER = "=== PREVIEW MODE - Use --execute to apply changes ==="
 EXECUTE_BANNER = "=== EXECUTING ==="
-
-
-def format_preview_banner() -> str:
-    """Return the preview mode header banner."""
-    return PREVIEW_BANNER
-
-
-def format_execute_banner() -> str:
-    """Return the execute mode header banner."""
-    return EXECUTE_BANNER
 
 
 def format_confirmation_prompt(
@@ -2352,17 +2342,21 @@ def main() -> int:
 
         # Helper function to print preview output
         def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
+            # Pre-calculate space savings once for non-compare actions
+            space_info = None
+            if args.action != 'compare':
+                space_info = calculate_space_savings(master_results)
+
             # Output unified header and summary line (unless --quiet)
             if not args.quiet:
                 formatter.format_unified_header(args.action, args.dir1, args.dir2)
-                # Calculate space savings for summary line
                 # Compare mode: show 0 space savings and total matched files count
                 if args.action == 'compare':
                     # For compare mode, show total files (master + duplicates) and 0 space
                     total_files = matched_files1 + matched_files2
                     formatter.format_summary_line(len(matches), total_files, 0)
                 else:
-                    bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
+                    bytes_saved, dup_count, grp_count = space_info
                     formatter.format_summary_line(grp_count, dup_count, bytes_saved)
 
             if show_banner:
@@ -2385,7 +2379,7 @@ def main() -> int:
                         print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
                         print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
                 else:
-                    bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
+                    bytes_saved, dup_count, grp_count = space_info
                     cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
                     formatter.format_statistics(
                         group_count=grp_count,
@@ -2445,7 +2439,11 @@ def main() -> int:
 
                 # Print statistics footer (only if there were matches)
                 if matches:
-                    bytes_saved, dup_count, grp_count = calculate_space_savings(master_results)
+                    if space_info:
+                        bytes_saved, dup_count, grp_count = space_info
+                    else:
+                        # Compare mode: space_info is None, use 0 for space savings
+                        bytes_saved, dup_count, grp_count = 0, total_duplicates, len(master_results)
                     cross_fs_count = len(cross_fs_files) if args.action == 'hardlink' else 0
                     formatter.format_statistics(
                         group_count=grp_count,
