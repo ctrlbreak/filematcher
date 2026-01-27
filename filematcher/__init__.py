@@ -85,40 +85,49 @@ from filematcher.actions import (
     write_log_footer,
 )
 
+# Import from formatters submodule (extracted module)
+# This import depends on colors.py and actions.py
+from filematcher.formatters import (
+    # Structured types
+    SpaceInfo,
+    # Constants
+    PREVIEW_BANNER,
+    EXECUTE_BANNER,
+    # Formatter classes
+    ActionFormatter,
+    TextActionFormatter,
+    JsonActionFormatter,
+    # Formatting functions
+    format_group_lines,
+    format_duplicate_group,
+    format_confirmation_prompt,
+    format_statistics_footer,
+    calculate_space_savings,
+)
+
 
 def __getattr__(name):
     """Lazy import attributes from file_matcher to avoid circular imports.
 
     This allows `from filematcher.colors import X` to work from file_matcher.py
     without triggering a circular import through the package __init__.py.
+
+    Note: Formatters (ActionFormatter, TextActionFormatter, JsonActionFormatter,
+    SpaceInfo, format_* functions, PREVIEW_BANNER, EXECUTE_BANNER) are now
+    directly imported from filematcher.formatters above.
     """
-    # Import file_matcher on-demand when accessing non-colors attributes
+    # Import file_matcher on-demand when accessing non-extracted attributes
     import file_matcher as _fm
 
-    # Map of attribute names to their source
+    # Map of attribute names to their source (only items not yet extracted)
     _file_matcher_attrs = {
-        # Output formatters
-        'ActionFormatter': _fm.ActionFormatter,
-        'TextActionFormatter': _fm.TextActionFormatter,
-        'JsonActionFormatter': _fm.JsonActionFormatter,
-        # Structured output types
-        'SpaceInfo': _fm.SpaceInfo,
-        # Directory operations
+        # Directory operations (not yet extracted)
         'index_directory': _fm.index_directory,
         'find_matching_files': _fm.find_matching_files,
         'select_master_file': _fm.select_master_file,
-        # Utilities
-        'calculate_space_savings': _fm.calculate_space_savings,
+        # Utilities (not yet extracted)
         'confirm_execution': _fm.confirm_execution,
-        # Formatting helpers
-        'format_duplicate_group': _fm.format_duplicate_group,
-        'format_group_lines': _fm.format_group_lines,
-        'format_statistics_footer': _fm.format_statistics_footer,
-        'format_confirmation_prompt': _fm.format_confirmation_prompt,
-        # Constants
-        'PREVIEW_BANNER': _fm.PREVIEW_BANNER,
-        'EXECUTE_BANNER': _fm.EXECUTE_BANNER,
-        # Internal helpers (used by tests)
+        # Internal helpers (used by tests, not yet extracted)
         'select_oldest': _fm.select_oldest,
         'build_file_hash_lookup': _fm.build_file_hash_lookup,
         'get_cross_fs_for_hardlink': _fm.get_cross_fs_for_hardlink,
