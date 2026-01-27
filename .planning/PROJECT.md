@@ -40,7 +40,10 @@ Safely deduplicate files across directories while preserving the master copy and
 
 <!-- Current scope. Building toward these. -->
 
-(None — planning next milestone)
+- [ ] Split file_matcher.py into filematcher/ package structure — v1.4
+- [ ] Maintain backward compatibility for `python file_matcher.py` invocation — v1.4
+- [ ] Maintain pip install functionality (`filematcher` command) — v1.4
+- [ ] All existing tests pass without major rewrites — v1.4
 
 ### Out of Scope
 
@@ -58,14 +61,14 @@ Safely deduplicate files across directories while preserving the master copy and
 
 ## Context
 
-**Current state:** v1.3 shipped with unified output architecture.
+**Current state:** v1.4 milestone — refactoring to package structure.
 
 - 2,455 lines Python (file_matcher.py)
-- 3,542 lines tests (198 tests, all passing)
+- 217 tests, all passing
 - Pure Python standard library (no external dependencies)
 - Python 3.9+ compatibility
 
-**Architecture:** Single-file implementation (`file_matcher.py`) with ActionFormatter hierarchy for all output modes (compare, hardlink, symlink, delete). CLI parsing via argparse, logging via standard library.
+**Architecture:** Single-file implementation (`file_matcher.py`) being refactored to `filematcher/` package with ActionFormatter hierarchy for all output modes (compare, hardlink, symlink, delete). CLI parsing via argparse, logging via standard library.
 
 **Tech stack:**
 - argparse for CLI
@@ -79,7 +82,7 @@ Safely deduplicate files across directories while preserving the master copy and
 
 - **Tech stack**: Pure Python standard library only — no external dependencies
 - **Compatibility**: Python 3.9+ (uses `from __future__ import annotations`)
-- **Architecture**: Maintain single-file implementation pattern
+- **Backward compat**: `python file_matcher.py` and `pip install -e .` must continue working
 
 ## Key Decisions
 
@@ -98,5 +101,14 @@ Safely deduplicate files across directories while preserving the master copy and
 | 16-color ANSI codes | Maximum terminal compatibility vs 256-color/truecolor | ✓ Good |
 | NO_COLOR environment support | Industry standard (no-color.org) for accessibility | ✓ Good |
 
+## Current Milestone: v1.4 Package Structure
+
+**Goal:** Split file_matcher.py into a proper Python package for better code navigation and AI tooling compatibility.
+
+**Target features:**
+- filematcher/ package with logical module separation
+- Backward-compatible file_matcher.py wrapper
+- All 217 tests passing with minimal import changes
+
 ---
-*Last updated: 2026-01-23 after v1.3 milestone*
+*Last updated: 2026-01-27 after v1.4 milestone started*
