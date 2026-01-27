@@ -146,10 +146,11 @@ Plans:
   3. Color and hashing tests pass without modification
   4. All 217 tests pass
 **Plans**: 2 plans
+**Completed**: 2026-01-27
 
 Plans:
-- [ ] 12-01-PLAN.md - Extract color system to filematcher/colors.py
-- [ ] 12-02-PLAN.md - Extract hashing functions to filematcher/hashing.py
+- [x] 12-01-PLAN.md - Extract color system to filematcher/colors.py
+- [x] 12-02-PLAN.md - Extract hashing functions to filematcher/hashing.py
 
 #### Phase 13: Extract Filesystem and Actions
 **Goal**: Extract filesystem helpers and action execution modules
@@ -240,7 +241,7 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 9. Unify Group Output | v1.3 | 1/1 | Complete | 2026-01-23 |
 | 10. Unify Compare as Action | v1.3 | 4/4 | Complete | 2026-01-23 |
 | 11. Package Scaffolding | v1.4 | 1/1 | Complete | 2026-01-27 |
-| 12. Foundation Modules | v1.4 | 0/2 | Not started | - |
+| 12. Foundation Modules | v1.4 | 2/2 | Complete | 2026-01-27 |
 | 13. Filesystem and Actions | v1.4 | 0/TBD | Not started | - |
 | 14. Formatters and Directory | v1.4 | 0/TBD | Not started | - |
 | 15. Logging and CLI | v1.4 | 0/TBD | Not started | - |
@@ -248,4 +249,4 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 17. Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-01-27 - Phase 12 planned*
+*Last updated: 2026-01-27 - Phase 12 complete*

@@ -17,8 +17,8 @@ Requirements for package structure refactoring. Each maps to roadmap phases.
 
 ### Module Organization
 
-- [ ] **MOD-01**: Extract color system to `filematcher/colors.py`
-- [ ] **MOD-02**: Extract hashing functions to `filematcher/hashing.py`
+- [x] **MOD-01**: Extract color system to `filematcher/colors.py`
+- [x] **MOD-02**: Extract hashing functions to `filematcher/hashing.py`
 - [ ] **MOD-03**: Extract filesystem helpers to `filematcher/filesystem.py`
 - [ ] **MOD-04**: Extract action execution to `filematcher/actions.py`
 - [ ] **MOD-05**: Extract output formatters to `filematcher/formatters.py`
@@ -76,8 +76,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PKG-03 | Phase 15 | Pending |
 | PKG-04 | Phase 17 | Pending |
 | PKG-05 | Phase 17 | Pending |
-| MOD-01 | Phase 12 | Pending |
-| MOD-02 | Phase 12 | Pending |
+| MOD-01 | Phase 12 | Complete |
+| MOD-02 | Phase 12 | Complete |
 | MOD-03 | Phase 13 | Pending |
 | MOD-04 | Phase 13 | Pending |
 | MOD-05 | Phase 14 | Pending |
@@ -99,4 +99,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 - Phase 11 requirements complete*
+*Last updated: 2026-01-27 - Phase 12 requirements complete*
