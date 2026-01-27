@@ -37,11 +37,20 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Test Suite
 
-- Total tests: 206
+- Total tests: 222
 - All passing
 - Coverage: file_matcher.py fully tested
 
 ## Quick Tasks Completed
+
+### Quick 009: Fix Execute Mode Preview Labels (2026-01-27)
+
+- Added `will_execute` parameter to ActionFormatter hierarchy
+- Header shows "Action mode:" without "(PREVIEW)" when --execute set
+- Banner shows red "=== EXECUTE MODE! ===" instead of yellow "=== PREVIEW MODE ==="
+- Labels show "WILL HARDLINK" instead of "WOULD HARDLINK"
+- Removed "Use --execute to apply changes" hint when execution pending
+- All 222 tests pass
 
 ### Quick 008: Eliminate Code Duplication (2026-01-24)
 
@@ -90,8 +99,8 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Session Continuity
 
-Last session: 2026-01-24 00:57
-Stopped at: Completed quick task 008
+Last session: 2026-01-27
+Stopped at: Completed quick task 009 - Fix execute mode preview labels
 Resume file: None
 
 ## Next Steps
@@ -99,4 +108,4 @@ Resume file: None
 Run `/gsd:new-milestone` to start next milestone (questioning -> research -> requirements -> roadmap)
 
 ---
-*Last updated: 2026-01-24 - Quick task 008 complete*
+*Last updated: 2026-01-27 - Quick task 009 complete*
