@@ -9,8 +9,8 @@ Requirements for package structure refactoring. Each maps to roadmap phases.
 
 ### Package Structure
 
-- [ ] **PKG-01**: Create `filematcher/` package directory with `__init__.py`
-- [ ] **PKG-02**: Add `__main__.py` enabling `python -m filematcher` invocation
+- [x] **PKG-01**: Create `filematcher/` package directory with `__init__.py`
+- [x] **PKG-02**: Add `__main__.py` enabling `python -m filematcher` invocation
 - [ ] **PKG-03**: Update pyproject.toml entry point to `filematcher.cli:main`
 - [ ] **PKG-04**: Each module is under 500 lines (improved maintainability)
 - [ ] **PKG-05**: No circular imports between modules
@@ -71,8 +71,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PKG-01 | Phase 11 | Pending |
-| PKG-02 | Phase 11 | Pending |
+| PKG-01 | Phase 11 | Complete |
+| PKG-02 | Phase 11 | Complete |
 | PKG-03 | Phase 15 | Pending |
 | PKG-04 | Phase 17 | Pending |
 | PKG-05 | Phase 17 | Pending |
@@ -99,4 +99,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 - traceability completed*
+*Last updated: 2026-01-27 - Phase 11 requirements complete*
