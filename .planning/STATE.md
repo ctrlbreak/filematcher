@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.4 Package Structure - Phase 15 in progress
+**Current focus:** v1.4 Package Structure - Phase 16 complete
 
 ## Current Position
 
-Phase: 15 of 17 (Extract CLI Module)
+Phase: 16 of 17 (Backward Compatibility)
 Plan: 01 of 01 complete
-Status: Phase 15 complete
-Last activity: 2026-01-27 - Completed 15-01-PLAN.md (CLI extraction)
+Status: Phase 16 complete
+Last activity: 2026-01-27 - Verified backward compatibility (COMPAT-01 through COMPAT-04)
 
-Progress: [################----] 88% (15/17 phases complete)
+Progress: [#################---] 94% (16/17 phases complete)
 
 ## Milestone Summary
 
@@ -29,6 +29,7 @@ Progress: [################----] 88% (15/17 phases complete)
 - Phase 13 complete: Filesystem and actions modules (filesystem.py, actions.py)
 - Phase 14 complete: Formatters and directory modules (formatters.py, directory.py)
 - Phase 15 complete: CLI module (cli.py), file_matcher.py now thin wrapper
+- Phase 16 complete: Backward compatibility verified (COMPAT-01-04)
 
 ### v1.3 Code Unification (shipped 2026-01-23)
 
@@ -85,15 +86,16 @@ Progress: [################----] 88% (15/17 phases complete)
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 15-01-PLAN.md
+Stopped at: Completed 16-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Execute Phase 16: Cleanup and Documentation
-- Remove any remaining dead code
-- Update documentation to reflect package structure
-- Use `/gsd:plan-phase 16` to research and plan
+Execute Phase 17: Verification and Cleanup
+- Update test imports to from filematcher import X pattern
+- Verify no circular imports
+- Verify all modules under 500 lines
+- Use `/gsd:plan-phase 17` to research and plan
 
 ---
-*Last updated: 2026-01-27 - Phase 15 complete*
+*Last updated: 2026-01-27 - Phase 16 complete*
