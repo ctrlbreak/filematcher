@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 Phase: 11 of 17 (Package Scaffolding)
-Plan: Ready to plan
-Status: Roadmap complete, ready to plan Phase 11
-Last activity: 2026-01-27 - Roadmap created for v1.4
+Plan: 1 of 1 complete
+Status: Phase 11 complete
+Last activity: 2026-01-27 - Completed 11-01-PLAN.md (Package Scaffolding)
 
-Progress: [##########----------] 59% (10/17 phases complete)
+Progress: [###########---------] 65% (11/17 phases complete)
 
 ## Milestone Summary
 
@@ -24,6 +24,7 @@ Progress: [##########----------] 59% (10/17 phases complete)
 - 20 requirements mapped
 - Goal: Refactor to filematcher/ package
 - Constraint: Full backward compatibility
+- Phase 11 complete: Package scaffolding with re-exports
 
 ### v1.3 Code Unification (shipped 2026-01-23)
 
@@ -45,6 +46,14 @@ Progress: [##########----------] 59% (10/17 phases complete)
 - All passing
 - Coverage: file_matcher.py fully tested
 
+## Accumulated Decisions
+
+| Phase | Decision | Rationale |
+|-------|----------|-----------|
+| 11-01 | Re-export all public symbols from file_matcher.py | Full backward compatibility during migration |
+| 11-01 | Include internal helpers in exports | Tests use these functions |
+| 11-01 | Explicit __all__ definition | Clear public API documentation |
+
 ## Pending Todos
 
 1. **Update JSON output header to object format** (output) - Consider `{"header": {"name": "filematcher"}}` (future)
@@ -55,13 +64,14 @@ Progress: [##########----------] 59% (10/17 phases complete)
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Created v1.4 roadmap (Phases 11-17)
+Stopped at: Completed 11-01-PLAN.md (Package Scaffolding)
 Resume file: None
 
 ## Next Steps
 
-Plan Phase 11: Package Scaffolding
-- Use `/gsd:plan-phase 11`
+Plan Phase 12: Core Splitting
+- Extract core hashing and directory functions to filematcher/core.py
+- Use `/gsd:plan-phase 12`
 
 ---
-*Last updated: 2026-01-27 - v1.4 roadmap created*
+*Last updated: 2026-01-27 - Phase 11 Plan 01 complete*
