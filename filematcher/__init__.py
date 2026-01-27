@@ -71,6 +71,20 @@ from filematcher.filesystem import (
     is_in_directory,
 )
 
+# Import from actions submodule (extracted module)
+# This import is safe - actions.py depends only on filesystem.py and stdlib
+from filematcher.actions import (
+    format_file_size,
+    safe_replace_with_link,
+    execute_action,
+    execute_all_actions,
+    determine_exit_code,
+    create_audit_logger,
+    write_log_header,
+    log_operation,
+    write_log_footer,
+)
+
 
 def __getattr__(name):
     """Lazy import attributes from file_matcher to avoid circular imports.
@@ -93,18 +107,7 @@ def __getattr__(name):
         'index_directory': _fm.index_directory,
         'find_matching_files': _fm.find_matching_files,
         'select_master_file': _fm.select_master_file,
-        # Action execution
-        'execute_action': _fm.execute_action,
-        'safe_replace_with_link': _fm.safe_replace_with_link,
-        'execute_all_actions': _fm.execute_all_actions,
-        'determine_exit_code': _fm.determine_exit_code,
-        # Audit logging
-        'create_audit_logger': _fm.create_audit_logger,
-        'log_operation': _fm.log_operation,
-        'write_log_header': _fm.write_log_header,
-        'write_log_footer': _fm.write_log_footer,
         # Utilities
-        'format_file_size': _fm.format_file_size,
         'calculate_space_savings': _fm.calculate_space_savings,
         'confirm_execution': _fm.confirm_execution,
         # Formatting helpers

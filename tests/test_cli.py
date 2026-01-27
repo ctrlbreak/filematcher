@@ -280,7 +280,7 @@ class TestActionExecution(BaseFileMatcherTest):
                                 '--action', 'hardlink',
                                 '--execute', '--yes']):
             with patch('sys.stdin.isatty', return_value=False):
-                with patch('file_matcher.execute_action', side_effect=mock_execute_action):
+                with patch('filematcher.actions.execute_action', side_effect=mock_execute_action):
                     output, exit_code = self.run_main_capture_output()
 
         # Should return 3 for partial failure (some succeeded, some failed)

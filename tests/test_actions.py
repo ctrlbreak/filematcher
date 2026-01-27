@@ -172,7 +172,7 @@ class TestExecuteAction(unittest.TestCase):
                 return (False, "Invalid cross-device link")
             return original_func(dup, master, action)
 
-        with patch('file_matcher.safe_replace_with_link', side_effect=mock_safe_replace):
+        with patch('filematcher.actions.safe_replace_with_link', side_effect=mock_safe_replace):
             success, error, action_used = execute_action(
                 str(self.duplicate), str(self.master), "hardlink", fallback_symlink=True
             )
@@ -183,7 +183,7 @@ class TestExecuteAction(unittest.TestCase):
         """Without fallback flag, cross-device hardlink fails."""
         self.master.write_text("content")
         self.duplicate.write_text("content")
-        with patch('file_matcher.safe_replace_with_link', return_value=(False, "Invalid cross-device link")):
+        with patch('filematcher.actions.safe_replace_with_link', return_value=(False, "Invalid cross-device link")):
             success, error, action_used = execute_action(
                 str(self.duplicate), str(self.master), "hardlink", fallback_symlink=False
             )
@@ -291,7 +291,7 @@ class TestExecuteAllActions(unittest.TestCase):
                 return (False, "Mocked error", action)
             return original_execute(dup, master, action, fallback_symlink)
 
-        with patch('file_matcher.execute_action', side_effect=mock_execute):
+        with patch('filematcher.actions.execute_action', side_effect=mock_execute):
             success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
 
         # Should have 1 failure and 1 success
@@ -346,7 +346,7 @@ class TestExecuteAllActions(unittest.TestCase):
 
         groups = [(str(master), [str(dup)], "test", "hash1")]
 
-        with patch('file_matcher.execute_action', return_value=(False, "Test error", "hardlink")):
+        with patch('filematcher.actions.execute_action', return_value=(False, "Test error", "hardlink")):
             success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
 
         self.assertEqual(len(failed_list), 1)
