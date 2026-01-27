@@ -185,18 +185,19 @@ Plans:
 - [x] 14-02-PLAN.md - Extract directory operations to filematcher/directory.py
 
 #### Phase 15: Extract Logging and CLI
-**Goal**: Extract audit logging and CLI modules, finalize entry points
+**Goal**: Extract CLI module, finalize entry points (audit logging already in actions.py from Phase 13)
 **Depends on**: Phase 14
-**Requirements**: MOD-07, MOD-08, PKG-03
+**Requirements**: MOD-08, PKG-03 (MOD-07 satisfied via actions.py)
 **Success Criteria** (what must be TRUE):
-  1. `from filematcher.logging import create_audit_logger` works
-  2. `filematcher --help` works after pip install -e .
-  3. `python -m filematcher <args>` executes correctly
-  4. All 217 tests pass
-**Plans**: TBD
+  1. `from filematcher.actions import create_audit_logger` works (already true from Phase 13)
+  2. `from filematcher.cli import main` works
+  3. `filematcher --help` works after pip install -e .
+  4. `python -m filematcher <args>` executes correctly
+  5. All 217 tests pass
+**Plans**: 1 plan
 
 Plans:
-- [ ] 15-01: TBD
+- [ ] 15-01-PLAN.md - Extract CLI to filematcher/cli.py, finalize entry points
 
 #### Phase 16: Backward Compatibility
 **Goal**: Establish file_matcher.py as thin wrapper with full re-exports
