@@ -60,6 +60,17 @@ from filematcher.hashing import (
     get_sparse_hash,
 )
 
+# Import from filesystem submodule (extracted module)
+# This import is safe - filesystem.py has only stdlib dependencies
+from filematcher.filesystem import (
+    get_device_id,
+    is_hardlink_to,
+    is_symlink_to,
+    check_cross_filesystem,
+    filter_hardlinked_duplicates,
+    is_in_directory,
+)
+
 
 def __getattr__(name):
     """Lazy import attributes from file_matcher to avoid circular imports.
@@ -87,13 +98,6 @@ def __getattr__(name):
         'safe_replace_with_link': _fm.safe_replace_with_link,
         'execute_all_actions': _fm.execute_all_actions,
         'determine_exit_code': _fm.determine_exit_code,
-        # Filesystem helpers
-        'is_hardlink_to': _fm.is_hardlink_to,
-        'is_symlink_to': _fm.is_symlink_to,
-        'check_cross_filesystem': _fm.check_cross_filesystem,
-        'get_device_id': _fm.get_device_id,
-        'filter_hardlinked_duplicates': _fm.filter_hardlinked_duplicates,
-        'is_in_directory': _fm.is_in_directory,
         # Audit logging
         'create_audit_logger': _fm.create_audit_logger,
         'log_operation': _fm.log_operation,
