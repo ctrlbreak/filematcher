@@ -130,10 +130,10 @@ Plans:
   1. `from filematcher import main` imports successfully
   2. `python -m filematcher --help` displays help text
   3. All 217 tests pass unchanged (no test modifications)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 11-01: TBD
+- [ ] 11-01-PLAN.md - Create package with __init__.py re-exports and __main__.py
 
 #### Phase 12: Extract Foundation Modules
 **Goal**: Extract leaf modules with no internal dependencies (color, hashing)
@@ -237,7 +237,7 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 8. Color Enhancement | v1.3 | 3/3 | Complete | 2026-01-23 |
 | 9. Unify Group Output | v1.3 | 1/1 | Complete | 2026-01-23 |
 | 10. Unify Compare as Action | v1.3 | 4/4 | Complete | 2026-01-23 |
-| 11. Package Scaffolding | v1.4 | 0/TBD | Not started | - |
+| 11. Package Scaffolding | v1.4 | 0/1 | Not started | - |
 | 12. Foundation Modules | v1.4 | 0/TBD | Not started | - |
 | 13. Filesystem and Actions | v1.4 | 0/TBD | Not started | - |
 | 14. Formatters and Directory | v1.4 | 0/TBD | Not started | - |
@@ -246,4 +246,4 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 17. Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-01-27 - v1.4 roadmap created*
+*Last updated: 2026-01-27 - Phase 11 planned*
