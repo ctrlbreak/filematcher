@@ -114,42 +114,17 @@ from filematcher.directory import (
     select_oldest,
 )
 
-
-def __getattr__(name):
-    """Lazy import attributes from file_matcher to avoid circular imports.
-
-    This allows `from filematcher.colors import X` to work from file_matcher.py
-    without triggering a circular import through the package __init__.py.
-
-    Note: Formatters (ActionFormatter, TextActionFormatter, JsonActionFormatter,
-    SpaceInfo, format_* functions, PREVIEW_BANNER, EXECUTE_BANNER) are now
-    directly imported from filematcher.formatters above.
-
-    Note: Directory operations (index_directory, find_matching_files,
-    select_master_file, select_oldest) are now directly imported from
-    filematcher.directory above.
-    """
-    # Import file_matcher on-demand when accessing non-extracted attributes
-    import file_matcher as _fm
-
-    # Map of attribute names to their source (only items not yet extracted)
-    _file_matcher_attrs = {
-        # Utilities (not yet extracted)
-        'confirm_execution': _fm.confirm_execution,
-        # Internal helpers (used by tests, not yet extracted)
-        'build_file_hash_lookup': _fm.build_file_hash_lookup,
-        'get_cross_fs_for_hardlink': _fm.get_cross_fs_for_hardlink,
-        'get_cross_fs_count': _fm.get_cross_fs_count,
-        'build_file_sizes': _fm.build_file_sizes,
-        'build_log_flags': _fm.build_log_flags,
-        # Entry point
-        'main': _fm.main,
-    }
-
-    if name in _file_matcher_attrs:
-        return _file_matcher_attrs[name]
-
-    raise AttributeError(f"module 'filematcher' has no attribute '{name}'")
+# Import from cli submodule (extracted module)
+# This import depends on all other filematcher modules
+from filematcher.cli import (
+    main,
+    confirm_execution,
+    build_file_hash_lookup,
+    get_cross_fs_for_hardlink,
+    get_cross_fs_count,
+    build_file_sizes,
+    build_log_flags,
+)
 
 __version__ = "1.1.0"
 
