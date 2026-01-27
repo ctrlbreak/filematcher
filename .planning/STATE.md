@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-27)
 ## Current Position
 
 Phase: 14 of 17 (Extract Formatters and Directory)
-Plan: Ready to plan
-Status: Phase 13 verified complete, ready for Phase 14
-Last activity: 2026-01-27 - Phase 13 verified and complete
+Plan: 01 of 02 complete
+Status: Plan 14-01 complete, ready for 14-02
+Last activity: 2026-01-27 - Completed 14-01-PLAN.md (formatters extraction)
 
-Progress: [#############-------] 76% (13/17 phases complete)
+Progress: [##############------] 79% (14.5/17 phases progress)
 
 ## Milestone Summary
 
@@ -27,6 +27,7 @@ Progress: [#############-------] 76% (13/17 phases complete)
 - Phase 11 complete: Package scaffolding with re-exports
 - Phase 12 complete: Foundation modules (colors.py, hashing.py)
 - Phase 13 complete: Filesystem and actions modules (filesystem.py, actions.py)
+- Phase 14 in progress: Plan 01 complete (formatters.py extracted)
 
 ### v1.3 Code Unification (shipped 2026-01-23)
 
@@ -65,6 +66,8 @@ Progress: [#############-------] 76% (13/17 phases complete)
 | 13-02 | Direct import for actions module | Actions.py depends only on filesystem.py and stdlib |
 | 13-02 | Duplicated format_file_size in actions.py | Self-contained module, avoids importing from file_matcher.py |
 | 13-02 | Updated test patch paths | Tests must patch where function is defined, not where imported |
+| 14-01 | Direct import for formatters module | Formatters.py depends only on colors.py and actions.py (no circular import risk) |
+| 14-01 | SpaceInfo moved to formatters.py | Part of formatter/output system, not core file matching |
 
 ## Pending Todos
 
@@ -76,15 +79,15 @@ Progress: [#############-------] 76% (13/17 phases complete)
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Phase 13 verified complete
+Stopped at: Completed 14-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Plan Phase 14: Extract Formatters and Directory
-- Extract output formatters to filematcher/formatters.py
-- Extract directory operations to filematcher/directory.py
-- Use `/gsd:discuss-phase 14` or `/gsd:plan-phase 14`
+Execute Phase 14 Plan 02: Extract Directory Operations
+- Extract index_directory to filematcher/directory.py
+- Extract find_matching_files to filematcher/directory.py
+- Use `/gsd:execute-phase 14-02` when plan is ready
 
 ---
-*Last updated: 2026-01-27 - Phase 13 verified complete*
+*Last updated: 2026-01-27 - Plan 14-01 complete*
