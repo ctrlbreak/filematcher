@@ -217,17 +217,17 @@ Plans:
 - [x] 16-01-PLAN.md - Verify backward compatibility
 
 #### Phase 17: Verification and Cleanup
-**Goal**: Verify all requirements met, update test imports, finalize documentation
+**Goal**: Migrate test imports to filematcher package, verify no circular imports
 **Depends on**: Phase 16
 **Requirements**: TEST-01, TEST-02, TEST-03, PKG-04
 **Success Criteria** (what must be TRUE):
-  1. All 217 tests pass with `from filematcher import X` pattern
+  1. All tests pass with `from filematcher import X` pattern
   2. No circular imports (verified via fresh Python subprocess)
   3. Package imports cleanly from fresh venv
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 17-01: TBD
+- [ ] 17-01-PLAN.md - Update test imports to filematcher package
 
 ## Progress
 
@@ -252,7 +252,7 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 14. Formatters and Directory | v1.4 | 2/2 | Complete | 2026-01-27 |
 | 15. Logging and CLI | v1.4 | 1/1 | Complete | 2026-01-27 |
 | 16. Backward Compatibility | v1.4 | 1/1 | Complete | 2026-01-27 |
-| 17. Verification | v1.4 | 0/TBD | Not started | - |
+| 17. Verification | v1.4 | 0/1 | Not started | - |
 
 ---
-*Last updated: 2026-01-27 - Phase 16 complete*
+*Last updated: 2026-01-27 - Phase 17 planned*
