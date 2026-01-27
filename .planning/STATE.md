@@ -37,11 +37,19 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 
 ## Test Suite
 
-- Total tests: 222
+- Total tests: 217
 - All passing
 - Coverage: file_matcher.py fully tested
 
 ## Quick Tasks Completed
+
+### Quick 010: Test Suite Cleanup (2026-01-27)
+
+- Removed 3 duplicate tests (cross-fs marker, JSON logger, color flag)
+- Renamed unclear TTY progress tests for clarity
+- Moved TestCrossFilesystemWarnings to test_directory_operations.py
+- Consolidated 3 confirmation tests into 1 using subTest()
+- Test count: 222 → 217
 
 ### Quick 009: Fix Execute Mode Preview Labels (2026-01-27)
 
@@ -100,7 +108,7 @@ Progress: [##########] 100% (v1.1: 4 phases, v1.3: 6 phases)
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed quick task 009 - Fix execute mode preview labels
+Stopped at: Completed quick task 010 - Test suite cleanup
 Resume file: None
 
 ## Next Steps
@@ -108,4 +116,4 @@ Resume file: None
 Run `/gsd:new-milestone` to start next milestone (questioning -> research -> requirements -> roadmap)
 
 ---
-*Last updated: 2026-01-27 - Quick task 009 complete*
+*Last updated: 2026-01-27 - Quick task 010 complete*
