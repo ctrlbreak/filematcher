@@ -21,8 +21,8 @@ Requirements for package structure refactoring. Each maps to roadmap phases.
 - [x] **MOD-02**: Extract hashing functions to `filematcher/hashing.py`
 - [x] **MOD-03**: Extract filesystem helpers to `filematcher/filesystem.py`
 - [x] **MOD-04**: Extract action execution to `filematcher/actions.py`
-- [ ] **MOD-05**: Extract output formatters to `filematcher/formatters.py`
-- [ ] **MOD-06**: Extract directory operations to `filematcher/directory.py`
+- [x] **MOD-05**: Extract output formatters to `filematcher/formatters.py`
+- [x] **MOD-06**: Extract directory operations to `filematcher/directory.py`
 - [ ] **MOD-07**: Extract audit logging to `filematcher/logging.py`
 - [ ] **MOD-08**: Extract CLI and main to `filematcher/cli.py`
 
@@ -80,8 +80,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOD-02 | Phase 12 | Complete |
 | MOD-03 | Phase 13 | Complete |
 | MOD-04 | Phase 13 | Complete |
-| MOD-05 | Phase 14 | Pending |
-| MOD-06 | Phase 14 | Pending |
+| MOD-05 | Phase 14 | Complete |
+| MOD-06 | Phase 14 | Complete |
 | MOD-07 | Phase 15 | Pending |
 | MOD-08 | Phase 15 | Pending |
 | COMPAT-01 | Phase 16 | Pending |
@@ -99,4 +99,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 - Phase 13 requirements complete*
+*Last updated: 2026-01-27 - Phase 14 requirements complete*
