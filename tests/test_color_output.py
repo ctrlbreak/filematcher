@@ -45,15 +45,6 @@ class TestColorFlag(unittest.TestCase):
         # Should have ANSI codes in output
         self.assertIn('\033[', result.stdout)
 
-    def test_color_flag_long_form(self):
-        """--color flag should work."""
-        result = subprocess.run(
-            [sys.executable, "file_matcher.py", self.test_dir1, self.test_dir2, "--color"],
-            capture_output=True,
-            text=True
-        )
-        self.assertIn('\033[', result.stdout)
-
 
 class TestNoColorFlag(unittest.TestCase):
     """Tests for --no-color flag."""

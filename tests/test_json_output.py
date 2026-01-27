@@ -403,14 +403,7 @@ class TestJsonOutput(BaseFileMatcherTest):
         self.assertIn('matches', data_all)
         self.assertIn('matches', data_filtered)
 
-    def test_json_logger_to_stderr(self):
-        """Logger output goes to stderr, not stdout (keeps stdout clean for JSON)."""
-        data, stderr, exit_code = self.run_main_with_json()
-        self.assertEqual(exit_code, 0)
-
-        # Logger messages should be in stderr
-        self.assertIn('Using MD5 hashing algorithm', stderr)
-        self.assertIn('Indexing directory:', stderr)
+    # NOTE: Stream separation (logger to stderr) is tested in test_output_unification.py
 
     def test_json_execute_requires_yes(self):
         """--json with --execute requires --yes flag."""
