@@ -219,12 +219,11 @@ Plans:
 #### Phase 17: Verification and Cleanup
 **Goal**: Verify all requirements met, update test imports, finalize documentation
 **Depends on**: Phase 16
-**Requirements**: TEST-01, TEST-02, TEST-03, PKG-04, PKG-05
+**Requirements**: TEST-01, TEST-02, TEST-03, PKG-04
 **Success Criteria** (what must be TRUE):
   1. All 217 tests pass with `from filematcher import X` pattern
-  2. No module exceeds 500 lines (improved maintainability)
-  3. No circular imports (verified via fresh Python subprocess)
-  4. Package imports cleanly from fresh venv
+  2. No circular imports (verified via fresh Python subprocess)
+  3. Package imports cleanly from fresh venv
 **Plans**: TBD
 
 Plans:

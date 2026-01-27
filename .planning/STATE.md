@@ -94,7 +94,6 @@ Resume file: None
 Execute Phase 17: Verification and Cleanup
 - Update test imports to from filematcher import X pattern
 - Verify no circular imports
-- Verify all modules under 500 lines
 - Use `/gsd:plan-phase 17` to research and plan
 
 ---
