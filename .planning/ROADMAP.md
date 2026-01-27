@@ -210,10 +210,10 @@ Plans:
   3. `from file_matcher import get_file_hash, find_matching_files` works (re-exports)
   4. All public symbols importable from `filematcher` package
   5. All 217 tests pass
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 16-01: TBD
+- [ ] 16-01-PLAN.md - Verify backward compatibility
 
 #### Phase 17: Verification and Cleanup
 **Goal**: Verify all requirements met, update test imports, finalize documentation
