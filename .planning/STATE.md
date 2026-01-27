@@ -5,18 +5,25 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.4 Package Structure
+**Current focus:** v1.4 Package Structure - Phase 11
 
 ## Current Position
 
-Phase: Defining requirements
-Plan: —
-Status: Defining requirements for v1.4
-Last activity: 2026-01-27 — Milestone v1.4 started
+Phase: 11 of 17 (Package Scaffolding)
+Plan: Ready to plan
+Status: Roadmap complete, ready to plan Phase 11
+Last activity: 2026-01-27 - Roadmap created for v1.4
 
-Progress: [░░░░░░░░░░] 0% (v1.4: defining requirements)
+Progress: [##########----------] 59% (10/17 phases complete)
 
 ## Milestone Summary
+
+### v1.4 Package Structure (in progress)
+
+- Phases 11-17 (7 phases)
+- 20 requirements mapped
+- Goal: Refactor to filematcher/ package
+- Constraint: Full backward compatibility
 
 ### v1.3 Code Unification (shipped 2026-01-23)
 
@@ -24,8 +31,6 @@ Progress: [░░░░░░░░░░] 0% (v1.4: defining requirements)
 - Unified output architecture
 - JSON output for scripting
 - TTY-aware color output
-- Single ActionFormatter hierarchy
-- 513 lines removed
 
 ### v1.1 Deduplication (shipped 2026-01-20)
 
@@ -33,72 +38,12 @@ Progress: [░░░░░░░░░░] 0% (v1.4: defining requirements)
 - Master directory protection
 - Preview-by-default safety
 - Hardlink/symlink/delete actions
-- Audit logging
 
 ## Test Suite
 
 - Total tests: 217
 - All passing
 - Coverage: file_matcher.py fully tested
-
-## Quick Tasks Completed
-
-### Quick 010: Test Suite Cleanup (2026-01-27)
-
-- Removed 3 duplicate tests (cross-fs marker, JSON logger, color flag)
-- Renamed unclear TTY progress tests for clarity
-- Moved TestCrossFilesystemWarnings to test_directory_operations.py
-- Consolidated 3 confirmation tests into 1 using subTest()
-- Test count: 222 → 217
-
-### Quick 009: Fix Execute Mode Preview Labels (2026-01-27)
-
-- Added `will_execute` parameter to ActionFormatter hierarchy
-- Header shows "Action mode:" without "(PREVIEW)" when --execute set
-- Banner shows red "=== EXECUTE MODE! ===" instead of yellow "=== PREVIEW MODE ==="
-- Labels show "WILL HARDLINK" instead of "WOULD HARDLINK"
-- Removed "Use --execute to apply changes" hint when execution pending
-- All 222 tests pass
-
-### Quick 008: Eliminate Code Duplication (2026-01-24)
-
-- create_hasher(): centralizes hash algorithm selection for get_file_hash/get_sparse_hash
-- is_in_directory(): replaces repeated startswith + os.sep pattern
-- select_oldest(): extracts min-by-mtime logic with remaining files
-- Inlined banner wrapper functions (use constants directly)
-- Consolidated calculate_space_savings() calls (pre-calculate once)
-- All 206 tests pass
-
-### Quick 007: Refactor Output Formatting for Modularity (2026-01-24)
-
-- GroupLine dataclass separates structure from presentation
-- render_group_line() applies colors based on line_type
-- ColorConfig.is_tty centralizes stdout TTY detection
-- Eliminated string parsing for "MASTER:" and "[!cross-fs]"
-- All 206 tests pass
-
-### Quick 006: Inline Progress for Group Output (2026-01-24)
-
-- TTY-aware [n/m] progress indicator on group output
-- Groups update in-situ (ANSI cursor control), last group stays visible
-- Changed label format from [LABEL] to bold LABEL: (less visual clutter)
-- Labels match path colors (bold green MASTER:, bold yellow actions)
-- Non-TTY mode outputs all groups normally
-- 2 new tests added
-
-### Quick 005: Clean Up Test Logs (2026-01-23)
-
-- Test logs redirected to .logs_test/ via FILEMATCHER_LOG_DIR env var
-- create_audit_logger respects FILEMATCHER_LOG_DIR environment variable
-- run_tests.py creates/clears .logs_test/ at test start
-- .logs_test/ added to .gitignore
-
-### Quick 004: Skip Files Already Symlinked/Hardlinked (2026-01-23)
-
-- Added is_symlink_to() and is_hardlink_to() detection functions
-- Extended hardlink check to all actions
-- Specific skip reasons: "symlink to master", "hardlink to master"
-- 9 new tests added, consolidated in test_directory_operations.py
 
 ## Pending Todos
 
@@ -110,12 +55,13 @@ Progress: [░░░░░░░░░░] 0% (v1.4: defining requirements)
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Started v1.4 milestone — defining requirements
+Stopped at: Created v1.4 roadmap (Phases 11-17)
 Resume file: None
 
 ## Next Steps
 
-Complete requirements definition, then create roadmap.
+Plan Phase 11: Package Scaffolding
+- Use `/gsd:plan-phase 11`
 
 ---
-*Last updated: 2026-01-27 — v1.4 milestone started*
+*Last updated: 2026-01-27 - v1.4 roadmap created*

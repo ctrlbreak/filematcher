@@ -71,32 +71,32 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PKG-01 | TBD | Pending |
-| PKG-02 | TBD | Pending |
-| PKG-03 | TBD | Pending |
-| PKG-04 | TBD | Pending |
-| PKG-05 | TBD | Pending |
-| MOD-01 | TBD | Pending |
-| MOD-02 | TBD | Pending |
-| MOD-03 | TBD | Pending |
-| MOD-04 | TBD | Pending |
-| MOD-05 | TBD | Pending |
-| MOD-06 | TBD | Pending |
-| MOD-07 | TBD | Pending |
-| MOD-08 | TBD | Pending |
-| COMPAT-01 | TBD | Pending |
-| COMPAT-02 | TBD | Pending |
-| COMPAT-03 | TBD | Pending |
-| COMPAT-04 | TBD | Pending |
-| TEST-01 | TBD | Pending |
-| TEST-02 | TBD | Pending |
-| TEST-03 | TBD | Pending |
+| PKG-01 | Phase 11 | Pending |
+| PKG-02 | Phase 11 | Pending |
+| PKG-03 | Phase 15 | Pending |
+| PKG-04 | Phase 17 | Pending |
+| PKG-05 | Phase 17 | Pending |
+| MOD-01 | Phase 12 | Pending |
+| MOD-02 | Phase 12 | Pending |
+| MOD-03 | Phase 13 | Pending |
+| MOD-04 | Phase 13 | Pending |
+| MOD-05 | Phase 14 | Pending |
+| MOD-06 | Phase 14 | Pending |
+| MOD-07 | Phase 15 | Pending |
+| MOD-08 | Phase 15 | Pending |
+| COMPAT-01 | Phase 16 | Pending |
+| COMPAT-02 | Phase 16 | Pending |
+| COMPAT-03 | Phase 16 | Pending |
+| COMPAT-04 | Phase 16 | Pending |
+| TEST-01 | Phase 17 | Pending |
+| TEST-02 | Phase 17 | Pending |
+| TEST-03 | Phase 17 | Pending |
 
 **Coverage:**
 - v1.4 requirements: 20 total
-- Mapped to phases: 0
-- Unmapped: 20 (pending roadmap)
+- Mapped to phases: 20
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 after initial definition*
+*Last updated: 2026-01-27 - traceability completed*

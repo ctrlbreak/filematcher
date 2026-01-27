@@ -2,13 +2,14 @@
 
 ## Milestones
 
-- ✅ **v1.1 Deduplication** - Phases 1-4 (shipped 2026-01-20)
-- ✅ **v1.3 Code Unification** - Phases 5-10 (shipped 2026-01-23)
+- v1.1 Deduplication - Phases 1-4 (shipped 2026-01-20)
+- v1.3 Code Unification - Phases 5-10 (shipped 2026-01-23)
+- **v1.4 Package Structure** - Phases 11-17 (in progress)
 
 ## Phases
 
 <details>
-<summary>✅ v1.1 Deduplication (Phases 1-4) - SHIPPED 2026-01-20</summary>
+<summary>v1.1 Deduplication (Phases 1-4) - SHIPPED 2026-01-20</summary>
 
 ### Phase 1: Master Directory Foundation
 **Goal**: Designate master directory and validate structure
@@ -49,7 +50,7 @@ Plans:
 </details>
 
 <details>
-<summary>✅ v1.3 Code Unification (Phases 5-10) - SHIPPED 2026-01-23</summary>
+<summary>v1.3 Code Unification (Phases 5-10) - SHIPPED 2026-01-23</summary>
 
 ### Phase 5: Formatter Abstraction
 **Goal**: Create unified output abstraction layer
@@ -117,9 +118,112 @@ Plans:
 
 </details>
 
+### v1.4 Package Structure (In Progress)
+
+**Milestone Goal:** Refactor single-file implementation to package structure for better code navigation and AI tooling compatibility while maintaining full backward compatibility.
+
+#### Phase 11: Package Scaffolding
+**Goal**: Create filematcher/ package structure with re-export foundation
+**Depends on**: Phase 10
+**Requirements**: PKG-01, PKG-02
+**Success Criteria** (what must be TRUE):
+  1. `from filematcher import main` imports successfully
+  2. `python -m filematcher --help` displays help text
+  3. All 217 tests pass unchanged (no test modifications)
+**Plans**: TBD
+
+Plans:
+- [ ] 11-01: TBD
+
+#### Phase 12: Extract Foundation Modules
+**Goal**: Extract leaf modules with no internal dependencies (color, hashing)
+**Depends on**: Phase 11
+**Requirements**: MOD-01, MOD-02
+**Success Criteria** (what must be TRUE):
+  1. `from filematcher.colors import ColorConfig, green, red` works
+  2. `from filematcher.hashing import get_file_hash, get_sparse_hash` works
+  3. Color and hashing tests pass without modification
+  4. All 217 tests pass
+**Plans**: TBD
+
+Plans:
+- [ ] 12-01: TBD
+
+#### Phase 13: Extract Filesystem and Actions
+**Goal**: Extract filesystem helpers and action execution modules
+**Depends on**: Phase 12
+**Requirements**: MOD-03, MOD-04
+**Success Criteria** (what must be TRUE):
+  1. `from filematcher.filesystem import is_hardlink_to, check_cross_filesystem` works
+  2. `from filematcher.actions import execute_action, safe_replace_with_link` works
+  3. Action and filesystem tests pass without modification
+  4. All 217 tests pass
+**Plans**: TBD
+
+Plans:
+- [ ] 13-01: TBD
+
+#### Phase 14: Extract Formatters and Directory
+**Goal**: Extract output formatters and directory operations modules
+**Depends on**: Phase 13
+**Requirements**: MOD-05, MOD-06
+**Success Criteria** (what must be TRUE):
+  1. `from filematcher.formatters import ActionFormatter, TextActionFormatter` works
+  2. `from filematcher.directory import find_matching_files, index_directory` works
+  3. JSON, color output, and directory operation tests pass
+  4. All 217 tests pass
+**Plans**: TBD
+
+Plans:
+- [ ] 14-01: TBD
+
+#### Phase 15: Extract Logging and CLI
+**Goal**: Extract audit logging and CLI modules, finalize entry points
+**Depends on**: Phase 14
+**Requirements**: MOD-07, MOD-08, PKG-03
+**Success Criteria** (what must be TRUE):
+  1. `from filematcher.logging import create_audit_logger` works
+  2. `filematcher --help` works after pip install -e .
+  3. `python -m filematcher <args>` executes correctly
+  4. All 217 tests pass
+**Plans**: TBD
+
+Plans:
+- [ ] 15-01: TBD
+
+#### Phase 16: Backward Compatibility
+**Goal**: Establish file_matcher.py as thin wrapper with full re-exports
+**Depends on**: Phase 15
+**Requirements**: COMPAT-01, COMPAT-02, COMPAT-03, COMPAT-04
+**Success Criteria** (what must be TRUE):
+  1. `python file_matcher.py dir1 dir2` works identically to before
+  2. `filematcher dir1 dir2` works via pip install
+  3. `from file_matcher import get_file_hash, find_matching_files` works (re-exports)
+  4. All public symbols importable from `filematcher` package
+  5. All 217 tests pass
+**Plans**: TBD
+
+Plans:
+- [ ] 16-01: TBD
+
+#### Phase 17: Verification and Cleanup
+**Goal**: Verify all requirements met, update test imports, finalize documentation
+**Depends on**: Phase 16
+**Requirements**: TEST-01, TEST-02, TEST-03, PKG-04, PKG-05
+**Success Criteria** (what must be TRUE):
+  1. All 217 tests pass with `from filematcher import X` pattern
+  2. No module exceeds 500 lines (improved maintainability)
+  3. No circular imports (verified via fresh Python subprocess)
+  4. Package imports cleanly from fresh venv
+**Plans**: TBD
+
+Plans:
+- [ ] 17-01: TBD
+
 ## Progress
 
-**All phases complete. Use `/gsd:new-milestone` to start next milestone.**
+**Execution Order:**
+Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
@@ -133,6 +237,13 @@ Plans:
 | 8. Color Enhancement | v1.3 | 3/3 | Complete | 2026-01-23 |
 | 9. Unify Group Output | v1.3 | 1/1 | Complete | 2026-01-23 |
 | 10. Unify Compare as Action | v1.3 | 4/4 | Complete | 2026-01-23 |
+| 11. Package Scaffolding | v1.4 | 0/TBD | Not started | - |
+| 12. Foundation Modules | v1.4 | 0/TBD | Not started | - |
+| 13. Filesystem and Actions | v1.4 | 0/TBD | Not started | - |
+| 14. Formatters and Directory | v1.4 | 0/TBD | Not started | - |
+| 15. Logging and CLI | v1.4 | 0/TBD | Not started | - |
+| 16. Backward Compatibility | v1.4 | 0/TBD | Not started | - |
+| 17. Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-01-23 - v1.3 milestone archived*
+*Last updated: 2026-01-27 - v1.4 roadmap created*
