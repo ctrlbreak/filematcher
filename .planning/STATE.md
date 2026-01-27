@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.4 Package Structure - Phase 14
+**Current focus:** v1.4 Package Structure - Phase 15 next
 
 ## Current Position
 
 Phase: 14 of 17 (Extract Formatters and Directory)
-Plan: 01 of 02 complete
-Status: Plan 14-01 complete, ready for 14-02
-Last activity: 2026-01-27 - Completed 14-01-PLAN.md (formatters extraction)
+Plan: 02 of 02 complete
+Status: Phase 14 complete
+Last activity: 2026-01-27 - Completed 14-02-PLAN.md (directory extraction)
 
-Progress: [##############------] 79% (14.5/17 phases progress)
+Progress: [###############-----] 82% (14/17 phases complete)
 
 ## Milestone Summary
 
@@ -27,7 +27,7 @@ Progress: [##############------] 79% (14.5/17 phases progress)
 - Phase 11 complete: Package scaffolding with re-exports
 - Phase 12 complete: Foundation modules (colors.py, hashing.py)
 - Phase 13 complete: Filesystem and actions modules (filesystem.py, actions.py)
-- Phase 14 in progress: Plan 01 complete (formatters.py extracted)
+- Phase 14 complete: Formatters and directory modules (formatters.py, directory.py)
 
 ### v1.3 Code Unification (shipped 2026-01-23)
 
@@ -68,6 +68,8 @@ Progress: [##############------] 79% (14.5/17 phases progress)
 | 13-02 | Updated test patch paths | Tests must patch where function is defined, not where imported |
 | 14-01 | Direct import for formatters module | Formatters.py depends only on colors.py and actions.py (no circular import risk) |
 | 14-01 | SpaceInfo moved to formatters.py | Part of formatter/output system, not core file matching |
+| 14-02 | Configure filematcher.directory logger in main() | Submodule has own logger that needs configuration for stderr output |
+| 14-02 | Direct import for directory module | Directory.py depends only on extracted modules (no circular risk) |
 
 ## Pending Todos
 
@@ -79,15 +81,14 @@ Progress: [##############------] 79% (14.5/17 phases progress)
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 14-01-PLAN.md
+Stopped at: Completed 14-02-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Execute Phase 14 Plan 02: Extract Directory Operations
-- Extract index_directory to filematcher/directory.py
-- Extract find_matching_files to filematcher/directory.py
-- Use `/gsd:execute-phase 14-02` when plan is ready
+Execute Phase 15: Extract CLI Module
+- Extract CLI argument parsing to filematcher/cli.py
+- Use `/gsd:plan-phase 15` to research and plan
 
 ---
-*Last updated: 2026-01-27 - Plan 14-01 complete*
+*Last updated: 2026-01-27 - Phase 14 complete*
