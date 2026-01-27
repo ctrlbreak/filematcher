@@ -28,10 +28,10 @@ Requirements for package structure refactoring. Each maps to roadmap phases.
 
 ### Backward Compatibility
 
-- [ ] **COMPAT-01**: `python file_matcher.py <args>` continues to work
-- [ ] **COMPAT-02**: `filematcher <args>` command via pip install works
-- [ ] **COMPAT-03**: All public symbols importable from `filematcher` package
-- [ ] **COMPAT-04**: `file_matcher.py` serves as thin wrapper importing from package
+- [x] **COMPAT-01**: `python file_matcher.py <args>` continues to work
+- [x] **COMPAT-02**: `filematcher <args>` command via pip install works
+- [x] **COMPAT-03**: All public symbols importable from `filematcher` package
+- [x] **COMPAT-04**: `file_matcher.py` serves as thin wrapper importing from package
 
 ### Test Migration
 
@@ -84,10 +84,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOD-06 | Phase 14 | Complete |
 | MOD-07 | Phase 13 | Complete |
 | MOD-08 | Phase 15 | Complete |
-| COMPAT-01 | Phase 16 | Pending |
-| COMPAT-02 | Phase 16 | Pending |
-| COMPAT-03 | Phase 16 | Pending |
-| COMPAT-04 | Phase 16 | Pending |
+| COMPAT-01 | Phase 16 | Complete |
+| COMPAT-02 | Phase 16 | Complete |
+| COMPAT-03 | Phase 16 | Complete |
+| COMPAT-04 | Phase 16 | Complete |
 | TEST-01 | Phase 17 | Pending |
 | TEST-02 | Phase 17 | Pending |
 | TEST-03 | Phase 17 | Pending |
@@ -99,4 +99,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 - Phase 15 requirements complete*
+*Last updated: 2026-01-27 - Phase 16 COMPAT requirements complete*
