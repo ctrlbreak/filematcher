@@ -205,40 +205,6 @@ class TestPreviewActionLabels(BaseFileMatcherTest):
             output = self.run_main_with_args([])
             self.assertIn("WOULD DELETE:", output)
 
-class TestCrossFilesystemWarnings(BaseFileMatcherTest):
-    """Tests for cross-filesystem warnings."""
-
-    def run_main_with_args(self, args: list[str]) -> str:
-        """Helper to run main() with given args and capture stdout."""
-        f = io.StringIO()
-        with redirect_stdout(f):
-            main()
-        return f.getvalue()
-
-    def test_cross_fs_warning_in_output(self):
-        """Cross-filesystem files should show [!cross-fs] warning."""
-        # Mock check_cross_filesystem to return a known set of "cross-filesystem" files
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
-            # Get the duplicate file paths that would normally be checked
-            # We'll mock check_cross_filesystem to return all duplicates as cross-fs
-            with patch('file_matcher.check_cross_filesystem') as mock_check:
-                # Return all duplicates as cross-filesystem
-                def mock_cross_fs(master_file, duplicates):
-                    return set(duplicates)
-                mock_check.side_effect = mock_cross_fs
-                output = self.run_main_with_args([])
-                # Should show [!cross-fs] marker
-                self.assertIn("[!cross-fs]", output)
-
-    def test_no_cross_fs_warning_without_hardlink(self):
-        """Cross-filesystem warning should not appear for symlink/delete actions."""
-        for action in ['symlink', 'delete']:
-            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', action]):
-                output = self.run_main_with_args([])
-                # Should NOT show [!cross-fs] marker for non-hardlink actions
-                self.assertNotIn("[!cross-fs]", output)
-
-
 class TestExecuteMode(BaseFileMatcherTest):
     """Tests for --execute flag behavior."""
 
@@ -305,34 +271,17 @@ class TestExecuteMode(BaseFileMatcherTest):
                 self.run_main_with_args([])
                 mock_input.assert_not_called()
 
-    def test_confirmation_accepts_y(self):
-        """User typing 'y' should proceed."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--action', 'hardlink', '--execute']):
-            with patch('sys.stdin.isatty', return_value=True):
-                with patch('builtins.input', return_value='y'):
-                    output = self.run_main_with_args([])
-                    # Should NOT show abort message
-                    self.assertNotIn("Aborted", output)
-
-    def test_confirmation_accepts_yes(self):
-        """User typing 'yes' should proceed."""
-        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                   '--action', 'hardlink', '--execute']):
-            with patch('sys.stdin.isatty', return_value=True):
-                with patch('builtins.input', return_value='yes'):
-                    output = self.run_main_with_args([])
-                    self.assertNotIn("Aborted", output)
-
-    def test_confirmation_case_insensitive(self):
-        """Confirmation should accept 'Y' and 'YES' (case insensitive)."""
-        for response in ['Y', 'YES', 'Yes']:
-            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
-                       '--action', 'hardlink', '--execute']):
-                with patch('sys.stdin.isatty', return_value=True):
-                    with patch('builtins.input', return_value=response):
-                        output = self.run_main_with_args([])
-                        self.assertNotIn("Aborted", output)
+    def test_confirmation_accepts_affirmative_responses(self):
+        """Confirmation accepts 'y', 'yes', 'Y', 'YES', 'Yes' (case insensitive)."""
+        affirmative_responses = ['y', 'yes', 'Y', 'YES', 'Yes']
+        for response in affirmative_responses:
+            with self.subTest(response=response):
+                with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                           '--action', 'hardlink', '--execute']):
+                    with patch('sys.stdin.isatty', return_value=True):
+                        with patch('builtins.input', return_value=response):
+                            output = self.run_main_with_args([])
+                            self.assertNotIn("Aborted", output, f"Response '{response}' should proceed")
 
 
 class TestNonInteractiveMode(BaseFileMatcherTest):

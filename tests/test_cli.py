@@ -133,23 +133,21 @@ class TestCLI(BaseFileMatcherTest):
             self.assertIn("Processing", stderr)
             self.assertIn("Matched files summary:", stdout)
 
-    def test_group_output_tty_progress(self):
-        """Test that TTY mode shows inline progress on stderr."""
+    def test_inline_progress_runs_in_tty_mode(self):
+        """TTY mode runs successfully with inline progress enabled."""
         # Create a mock stderr that claims to be a TTY
         mock_stderr = io.StringIO()
         mock_stderr.isatty = lambda: True
 
         with patch('sys.stderr', mock_stderr):
             with patch('sys.argv', ['file_matcher', self.test_dir1, self.test_dir2]):
-                # Run compare mode
                 result = main()
 
-        # Check stderr was accessed (progress was written and cleared)
-        # The final clear leaves empty line, but we can verify execution succeeded
+        # Execution should succeed (progress written and cleared)
         self.assertEqual(result, 0)
 
-    def test_group_output_non_tty_no_progress(self):
-        """Test that non-TTY mode does not write progress to stderr."""
+    def test_no_inline_progress_in_non_tty_mode(self):
+        """Non-TTY mode does not write inline progress indicators."""
         mock_stderr = io.StringIO()
         # Default StringIO.isatty() returns False
 
@@ -157,12 +155,9 @@ class TestCLI(BaseFileMatcherTest):
             with patch('sys.argv', ['file_matcher', self.test_dir1, self.test_dir2]):
                 result = main()
 
-        # stderr may have logger messages, but should not have group progress [n/m]
+        # stderr may have logger messages, but should not have carriage return progress
         stderr_content = mock_stderr.getvalue()
-        # Non-TTY mode should not write inline progress indicators
-        import re
-        # Check there's no [n/m] pattern from group progress (but allow [n/m] from verbose file progress)
-        # Group progress format: [1/3] /path/to/file (at start of line after \r)
+        # Group progress uses \r[n/m] format - should not appear in non-TTY mode
         self.assertNotIn('\r[', stderr_content)
         self.assertEqual(result, 0)
 

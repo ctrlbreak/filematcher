@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
+import io
 import os
 import unittest
+from contextlib import redirect_stdout
+from unittest.mock import patch
 
 from file_matcher import (
     index_directory, find_matching_files, get_file_hash,
     is_symlink_to, execute_action, is_hardlink_to,
-    filter_hardlinked_duplicates
+    filter_hardlinked_duplicates, main
 )
 from tests.test_base import BaseFileMatcherTest
 
@@ -357,6 +360,37 @@ class TestFilterHardlinkedDuplicates(unittest.TestCase):
 
         self.assertEqual(actionable, [])
         self.assertEqual(hardlinked, [])
+
+
+class TestCrossFilesystemWarnings(BaseFileMatcherTest):
+    """Tests for cross-filesystem detection and warnings in output."""
+
+    def run_main_with_args(self, args: list[str]) -> str:
+        """Helper to run main() with given args and capture stdout."""
+        f = io.StringIO()
+        with redirect_stdout(f):
+            main()
+        return f.getvalue()
+
+    def test_cross_fs_marker_shown_for_hardlink(self):
+        """Cross-filesystem files show [!cross-fs] marker in hardlink mode."""
+        # Mock check_cross_filesystem to simulate cross-filesystem files
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
+            with patch('file_matcher.check_cross_filesystem') as mock_check:
+                # Return all duplicates as cross-filesystem
+                def mock_cross_fs(master_file, duplicates):
+                    return set(duplicates)
+                mock_check.side_effect = mock_cross_fs
+                output = self.run_main_with_args([])
+                self.assertIn("[!cross-fs]", output)
+
+    def test_no_cross_fs_marker_for_symlink_or_delete(self):
+        """Cross-filesystem marker should not appear for symlink/delete actions."""
+        for action in ['symlink', 'delete']:
+            with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', action]):
+                output = self.run_main_with_args([])
+                # Symlink and delete work across filesystems, so no warning needed
+                self.assertNotIn("[!cross-fs]", output)
 
 
 if __name__ == "__main__":
