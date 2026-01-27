@@ -354,17 +354,19 @@ class ActionFormatter(ABC):
     Action mode shows master/duplicate relationships and actions to be taken.
     """
 
-    def __init__(self, verbose: bool = False, preview_mode: bool = True, action: str | None = None):
+    def __init__(self, verbose: bool = False, preview_mode: bool = True, action: str | None = None, will_execute: bool = False):
         """Initialize the formatter with configuration.
 
         Args:
             verbose: If True, show additional details in output
             preview_mode: If True, format for preview; if False, format for execution
             action: Action type (compare, hardlink, symlink, delete) for action-specific formatting
+            will_execute: If True, execution will follow (changes labeling from "WOULD" to "WILL")
         """
         self.verbose = verbose
         self.preview_mode = preview_mode
         self._action = action
+        self.will_execute = will_execute
 
     @abstractmethod
     def format_banner(self) -> None:
@@ -543,15 +545,16 @@ class JsonActionFormatter(ActionFormatter):
     then serializes to JSON in finalize().
     """
 
-    def __init__(self, verbose: bool = False, preview_mode: bool = True, action: str | None = None):
+    def __init__(self, verbose: bool = False, preview_mode: bool = True, action: str | None = None, will_execute: bool = False):
         """Initialize the formatter with configuration.
 
         Args:
             verbose: If True, include additional details in output
             preview_mode: If True, mode is "preview"; if False, mode is "execute"
             action: Action type (compare, hardlink, symlink, delete)
+            will_execute: If True, execution will follow (not used in JSON, but accepted for API consistency)
         """
-        super().__init__(verbose, preview_mode, action)
+        super().__init__(verbose, preview_mode, action, will_execute)
         self._data: dict = {
             "timestamp": datetime.now(timezone.utc).isoformat(),
             "mode": "preview" if preview_mode else "execute",
@@ -901,7 +904,8 @@ class TextActionFormatter(ActionFormatter):
         verbose: bool = False,
         preview_mode: bool = True,
         action: str | None = None,
-        color_config: ColorConfig | None = None
+        color_config: ColorConfig | None = None,
+        will_execute: bool = False
     ):
         """Initialize the formatter with configuration.
 
@@ -910,8 +914,9 @@ class TextActionFormatter(ActionFormatter):
             preview_mode: If True, format for preview; if False, format for execution
             action: Action type (compare, hardlink, symlink, delete)
             color_config: Color configuration (default: no color)
+            will_execute: If True, execution will follow (changes labeling from "WOULD" to "WILL")
         """
-        super().__init__(verbose, preview_mode, action)
+        super().__init__(verbose, preview_mode, action, will_execute)
         self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
         self._prev_group_row_count = 0  # Track terminal rows for inline TTY updates
 
@@ -919,11 +924,15 @@ class TextActionFormatter(ActionFormatter):
         """Format and output the mode banner (PREVIEW or EXECUTE)."""
         if self._action == "compare":
             return  # Compare mode doesn't show PREVIEW/EXECUTING banner
-        if self.preview_mode:
+        if self.will_execute:
+            # Pre-execution display: show EXECUTE banner in red (execution will follow)
+            print(red(EXECUTE_BANNER, self.cc))
+        elif self.preview_mode:
             # PREVIEW banner in bold yellow (attention-grabbing safety warning)
             print(bold_yellow(PREVIEW_BANNER, self.cc))
         else:
-            print(EXECUTE_BANNER)
+            # Execute mode: show EXECUTE banner in red
+            print(red(EXECUTE_BANNER, self.cc))
         print()
 
     def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
@@ -931,6 +940,9 @@ class TextActionFormatter(ActionFormatter):
         if action == "compare":
             # Compare mode: no (PREVIEW)/(EXECUTING) state indicator
             header = f"Compare mode: {dir1} vs {dir2}"
+        elif self.will_execute:
+            # Pre-execution display: no state indicator (execution will follow)
+            header = f"Action mode: {action} {dir1} vs {dir2}"
         else:
             state = "PREVIEW" if self.preview_mode else "EXECUTING"
             header = f"Action mode ({state}): {action} {dir1} vs {dir2}"
@@ -998,7 +1010,8 @@ class TextActionFormatter(ActionFormatter):
             verbose=self.verbose,
             file_sizes=file_sizes,
             cross_fs_files=cross_fs_files,
-            preview_mode=self.preview_mode
+            preview_mode=self.preview_mode,
+            will_execute=self.will_execute
         )
 
         # Add hash line as GroupLine if verbose
@@ -1072,7 +1085,8 @@ class TextActionFormatter(ActionFormatter):
             action=action,
             verbose=self.verbose,
             cross_fs_count=cross_fs_count,
-            preview_mode=self.preview_mode
+            preview_mode=self.preview_mode,
+            will_execute=self.will_execute
         )
         for line in lines:
             if line == "--- Statistics ---":
@@ -1161,7 +1175,9 @@ class TextActionFormatter(ActionFormatter):
         print()
 
     def format_execute_banner_line(self) -> str:
-        """Return the execute banner text."""
+        """Return the execute banner text (empty if already shown via will_execute)."""
+        if self.will_execute:
+            return ""  # Banner already shown at top of output
         return EXECUTE_BANNER
 
     def finalize(self) -> None:
@@ -1421,7 +1437,8 @@ def format_duplicate_group(
     verbose: bool = False,
     file_sizes: dict[str, int] | None = None,
     cross_fs_files: set[str] | None = None,
-    preview_mode: bool = True
+    preview_mode: bool = True,
+    will_execute: bool = False
 ) -> list[GroupLine]:
     """
     Format a duplicate group for display.
@@ -1434,14 +1451,23 @@ def format_duplicate_group(
         file_sizes: Dict mapping paths to file sizes (for verbose mode)
         cross_fs_files: Set of duplicate paths on different filesystems (for warnings)
         preview_mode: If True and action is set, use "WOULD X" labels; if False, use "[DUP:action]"
+        will_execute: If True and preview_mode is True, use "WILL X" labels instead of "WOULD X"
 
     Returns:
         List of GroupLine objects for this group
     """
-    # Determine action label based on preview_mode and action type
+    # Determine action label based on preview_mode, will_execute, and action type
     if action == "compare":
         # Compare mode: always use DUPLICATE label (no WOULD/execution states)
         action_label = "DUPLICATE"
+    elif action and preview_mode and will_execute:
+        # Pre-execution display: use "WILL X" labels (execution will follow)
+        action_labels = {
+            "hardlink": "WILL HARDLINK",
+            "symlink": "WILL SYMLINK",
+            "delete": "WILL DELETE"
+        }
+        action_label = action_labels.get(action, f"WILL {action.upper()}")
     elif action and preview_mode:
         # Preview mode: use "WOULD X" labels
         action_labels = {
@@ -1472,7 +1498,7 @@ def format_duplicate_group(
 
 
 PREVIEW_BANNER = "=== PREVIEW MODE - Use --execute to apply changes ==="
-EXECUTE_BANNER = "=== EXECUTING ==="
+EXECUTE_BANNER = "=== EXECUTE MODE! ==="
 
 
 def format_confirmation_prompt(
@@ -1527,7 +1553,8 @@ def format_statistics_footer(
     action: str | None = None,
     verbose: bool = False,
     cross_fs_count: int = 0,
-    preview_mode: bool = True
+    preview_mode: bool = True,
+    will_execute: bool = False
 ) -> list[str]:
     """
     Format the statistics footer for preview/execute output.
@@ -1541,6 +1568,7 @@ def format_statistics_footer(
         verbose: If True, show exact bytes
         cross_fs_count: Number of files that can't be hardlinked (cross-fs)
         preview_mode: If True, add hint about using --execute
+        will_execute: If True, skip the --execute hint (execution will follow)
 
     Returns:
         List of lines for the footer
@@ -1567,7 +1595,8 @@ def format_statistics_footer(
     if action == 'compare':
         lines.append("")
         lines.append("Use --action to deduplicate (hardlink, symlink, or delete)")
-    elif preview_mode:
+    elif preview_mode and not will_execute:
+        # Only show --execute hint in true preview mode (not when execution will follow)
         lines.append("")
         lines.append("Use --execute to apply changes")
 
@@ -2533,7 +2562,8 @@ def main() -> int:
                 verbose=args.verbose,
                 preview_mode=True,
                 action=args.action,
-                color_config=color_config
+                color_config=color_config,
+                will_execute=args.execute
             )
 
         # Helper function to print preview output

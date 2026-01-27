@@ -261,15 +261,20 @@ class TestExecuteMode(BaseFileMatcherTest):
             main()
         return f.getvalue()
 
-    def test_execute_shows_preview_then_banner(self):
-        """--execute should show preview output then EXECUTING banner."""
+    def test_execute_shows_will_labels_then_banner(self):
+        """--execute should show 'WILL' labels (not WOULD/PREVIEW) then EXECUTE MODE banner."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
                    '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='n'):
                     output = self.run_main_with_args([])
-                    self.assertIn("PREVIEW MODE", output)
-                    self.assertIn("EXECUTING", output)
+                    # With --execute, pre-execution display uses "WILL" not "WOULD"
+                    self.assertIn("WILL HARDLINK", output)
+                    self.assertNotIn("WOULD HARDLINK", output)
+                    # No PREVIEW banner when --execute is set
+                    self.assertNotIn("PREVIEW MODE", output)
+                    # EXECUTE MODE banner shown before groups
+                    self.assertIn("EXECUTE MODE!", output)
 
     def test_execute_prompts_for_confirmation(self):
         """--execute should prompt user before proceeding."""
