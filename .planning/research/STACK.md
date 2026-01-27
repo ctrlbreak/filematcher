@@ -1,364 +1,308 @@
-# Technology Stack: Output Formatting and JSON Support
+# Stack Research: Python Package Refactoring
 
-**Project:** File Matcher v1.2 Output Rationalisation
-**Research Focus:** Structured text output and JSON generation
-**Researched:** 2026-01-22
-**Confidence:** HIGH
+**Project:** File Matcher CLI refactoring from single-file to package structure
+**Researched:** 2026-01-27
+**Confidence:** HIGH (authoritative sources consulted)
 
-## Executive Summary
+## Recommendation
 
-For unified output formatting and JSON support, use Python's standard library only. **Recommended stack:**
+**Use flat layout with `pyproject.toml` entry points.** Do NOT use src layout.
 
-| Capability | Module | Rationale |
-|------------|--------|-----------|
-| JSON output | `json` | Standard library, full control, zero dependencies |
-| Text formatting | `str.format()` | Already in use, powerful, no new imports |
-| Data structures | `dataclasses` (optional) | Clean data modeling, easy JSON via `asdict()` |
-| Pretty printing | ❌ Avoid `pprint` | Wrong abstraction for CLI output |
+**Rationale:** For this project, flat layout is the better choice because:
 
-**Core principle:** Continue using string methods and `json.dumps()` from standard library. No new dependencies needed.
+1. **Existing tests use `sys.path` manipulation** - The current `tests/__init__.py` adds the parent directory to `sys.path`. With flat layout, this continues to work. Src layout would require rewriting test imports.
 
----
+2. **Backward compatibility for `python file_matcher.py`** - Flat layout allows keeping `file_matcher.py` as a thin wrapper in the project root. Src layout would complicate this.
 
-## Detailed Recommendations
+3. **No complex build requirements** - The project is pure Python stdlib. The src layout's protection against "importing the wrong version" is less critical when there's no compilation step.
 
-### 1. JSON Output Generation
+4. **Simpler migration path** - Flat layout means moving code into `filematcher/` directory without touching the test infrastructure significantly.
 
-**Use:** `json` module (standard library)
+The src layout is generally recommended for libraries intended for PyPI distribution where import isolation is critical. For a CLI tool with existing test infrastructure, flat layout minimizes disruption.
 
-#### Why json module?
-- **Already familiar:** Project uses hashlib, argparse, logging — consistent stdlib approach
-- **Full control:** `indent`, `sort_keys`, `separators` provide precise formatting
-- **Zero overhead:** No new dependencies
-- **Battle-tested:** Used everywhere, reliable, well-documented
+## Package Structure
 
-#### Recommended pattern:
+### Recommended: Flat Layout
+
+```
+filematcher/
+├── pyproject.toml              # Already exists, update for package discovery
+├── file_matcher.py             # KEEP as backward-compat wrapper (thin)
+├── filematcher/                # NEW package directory
+│   ├── __init__.py             # Public API exports + __version__
+│   ├── __main__.py             # Enable `python -m filematcher`
+│   ├── cli.py                  # main() and argparse logic
+│   ├── core.py                 # Core matching logic
+│   ├── hashing.py              # Hash functions (get_file_hash, get_sparse_hash)
+│   ├── actions.py              # Action execution (hardlink/symlink/delete)
+│   ├── output.py               # Formatters (TextActionFormatter, JsonActionFormatter)
+│   ├── color.py                # ColorConfig, color helper functions
+│   ├── logging.py              # Audit logging functions
+│   └── filesystem.py           # Filesystem helpers (is_hardlink_to, etc.)
+├── tests/                      # Keep existing structure
+│   ├── __init__.py
+│   └── ...
+├── test_dir1/                  # Keep existing fixtures
+├── test_dir2/
+└── complex_test/
+```
+
+### Why NOT src Layout
+
+| Factor | Flat | Src | Winner |
+|--------|------|-----|--------|
+| Existing test compatibility | Works as-is | Requires test rewrite | Flat |
+| `python file_matcher.py` compat | Trivial wrapper | Complex path manipulation | Flat |
+| Import isolation | Adequate with proper install | Strong | Tie for this project |
+| Migration complexity | Lower | Higher | Flat |
+
+### Alternative: src Layout (NOT recommended)
+
+```
+filematcher/
+├── pyproject.toml
+├── file_matcher.py             # Wrapper (harder to make work)
+├── src/
+│   └── filematcher/
+│       ├── __init__.py
+│       └── ...
+└── tests/
+    └── ...                     # Would need conftest.py or editable install
+```
+
+src layout would require all test runs to use `pip install -e .` first, which is more ceremony than this project needs.
+
+## Entry Points
+
+### pyproject.toml Configuration (Updated)
+
+The existing `pyproject.toml` needs updates for package discovery:
+
+```toml
+[project]
+name = "filematcher"
+version = "1.1.0"
+# ... existing metadata unchanged ...
+
+[project.scripts]
+filematcher = "filematcher.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["filematcher"]
+# Remove py-modules = ["file_matcher"] after migration
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+```
+
+### Key Changes from Current
+
+| Current | After Refactor | Reason |
+|---------|----------------|--------|
+| `[project.scripts] filematcher = "file_matcher:main"` | `filematcher = "filematcher.cli:main"` | Points to package module |
+| `[tool.setuptools] py-modules = ["file_matcher"]` | `packages = ["filematcher"]` | Package discovery instead of single module |
+
+### Entry Point Pattern
+
+The entry point should call a function that returns an exit code:
 
 ```python
-import json
-
-# For CLI output (readable)
-def format_json_output(data, pretty=True):
-    """Format data as JSON for CLI output."""
-    if pretty:
-        return json.dumps(data, indent=2, sort_keys=False, ensure_ascii=False)
-    else:
-        return json.dumps(data, separators=(',', ':'), ensure_ascii=False)
-
-# Usage with --json flag
-if args.json:
-    output_data = build_output_dict(matches, stats, mode='compare')
-    print(format_json_output(output_data))
-else:
-    # Current text output
-    print_text_output(matches, stats)
+# filematcher/cli.py
+def main() -> int:
+    """CLI entry point. Returns exit code."""
+    # ... argparse and main logic ...
+    return 0  # or 1 for error, 2 for partial failure
 ```
 
-#### Key parameters for CLI use:
+Console scripts automatically pass the return value to `sys.exit()`.
 
-| Parameter | Value | Why |
-|-----------|-------|-----|
-| `indent=2` | Pretty print | Human-readable when piped to files |
-| `sort_keys=False` | Preserve order | Logical ordering (not alphabetical) |
-| `ensure_ascii=False` | Unicode support | Handle international filenames correctly |
-| `separators=(',', ':')` | Compact mode | Optional for `--json --compact` flag |
+## Import Patterns
 
-**What NOT to use:**
-- ❌ `pprint` — Wrong abstraction (Python repr, not JSON)
-- ❌ Third-party libraries (`orjson`, `ujson`) — Violates zero-dependency constraint
+### Recommendation: Relative Imports Within Package
 
----
-
-### 2. Structured Text Output
-
-**Use:** `str.format()` with explicit formatting strings (current approach)
-
-#### Why continue with str.format()?
-- **Already in use:** Project already uses f-strings and format strings
-- **Sufficient:** Handles alignment, padding, width control
-- **No imports needed:** Built-in string method
-- **Readable:** Clear what output will look like
-
-#### Current pattern (continue this):
+**Within the `filematcher/` package, use relative imports:**
 
 ```python
-# Already doing this well
-def format_duplicate_group(master_file, duplicates, action=None, verbose=False):
-    lines = []
-    lines.append(f"[MASTER] {master_file}")
-    for dup in sorted(duplicates):
-        label = f"[DUP:{action}]" if action else "[DUP]"
-        lines.append(f"    {label} {dup}")
-    return lines
+# filematcher/cli.py
+from .core import find_matching_files, index_directory
+from .hashing import get_file_hash
+from .output import TextActionFormatter, JsonActionFormatter
+from .color import ColorConfig, ColorMode
 ```
 
-#### Enhancement opportunities:
+**Rationale:**
+- Relative imports make the package self-contained
+- Easier to rename/move the package later
+- PEP 8 allows relative imports when they reduce verbosity
+- The package is small enough that relative imports stay readable
+
+### Public API in `__init__.py`
 
 ```python
-# For consistent column widths
-def format_statistics_table(stats):
-    """Format statistics with aligned columns."""
-    rows = [
-        ("Duplicate groups:", f"{stats['group_count']}"),
-        ("Master files:", f"{stats['master_count']}"),
-        ("Duplicate files:", f"{stats['duplicate_count']}"),
-        ("Space savings:", format_file_size(stats['space_savings'])),
-    ]
+# filematcher/__init__.py
+"""File Matcher - Find and deduplicate files with identical content."""
 
-    # Calculate max width for alignment
-    max_label_width = max(len(label) for label, _ in rows)
+__version__ = "1.1.0"
+__author__ = "Patrick Myles"
 
-    return [f"{label:<{max_label_width}} {value}" for label, value in rows]
+# Public API exports (for programmatic use)
+from .core import find_matching_files, index_directory
+from .hashing import get_file_hash, get_sparse_hash
+from .cli import main
+
+__all__ = [
+    "__version__",
+    "find_matching_files",
+    "index_directory",
+    "get_file_hash",
+    "get_sparse_hash",
+    "main",
+]
 ```
 
-**What NOT to use:**
-- ❌ `textwrap` — Not needed for current output patterns (no paragraph wrapping)
-- ❌ `string.Template` — Less powerful than f-strings, no advantage here
-- ❌ Third-party libraries (`rich`, `tabulate`) — Violates constraints
+**Keep `__all__` focused.** Only export what external code might actually use. Internal implementation details (formatters, color helpers) stay internal.
 
----
-
-### 3. Data Structures (Optional Enhancement)
-
-**Consider:** `dataclasses` for internal data modeling
-
-#### Why dataclasses?
-- **Clean schema:** Explicit structure for output data
-- **JSON-ready:** `asdict()` converts directly to dict for `json.dumps()`
-- **Type hints:** IDE support, maintainability
-- **Standard library:** Python 3.7+ (project requires 3.9+)
-
-#### Example usage:
+### `__main__.py` for `python -m filematcher`
 
 ```python
-from dataclasses import dataclass, asdict
-from typing import List
+# filematcher/__main__.py
+"""Enable `python -m filematcher`."""
+import sys
+from .cli import main
 
-@dataclass
-class DuplicateGroup:
-    master_file: str
-    duplicates: List[str]
-    file_hash: str
-    file_size: int
-    selection_reason: str
-
-@dataclass
-class ComparisonOutput:
-    mode: str  # "compare" or "action"
-    statistics: dict
-    duplicate_groups: List[DuplicateGroup]
-    unmatched_files: dict = None
-
-# Easy conversion to JSON
-output = ComparisonOutput(...)
-json_data = json.dumps(asdict(output), indent=2)
+sys.exit(main())
 ```
 
-#### Benefits:
-- **Schema documentation:** Clear what data structure looks like
-- **Refactoring safety:** Changes propagate through IDE
-- **Easy JSON:** `json.dumps(asdict(obj))` just works
-- **No runtime overhead:** Pure Python, no validation unless you add it
+**No `if __name__ == '__main__'` check needed** in `__main__.py` - this file only runs when invoked as a module.
 
-#### When NOT to use:
-- ❌ Simple dict is sufficient for current needs
-- ❌ Don't want to refactor existing code
-- ❌ Overhead not justified for single-use structures
+## Backward Compatibility
 
-**Decision:** Optional. Current dict-based approach is fine. Consider for v1.3+ if complexity grows.
+### Wrapper Pattern for `python file_matcher.py`
 
----
-
-### 4. What NOT to Add
-
-#### pprint module — Wrong abstraction
-- **Purpose:** Debug Python objects, not CLI output
-- **Limitation:** Produces Python repr, not custom formats
-- **Not needed:** We need custom formatting (labels, indentation), not generic pretty-printing
+Keep `file_matcher.py` in the project root as a thin wrapper:
 
 ```python
-# Don't do this:
-import pprint
-pprint.pp(matches)  # Wrong: shows Python dict repr, not user-friendly output
+#!/usr/bin/env python3
+"""
+Backward compatibility wrapper.
+
+This file maintains compatibility with:
+  python file_matcher.py dir1 dir2 [options]
+
+For new usage, prefer:
+  filematcher dir1 dir2 [options]
+  python -m filematcher dir1 dir2 [options]
+"""
+import sys
+from filematcher.cli import main
+
+if __name__ == "__main__":
+    sys.exit(main())
 ```
 
-#### textwrap module — Not applicable
-- **Purpose:** Paragraph wrapping (e.g., help text, documentation)
-- **Not needed:** We output structured lists, not flowing paragraphs
-- **Current output:** Already has explicit indentation and structure
+**Size:** ~10 lines vs current 2,843 lines.
+
+### Three Invocation Methods (All Supported)
+
+| Method | How It Works | Status |
+|--------|--------------|--------|
+| `filematcher dir1 dir2` | Console script entry point | Already works |
+| `python -m filematcher dir1 dir2` | `__main__.py` | NEW after refactor |
+| `python file_matcher.py dir1 dir2` | Thin wrapper script | MAINTAINED for compat |
+
+### Test Compatibility
+
+The existing tests import from `file_matcher`:
 
 ```python
-# Don't need this:
-import textwrap
-textwrap.fill(long_file_path, width=80)  # Wrong: file paths shouldn't wrap
+# Current test imports
+from file_matcher import get_file_hash, find_matching_files, main
 ```
 
-#### Third-party libraries — Violates constraints
-Project explicitly requires "Pure Python standard library only" (see PROJECT.md, CONSTRAINTS).
+**Two approaches to maintain compatibility:**
 
+**Option A: Alias in wrapper (simpler)**
 ```python
-# Don't add these:
-import rich      # ❌ External dependency
-import tabulate  # ❌ External dependency
-import orjson    # ❌ External dependency
+# file_matcher.py (updated wrapper)
+from filematcher import *  # Re-export everything
+from filematcher.cli import main
 ```
 
----
+Then existing tests work unchanged.
 
-## Implementation Guide
-
-### Phase 1: JSON Output Structure
-
-Define consistent output schema:
-
+**Option B: Update test imports (cleaner)**
 ```python
-def build_json_output(mode, matches, stats, unmatched=None):
-    """Build JSON-serializable output structure.
-
-    Args:
-        mode: "compare" or "action" (action includes preview/execute)
-        matches: Dict of file hash -> (files1, files2) or master/dup groups
-        stats: Statistics dict
-        unmatched: Optional unmatched files data
-
-    Returns:
-        Dict suitable for json.dumps()
-    """
-    output = {
-        "version": "1.2",
-        "mode": mode,
-        "statistics": stats,
-        "duplicate_groups": format_duplicate_groups_json(matches),
-    }
-
-    if unmatched:
-        output["unmatched_files"] = unmatched
-
-    return output
+# tests/test_file_hashing.py
+from filematcher import get_file_hash  # Changed from file_matcher
 ```
 
-### Phase 2: Unified Text Output
+**Recommendation: Option B** - Clean imports are better long-term. The test updates are mechanical (find/replace) and can be done in one commit.
 
-Extract common formatting functions:
+## What NOT to Add
 
-```python
-def format_statistics_footer(stats, mode):
-    """Format statistics footer (same for all modes)."""
-    lines = ["", "--- Statistics ---"]
-    lines.extend(format_statistics_table(stats))
-    return lines
+### Do NOT add type stubs or py.typed marker
 
-def format_duplicate_group_text(group, mode, action=None):
-    """Format a duplicate group (unified across modes)."""
-    # Common structure for compare and action modes
-    pass
-```
+The codebase already has inline type hints (`from __future__ import annotations`). Adding `py.typed` marker would promise PEP 561 compliance which isn't necessary for a CLI tool.
 
-### Phase 3: Output Dispatcher
+### Do NOT add setuptools-scm or other version management
 
-Route to correct formatter:
+Current manual versioning (`__version__ = "1.1.0"`) is fine for this project size. Adding SCM-based versioning adds complexity without benefit.
 
-```python
-def write_output(data, output_format='text', pretty=True):
-    """Write output in requested format.
+### Do NOT add namespace packages
 
-    Args:
-        data: Structured data (dict or dataclass)
-        output_format: 'text' or 'json'
-        pretty: For JSON, whether to pretty-print
-    """
-    if output_format == 'json':
-        print(format_json_output(data, pretty))
-    else:
-        print_text_output(data)
-```
+The project has a single package (`filematcher`). Namespace packages are for splitting a package across multiple distributions.
 
----
+### Do NOT add `setup.py`
 
-## Integration with Existing Code
+The project already uses `pyproject.toml` with setuptools backend. Modern Python (3.9+) doesn't need `setup.py` for pure Python packages.
 
-### Current CLI flags:
-```python
-parser.add_argument('--summary', '-s')     # Existing: brief vs detailed
-parser.add_argument('--verbose', '-v')     # Existing: extra detail
-```
+### Do NOT add external dependencies
 
-### New flags needed:
-```python
-parser.add_argument('--json', action='store_true',
-                    help='Output in JSON format (for scripting/pipelines)')
-parser.add_argument('--compact', action='store_true',
-                    help='Compact output (with --json, removes whitespace)')
-```
+The zero-dependency constraint is a feature. Resist adding:
+- `click` (argparse works fine)
+- `rich` (the custom color system works fine)
+- `attrs`/`pydantic` (dataclasses work fine)
 
-### Compatibility:
-- `--json` overrides text output (mutually exclusive)
-- `--json --summary` and `--json --verbose` control what data is included
-- `--json --compact` produces minimal JSON (for parsing, not humans)
+### Do NOT use absolute imports within the package
 
----
+Within `filematcher/`, prefer relative imports (`.core`, `.hashing`). This keeps the package self-contained.
 
-## Testing Strategy
+## Module Split Recommendation
 
-### Unit tests needed:
+Based on the current 2,843-line `file_matcher.py`, here's the recommended module breakdown:
 
-```python
-def test_json_output_structure():
-    """Verify JSON output has expected schema."""
-    output = build_json_output('compare', matches, stats)
-    assert 'version' in output
-    assert 'mode' in output
-    assert 'statistics' in output
-    assert output['mode'] == 'compare'
+| Module | Lines (est.) | Contents |
+|--------|--------------|----------|
+| `cli.py` | ~300 | `main()`, argparse setup, CLI flow |
+| `core.py` | ~400 | `find_matching_files()`, `index_directory()`, `select_master_file()` |
+| `hashing.py` | ~150 | `get_file_hash()`, `get_sparse_hash()`, hash algorithm selection |
+| `actions.py` | ~300 | `execute_action()`, `execute_all_actions()`, `safe_replace_with_link()` |
+| `output.py` | ~400 | `ActionFormatter`, `TextActionFormatter`, `JsonActionFormatter` |
+| `color.py` | ~150 | `ColorMode`, `ColorConfig`, color helpers (`green()`, `red()`, etc.) |
+| `logging.py` | ~150 | `create_audit_logger()`, `log_operation()`, header/footer |
+| `filesystem.py` | ~200 | `is_hardlink_to()`, `is_symlink_to()`, `check_cross_filesystem()` |
+| `__init__.py` | ~30 | Version, public API exports |
+| `__main__.py` | ~10 | Module invocation support |
 
-def test_json_valid_syntax():
-    """Ensure output is valid JSON."""
-    output = build_json_output('compare', matches, stats)
-    json_str = json.dumps(output)
-    parsed = json.loads(json_str)  # Should not raise
-    assert parsed == output
-
-def test_unified_statistics_footer():
-    """Statistics appear in all modes."""
-    # Test compare mode
-    # Test action preview mode
-    # Test action execute mode
-```
-
-### Integration tests:
-
-```bash
-# Verify JSON is parseable
-filematcher dir1 dir2 --json | jq .
-
-# Verify text output unchanged (backward compatibility)
-filematcher dir1 dir2 > output.txt
-diff output.txt expected_output.txt
-```
-
----
+**Total: ~2,090 lines** (reduction from shared constants, cleaner organization)
 
 ## Sources
 
-**Official Documentation:**
-- [json — JSON encoder and decoder — Python 3.14.2](https://docs.python.org/3/library/json.html)
-- [textwrap — Text wrapping and filling](https://docs.python.org/3/library/textwrap.html)
-- [string — Common string operations](https://docs.python.org/3/library/string.html)
-- [pprint — Data pretty printer](https://docs.python.org/3/library/pprint.html)
-- [dataclasses — Data Classes](https://docs.python.org/3/library/dataclasses.html)
+### Authoritative (HIGH confidence)
+- [Python Packaging User Guide: src layout vs flat layout](https://packaging.python.org/en/latest/discussions/src-layout-vs-flat-layout/)
+- [Python Packaging User Guide: Writing pyproject.toml](https://packaging.python.org/en/latest/guides/writing-pyproject-toml/)
+- [Python docs: __main__ module](https://docs.python.org/3/library/__main__.html)
+- [setuptools: Package Discovery](https://setuptools.pypa.io/en/latest/userguide/package_discovery.html)
+- [setuptools: Entry Points](https://setuptools.pypa.io/en/latest/userguide/entry_point.html)
 
-**Community Resources:**
-- [How to Pretty Print JSON in Python | DigitalOcean](https://www.digitalocean.com/community/tutorials/python-pretty-print-json)
-- [Working With JSON Data in Python – Real Python](https://realpython.com/python-json/)
-- [Everything You Can Do with Python's textwrap Module | Martin Heinz](https://martinheinz.dev/blog/108)
-- [Python print() Output: Practical Patterns, Pitfalls, and Modern Workflows (2026) – TheLinuxCode](https://thelinuxcode.com/python-print-output-practical-patterns-pitfalls-and-modern-workflows-2026/)
-
-**Standard Library Reference:**
-- json module: Provides `dumps()`, `dump()` with `indent`, `sort_keys`, `separators`, `ensure_ascii` for full control
-- str.format(): Already in use, sufficient for structured text output
-- dataclasses: Optional enhancement for data modeling, provides `asdict()` for easy JSON conversion
+### Community Best Practices (MEDIUM confidence)
+- [Real Python: Absolute vs Relative Imports](https://realpython.com/absolute-vs-relative-python-imports/)
+- [Real Python: Python __init__.py](https://realpython.com/python-init-py/)
+- [PyOpenSci: Python Package Structure](https://www.pyopensci.org/python-package-guide/package-structure-code/python-package-structure.html)
 
 ---
-
-*Research complete: 2026-01-22*
-*Confidence level: HIGH (all solutions verified in official Python documentation)*
+*Research completed: 2026-01-27*
