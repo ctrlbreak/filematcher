@@ -177,10 +177,11 @@ Plans:
   2. `from filematcher.directory import find_matching_files, index_directory` works
   3. JSON, color output, and directory operation tests pass
   4. All 217 tests pass
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 14-01: TBD
+- [ ] 14-01-PLAN.md - Extract output formatters to filematcher/formatters.py
+- [ ] 14-02-PLAN.md - Extract directory operations to filematcher/directory.py
 
 #### Phase 15: Extract Logging and CLI
 **Goal**: Extract audit logging and CLI modules, finalize entry points
@@ -245,7 +246,7 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 11. Package Scaffolding | v1.4 | 1/1 | Complete | 2026-01-27 |
 | 12. Foundation Modules | v1.4 | 2/2 | Complete | 2026-01-27 |
 | 13. Filesystem and Actions | v1.4 | 2/2 | Complete | 2026-01-27 |
-| 14. Formatters and Directory | v1.4 | 0/TBD | Not started | - |
+| 14. Formatters and Directory | v1.4 | 0/2 | Planned | - |
 | 15. Logging and CLI | v1.4 | 0/TBD | Not started | - |
 | 16. Backward Compatibility | v1.4 | 0/TBD | Not started | - |
 | 17. Verification | v1.4 | 0/TBD | Not started | - |
