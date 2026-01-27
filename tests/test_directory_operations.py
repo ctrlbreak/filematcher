@@ -375,8 +375,9 @@ class TestCrossFilesystemWarnings(BaseFileMatcherTest):
     def test_cross_fs_marker_shown_for_hardlink(self):
         """Cross-filesystem files show [!cross-fs] marker in hardlink mode."""
         # Mock check_cross_filesystem to simulate cross-filesystem files
+        # Patch where the function is used (filematcher.cli), not where it's defined
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
-            with patch('file_matcher.check_cross_filesystem') as mock_check:
+            with patch('filematcher.cli.check_cross_filesystem') as mock_check:
                 # Return all duplicates as cross-filesystem
                 def mock_cross_fs(master_file, duplicates):
                     return set(duplicates)
