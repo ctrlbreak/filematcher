@@ -27,13 +27,14 @@ classifiers = [
 ]
 
 [project.scripts]
-filematcher = "file_matcher:main"
+filematcher = "filematcher.cli:main"
 
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
+packages = ["filematcher"]
 py-modules = ["file_matcher"]
 
 [tool.pytest.ini_options]
