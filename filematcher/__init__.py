@@ -52,6 +52,14 @@ from filematcher.colors import (
     determine_color_mode,
 )
 
+# Import from hashing submodule (extracted module)
+# This import is safe and has no dependencies on file_matcher
+from filematcher.hashing import (
+    create_hasher,
+    get_file_hash,
+    get_sparse_hash,
+)
+
 
 def __getattr__(name):
     """Lazy import attributes from file_matcher to avoid circular imports.
@@ -70,10 +78,6 @@ def __getattr__(name):
         'JsonActionFormatter': _fm.JsonActionFormatter,
         # Structured output types
         'SpaceInfo': _fm.SpaceInfo,
-        # Hashing functions
-        'get_file_hash': _fm.get_file_hash,
-        'get_sparse_hash': _fm.get_sparse_hash,
-        'create_hasher': _fm.create_hasher,
         # Directory operations
         'index_directory': _fm.index_directory,
         'find_matching_files': _fm.find_matching_files,
