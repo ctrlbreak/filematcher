@@ -11,7 +11,7 @@ Requirements for package structure refactoring. Each maps to roadmap phases.
 
 - [x] **PKG-01**: Create `filematcher/` package directory with `__init__.py`
 - [x] **PKG-02**: Add `__main__.py` enabling `python -m filematcher` invocation
-- [ ] **PKG-03**: Update pyproject.toml entry point to `filematcher.cli:main`
+- [x] **PKG-03**: Update pyproject.toml entry point to `filematcher.cli:main`
 - [ ] **PKG-04**: Each module is under 500 lines (improved maintainability)
 - [ ] **PKG-05**: No circular imports between modules
 
@@ -23,8 +23,8 @@ Requirements for package structure refactoring. Each maps to roadmap phases.
 - [x] **MOD-04**: Extract action execution to `filematcher/actions.py`
 - [x] **MOD-05**: Extract output formatters to `filematcher/formatters.py`
 - [x] **MOD-06**: Extract directory operations to `filematcher/directory.py`
-- [ ] **MOD-07**: Extract audit logging to `filematcher/logging.py`
-- [ ] **MOD-08**: Extract CLI and main to `filematcher/cli.py`
+- [x] **MOD-07**: Extract audit logging to `filematcher/actions.py` (combined with action execution)
+- [x] **MOD-08**: Extract CLI and main to `filematcher/cli.py`
 
 ### Backward Compatibility
 
@@ -73,7 +73,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | PKG-01 | Phase 11 | Complete |
 | PKG-02 | Phase 11 | Complete |
-| PKG-03 | Phase 15 | Pending |
+| PKG-03 | Phase 15 | Complete |
 | PKG-04 | Phase 17 | Pending |
 | PKG-05 | Phase 17 | Pending |
 | MOD-01 | Phase 12 | Complete |
@@ -82,8 +82,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | MOD-04 | Phase 13 | Complete |
 | MOD-05 | Phase 14 | Complete |
 | MOD-06 | Phase 14 | Complete |
-| MOD-07 | Phase 15 | Pending |
-| MOD-08 | Phase 15 | Pending |
+| MOD-07 | Phase 13 | Complete |
+| MOD-08 | Phase 15 | Complete |
 | COMPAT-01 | Phase 16 | Pending |
 | COMPAT-02 | Phase 16 | Pending |
 | COMPAT-03 | Phase 16 | Pending |
@@ -99,4 +99,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 - Phase 14 requirements complete*
+*Last updated: 2026-01-27 - Phase 15 requirements complete*

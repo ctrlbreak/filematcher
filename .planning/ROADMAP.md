@@ -195,9 +195,10 @@ Plans:
   4. `python -m filematcher <args>` executes correctly
   5. All 217 tests pass
 **Plans**: 1 plan
+**Completed**: 2026-01-27
 
 Plans:
-- [ ] 15-01-PLAN.md - Extract CLI to filematcher/cli.py, finalize entry points
+- [x] 15-01-PLAN.md - Extract CLI to filematcher/cli.py, finalize entry points
 
 #### Phase 16: Backward Compatibility
 **Goal**: Establish file_matcher.py as thin wrapper with full re-exports
@@ -249,9 +250,9 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 12. Foundation Modules | v1.4 | 2/2 | Complete | 2026-01-27 |
 | 13. Filesystem and Actions | v1.4 | 2/2 | Complete | 2026-01-27 |
 | 14. Formatters and Directory | v1.4 | 2/2 | Complete | 2026-01-27 |
-| 15. Logging and CLI | v1.4 | 0/TBD | Not started | - |
+| 15. Logging and CLI | v1.4 | 1/1 | Complete | 2026-01-27 |
 | 16. Backward Compatibility | v1.4 | 0/TBD | Not started | - |
 | 17. Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-01-27 - Phase 14 complete*
+*Last updated: 2026-01-27 - Phase 15 complete*
