@@ -17,18 +17,28 @@ Basic usage:
     exit_code = main()
 """
 
-from file_matcher import (
-    # Color system
+# Import from colors submodule (extracted module)
+# This import is safe and has no dependencies on file_matcher
+from filematcher.colors import (
+    # ANSI constants
+    RESET,
+    GREEN,
+    YELLOW,
+    RED,
+    CYAN,
+    BOLD,
+    DIM,
+    BOLD_GREEN,
+    BOLD_YELLOW,
+    # Classes
     ColorMode,
     ColorConfig,
-    # Output formatters
-    ActionFormatter,
-    TextActionFormatter,
-    JsonActionFormatter,
-    # Structured output types
     GroupLine,
-    SpaceInfo,
-    # Color helper functions
+    # Terminal helpers
+    strip_ansi,
+    visible_len,
+    terminal_rows_for_line,
+    # Color helpers
     colorize,
     green,
     yellow,
@@ -40,64 +50,95 @@ from file_matcher import (
     bold_green,
     render_group_line,
     determine_color_mode,
-    # Terminal helpers
-    strip_ansi,
-    visible_len,
-    terminal_rows_for_line,
-    # Hashing functions
-    get_file_hash,
-    get_sparse_hash,
-    create_hasher,
-    # Directory operations
-    index_directory,
-    find_matching_files,
-    select_master_file,
-    # Action execution
-    execute_action,
-    safe_replace_with_link,
-    execute_all_actions,
-    determine_exit_code,
-    # Filesystem helpers
-    is_hardlink_to,
-    is_symlink_to,
-    check_cross_filesystem,
-    get_device_id,
-    filter_hardlinked_duplicates,
-    is_in_directory,
-    # Audit logging
-    create_audit_logger,
-    log_operation,
-    write_log_header,
-    write_log_footer,
-    # Utilities
-    format_file_size,
-    calculate_space_savings,
-    confirm_execution,
-    # Formatting helpers
-    format_duplicate_group,
-    format_group_lines,
-    format_statistics_footer,
-    format_confirmation_prompt,
-    # Constants
-    PREVIEW_BANNER,
-    EXECUTE_BANNER,
-    # Internal helpers (used by tests)
-    select_oldest,
-    build_file_hash_lookup,
-    get_cross_fs_for_hardlink,
-    get_cross_fs_count,
-    build_file_sizes,
-    build_log_flags,
-    # Entry point
-    main,
 )
+
+
+def __getattr__(name):
+    """Lazy import attributes from file_matcher to avoid circular imports.
+
+    This allows `from filematcher.colors import X` to work from file_matcher.py
+    without triggering a circular import through the package __init__.py.
+    """
+    # Import file_matcher on-demand when accessing non-colors attributes
+    import file_matcher as _fm
+
+    # Map of attribute names to their source
+    _file_matcher_attrs = {
+        # Output formatters
+        'ActionFormatter': _fm.ActionFormatter,
+        'TextActionFormatter': _fm.TextActionFormatter,
+        'JsonActionFormatter': _fm.JsonActionFormatter,
+        # Structured output types
+        'SpaceInfo': _fm.SpaceInfo,
+        # Hashing functions
+        'get_file_hash': _fm.get_file_hash,
+        'get_sparse_hash': _fm.get_sparse_hash,
+        'create_hasher': _fm.create_hasher,
+        # Directory operations
+        'index_directory': _fm.index_directory,
+        'find_matching_files': _fm.find_matching_files,
+        'select_master_file': _fm.select_master_file,
+        # Action execution
+        'execute_action': _fm.execute_action,
+        'safe_replace_with_link': _fm.safe_replace_with_link,
+        'execute_all_actions': _fm.execute_all_actions,
+        'determine_exit_code': _fm.determine_exit_code,
+        # Filesystem helpers
+        'is_hardlink_to': _fm.is_hardlink_to,
+        'is_symlink_to': _fm.is_symlink_to,
+        'check_cross_filesystem': _fm.check_cross_filesystem,
+        'get_device_id': _fm.get_device_id,
+        'filter_hardlinked_duplicates': _fm.filter_hardlinked_duplicates,
+        'is_in_directory': _fm.is_in_directory,
+        # Audit logging
+        'create_audit_logger': _fm.create_audit_logger,
+        'log_operation': _fm.log_operation,
+        'write_log_header': _fm.write_log_header,
+        'write_log_footer': _fm.write_log_footer,
+        # Utilities
+        'format_file_size': _fm.format_file_size,
+        'calculate_space_savings': _fm.calculate_space_savings,
+        'confirm_execution': _fm.confirm_execution,
+        # Formatting helpers
+        'format_duplicate_group': _fm.format_duplicate_group,
+        'format_group_lines': _fm.format_group_lines,
+        'format_statistics_footer': _fm.format_statistics_footer,
+        'format_confirmation_prompt': _fm.format_confirmation_prompt,
+        # Constants
+        'PREVIEW_BANNER': _fm.PREVIEW_BANNER,
+        'EXECUTE_BANNER': _fm.EXECUTE_BANNER,
+        # Internal helpers (used by tests)
+        'select_oldest': _fm.select_oldest,
+        'build_file_hash_lookup': _fm.build_file_hash_lookup,
+        'get_cross_fs_for_hardlink': _fm.get_cross_fs_for_hardlink,
+        'get_cross_fs_count': _fm.get_cross_fs_count,
+        'build_file_sizes': _fm.build_file_sizes,
+        'build_log_flags': _fm.build_log_flags,
+        # Entry point
+        'main': _fm.main,
+    }
+
+    if name in _file_matcher_attrs:
+        return _file_matcher_attrs[name]
+
+    raise AttributeError(f"module 'filematcher' has no attribute '{name}'")
 
 __version__ = "1.1.0"
 
 __all__ = [
     # Version
     "__version__",
-    # Color system
+    # ANSI constants (from colors)
+    "RESET",
+    "GREEN",
+    "YELLOW",
+    "RED",
+    "CYAN",
+    "BOLD",
+    "DIM",
+    "BOLD_GREEN",
+    "BOLD_YELLOW",
+    # Color system classes
     "ColorMode",
     "ColorConfig",
     # Output formatters
