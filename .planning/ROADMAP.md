@@ -161,10 +161,11 @@ Plans:
   2. `from filematcher.actions import execute_action, safe_replace_with_link` works
   3. Action and filesystem tests pass without modification
   4. All 217 tests pass
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 13-01: TBD
+- [ ] 13-01-PLAN.md - Extract filesystem helpers to filematcher/filesystem.py
+- [ ] 13-02-PLAN.md - Extract action execution to filematcher/actions.py
 
 #### Phase 14: Extract Formatters and Directory
 **Goal**: Extract output formatters and directory operations modules
@@ -242,11 +243,11 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 10. Unify Compare as Action | v1.3 | 4/4 | Complete | 2026-01-23 |
 | 11. Package Scaffolding | v1.4 | 1/1 | Complete | 2026-01-27 |
 | 12. Foundation Modules | v1.4 | 2/2 | Complete | 2026-01-27 |
-| 13. Filesystem and Actions | v1.4 | 0/TBD | Not started | - |
+| 13. Filesystem and Actions | v1.4 | 0/2 | Planned | - |
 | 14. Formatters and Directory | v1.4 | 0/TBD | Not started | - |
 | 15. Logging and CLI | v1.4 | 0/TBD | Not started | - |
 | 16. Backward Compatibility | v1.4 | 0/TBD | Not started | - |
 | 17. Verification | v1.4 | 0/TBD | Not started | - |
 
 ---
-*Last updated: 2026-01-27 - Phase 12 complete*
+*Last updated: 2026-01-27 - Phase 13 planned*
