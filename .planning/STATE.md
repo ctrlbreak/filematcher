@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.4 Package Structure - Phase 15 next
+**Current focus:** v1.4 Package Structure - Phase 15 in progress
 
 ## Current Position
 
-Phase: 14 of 17 (Extract Formatters and Directory)
-Plan: 02 of 02 complete
-Status: Phase 14 complete
-Last activity: 2026-01-27 - Completed 14-02-PLAN.md (directory extraction)
+Phase: 15 of 17 (Extract CLI Module)
+Plan: 01 of 01 complete
+Status: Phase 15 complete
+Last activity: 2026-01-27 - Completed 15-01-PLAN.md (CLI extraction)
 
-Progress: [###############-----] 82% (14/17 phases complete)
+Progress: [################----] 88% (15/17 phases complete)
 
 ## Milestone Summary
 
@@ -28,6 +28,7 @@ Progress: [###############-----] 82% (14/17 phases complete)
 - Phase 12 complete: Foundation modules (colors.py, hashing.py)
 - Phase 13 complete: Filesystem and actions modules (filesystem.py, actions.py)
 - Phase 14 complete: Formatters and directory modules (formatters.py, directory.py)
+- Phase 15 complete: CLI module (cli.py), file_matcher.py now thin wrapper
 
 ### v1.3 Code Unification (shipped 2026-01-23)
 
@@ -47,7 +48,7 @@ Progress: [###############-----] 82% (14/17 phases complete)
 
 - Total tests: 217
 - All passing
-- Coverage: file_matcher.py fully tested
+- Coverage: filematcher package fully tested
 
 ## Accumulated Decisions
 
@@ -70,6 +71,9 @@ Progress: [###############-----] 82% (14/17 phases complete)
 | 14-01 | SpaceInfo moved to formatters.py | Part of formatter/output system, not core file matching |
 | 14-02 | Configure filematcher.directory logger in main() | Submodule has own logger that needs configuration for stderr output |
 | 14-02 | Direct import for directory module | Directory.py depends only on extracted modules (no circular risk) |
+| 15-01 | Direct import in __init__.py for CLI | All modules extracted, no circular import risk, __getattr__ removed |
+| 15-01 | Configure filematcher.cli logger in main() | Submodule has own logger that needs configuration |
+| 15-01 | Thin wrapper with wildcard re-export | file_matcher.py backward compatibility via from filematcher import * |
 
 ## Pending Todos
 
@@ -81,14 +85,15 @@ Progress: [###############-----] 82% (14/17 phases complete)
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 14-02-PLAN.md
+Stopped at: Completed 15-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Execute Phase 15: Extract CLI Module
-- Extract CLI argument parsing to filematcher/cli.py
-- Use `/gsd:plan-phase 15` to research and plan
+Execute Phase 16: Cleanup and Documentation
+- Remove any remaining dead code
+- Update documentation to reflect package structure
+- Use `/gsd:plan-phase 16` to research and plan
 
 ---
-*Last updated: 2026-01-27 - Phase 14 complete*
+*Last updated: 2026-01-27 - Phase 15 complete*
