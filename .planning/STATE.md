@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.4 Package Structure - Phase 13
+**Current focus:** v1.4 Package Structure - Phase 14
 
 ## Current Position
 
 Phase: 13 of 17 (Extract Filesystem and Actions)
-Plan: 1 of 2 complete
-Status: In progress - 13-01 complete, 13-02 remaining
-Last activity: 2026-01-27 - Completed 13-01-PLAN.md
+Plan: 2 of 2 complete
+Status: Phase complete
+Last activity: 2026-01-27 - Completed 13-02-PLAN.md
 
-Progress: [############--------] 71% (12/17 phases complete)
+Progress: [#############-------] 76% (13/17 phases complete)
 
 ## Milestone Summary
 
@@ -26,7 +26,7 @@ Progress: [############--------] 71% (12/17 phases complete)
 - Constraint: Full backward compatibility
 - Phase 11 complete: Package scaffolding with re-exports
 - Phase 12 complete: Foundation modules (colors.py, hashing.py)
-- Phase 13 in progress: Filesystem module extracted (13-01), actions remaining (13-02)
+- Phase 13 complete: Filesystem and actions modules (filesystem.py, actions.py)
 
 ### v1.3 Code Unification (shipped 2026-01-23)
 
@@ -62,6 +62,9 @@ Progress: [############--------] 71% (12/17 phases complete)
 | 12-02 | Removed hashing from __getattr__ | Since directly imported, no need in lazy loader |
 | 13-01 | Direct import for filesystem module | Like hashing, filesystem is pure leaf module with no circular import risk |
 | 13-01 | Removed filesystem from __getattr__ | Since directly imported, no need in lazy loader |
+| 13-02 | Direct import for actions module | Actions.py depends only on filesystem.py and stdlib |
+| 13-02 | Duplicated format_file_size in actions.py | Self-contained module, avoids importing from file_matcher.py |
+| 13-02 | Updated test patch paths | Tests must patch where function is defined, not where imported |
 
 ## Pending Todos
 
@@ -73,14 +76,14 @@ Progress: [############--------] 71% (12/17 phases complete)
 ## Session Continuity
 
 Last session: 2026-01-27
-Stopped at: Completed 13-01-PLAN.md
+Stopped at: Completed 13-02-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-Execute Phase 13 Plan 02: Extract Actions Module
-- Extract action execution to filematcher/actions.py
-- Use `/gsd:execute-phase 13 --plan 02`
+Plan Phase 14: Extract Directory Operations
+- Extract index_directory, find_matching_files, select_master_file to filematcher/directory.py
+- Use `/gsd:plan-phase 14`
 
 ---
-*Last updated: 2026-01-27 - Completed 13-01-PLAN.md*
+*Last updated: 2026-01-27 - Completed 13-02-PLAN.md*
