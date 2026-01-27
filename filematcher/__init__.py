@@ -105,6 +105,15 @@ from filematcher.formatters import (
     calculate_space_savings,
 )
 
+# Import from directory submodule (extracted module)
+# This import depends on hashing.py, actions.py, and filesystem.py
+from filematcher.directory import (
+    index_directory,
+    find_matching_files,
+    select_master_file,
+    select_oldest,
+)
+
 
 def __getattr__(name):
     """Lazy import attributes from file_matcher to avoid circular imports.
@@ -115,20 +124,19 @@ def __getattr__(name):
     Note: Formatters (ActionFormatter, TextActionFormatter, JsonActionFormatter,
     SpaceInfo, format_* functions, PREVIEW_BANNER, EXECUTE_BANNER) are now
     directly imported from filematcher.formatters above.
+
+    Note: Directory operations (index_directory, find_matching_files,
+    select_master_file, select_oldest) are now directly imported from
+    filematcher.directory above.
     """
     # Import file_matcher on-demand when accessing non-extracted attributes
     import file_matcher as _fm
 
     # Map of attribute names to their source (only items not yet extracted)
     _file_matcher_attrs = {
-        # Directory operations (not yet extracted)
-        'index_directory': _fm.index_directory,
-        'find_matching_files': _fm.find_matching_files,
-        'select_master_file': _fm.select_master_file,
         # Utilities (not yet extracted)
         'confirm_execution': _fm.confirm_execution,
         # Internal helpers (used by tests, not yet extracted)
-        'select_oldest': _fm.select_oldest,
         'build_file_hash_lookup': _fm.build_file_hash_lookup,
         'get_cross_fs_for_hardlink': _fm.get_cross_fs_for_hardlink,
         'get_cross_fs_count': _fm.get_cross_fs_count,
