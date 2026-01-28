@@ -62,7 +62,8 @@ def build_file_sizes(paths: list[str]) -> dict[str, int]:
     for p in paths:
         try:
             sizes[p] = os.path.getsize(p)
-        except OSError:
+        except OSError as e:
+            logger.debug(f"Could not get size for {p}: {e}")
             sizes[p] = 0
     return sizes
 

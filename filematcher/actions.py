@@ -170,7 +170,8 @@ def execute_all_actions(
 
         try:
             master_size = os.path.getsize(group.master_file)
-        except OSError:
+        except OSError as e:
+            logger.debug(f"Could not get size for master {group.master_file}: {e}")
             master_size = 0
 
         for dup in group.duplicates:
@@ -186,7 +187,8 @@ def execute_all_actions(
 
             try:
                 file_size = os.path.getsize(dup)
-            except OSError:
+            except OSError as e:
+                logger.debug(f"Could not get size for {dup}: {e}")
                 file_size = master_size
 
             success, error, actual_action = execute_action(

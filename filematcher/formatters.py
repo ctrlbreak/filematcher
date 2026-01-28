@@ -11,10 +11,13 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
+import logging
 import os
 import shutil
 import sys
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Import from colors module (color system and structured types)
 from filematcher.colors import (
@@ -261,7 +264,8 @@ class JsonActionFormatter(ActionFormatter):
             else:
                 try:
                     dup_obj["sizeBytes"] = os.path.getsize(dup)
-                except OSError:
+                except OSError as e:
+                    logger.debug(f"Could not get size for {dup}: {e}")
                     dup_obj["sizeBytes"] = 0
             if target_dir and dir2_base:
                 target_path = compute_target_path(dup, target_dir, dir2_base)
@@ -286,8 +290,8 @@ class JsonActionFormatter(ActionFormatter):
                         "sizeBytes": stat.st_size,
                         "modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
                     }
-                except OSError:
-                    pass
+                except OSError as e:
+                    logger.debug(f"Could not get metadata for {f}: {e}")
 
     def format_statistics(
         self,
@@ -377,8 +381,8 @@ class JsonActionFormatter(ActionFormatter):
                         "sizeBytes": stat.st_size,
                         "modified": datetime.fromtimestamp(stat.st_mtime, timezone.utc).isoformat()
                     }
-                except OSError:
-                    pass
+                except OSError as e:
+                    logger.debug(f"Could not get metadata for {f}: {e}")
 
     # No-ops for JSON mode
     def format_user_abort(self) -> None: pass

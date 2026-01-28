@@ -5,8 +5,11 @@ Provides utilities for detecting file relationships with graceful OSError handli
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 def get_device_id(path: str) -> int:
@@ -21,7 +24,8 @@ def check_cross_filesystem(master_file: str, duplicates: list[str]) -> set[str]:
 
     try:
         master_device = get_device_id(master_file)
-    except OSError:
+    except OSError as e:
+        logger.debug(f"Could not get device ID for master {master_file}: {e}")
         return set(duplicates)
 
     cross_fs = set()
@@ -29,7 +33,8 @@ def check_cross_filesystem(master_file: str, duplicates: list[str]) -> set[str]:
         try:
             if get_device_id(dup) != master_device:
                 cross_fs.add(dup)
-        except OSError:
+        except OSError as e:
+            logger.debug(f"Could not get device ID for {dup}: {e}")
             cross_fs.add(dup)
 
     return cross_fs
@@ -41,7 +46,8 @@ def is_hardlink_to(file1: str, file2: str) -> bool:
         stat1 = os.lstat(file1)
         stat2 = os.lstat(file2)
         return stat1.st_ino == stat2.st_ino and stat1.st_dev == stat2.st_dev
-    except OSError:
+    except OSError as e:
+        logger.debug(f"Could not stat files for hardlink check ({file1}, {file2}): {e}")
         return False
 
 
@@ -54,7 +60,8 @@ def is_symlink_to(duplicate: str, master: str) -> bool:
         resolved_target = dup_path.resolve()
         resolved_master = Path(master).resolve()
         return resolved_target == resolved_master
-    except OSError:
+    except OSError as e:
+        logger.debug(f"Could not check symlink status ({duplicate} -> {master}): {e}")
         return False
 
 
