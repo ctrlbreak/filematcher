@@ -269,7 +269,7 @@ class TestActionExecution(BaseFileMatcherTest):
         # Mock execute_action to fail for specific files
         call_count = [0]
 
-        def mock_execute_action(duplicate, master, action, fallback_symlink=False):
+        def mock_execute_action(duplicate, master, action, fallback_symlink=False, target_dir=None, dir2_base=None):
             call_count[0] += 1
             # Fail every other file
             if call_count[0] % 2 == 0:
@@ -391,6 +391,79 @@ class TestActionExecution(BaseFileMatcherTest):
         # Clean up
         os.unlink(hardlink_in_dir2)
         os.unlink(master_file)
+
+
+class TestTargetDirValidation(BaseFileMatcherTest):
+    """Tests for --target-dir CLI validation."""
+
+    def test_target_dir_requires_link_action(self):
+        """--target-dir rejected with delete or compare actions."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as target_dir:
+            # Test with delete action
+            stderr_capture = io.StringIO()
+            with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                    '--action', 'delete',
+                                    '--target-dir', target_dir]):
+                with redirect_stderr(stderr_capture):
+                    with self.assertRaises(SystemExit) as cm:
+                        main()
+                    self.assertEqual(cm.exception.code, 2)
+            error_output = stderr_capture.getvalue()
+            self.assertIn("--target-dir only applies to --action hardlink or --action symlink", error_output)
+
+            # Test with compare action
+            stderr_capture = io.StringIO()
+            with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                    '--action', 'compare',
+                                    '--target-dir', target_dir]):
+                with redirect_stderr(stderr_capture):
+                    with self.assertRaises(SystemExit) as cm:
+                        main()
+                    self.assertEqual(cm.exception.code, 2)
+            error_output = stderr_capture.getvalue()
+            self.assertIn("--target-dir only applies to --action hardlink or --action symlink", error_output)
+
+    def test_target_dir_requires_existing_directory(self):
+        """--target-dir rejected if directory doesn't exist."""
+        stderr_capture = io.StringIO()
+        with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                '--action', 'hardlink',
+                                '--target-dir', '/nonexistent/directory/path']):
+            with redirect_stderr(stderr_capture):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+                self.assertEqual(cm.exception.code, 2)
+        error_output = stderr_capture.getvalue()
+        self.assertIn("--target-dir must be an existing directory", error_output)
+
+    def test_target_dir_accepted_with_hardlink(self):
+        """--target-dir accepted with hardlink action."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as target_dir:
+            with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                    '--action', 'hardlink',
+                                    '--target-dir', target_dir]):
+                with patch('sys.stdin.isatty', return_value=False):
+                    f = io.StringIO()
+                    with redirect_stdout(f):
+                        exit_code = main()
+                    # Preview mode should succeed
+                    self.assertEqual(exit_code, 0)
+
+    def test_target_dir_accepted_with_symlink(self):
+        """--target-dir accepted with symlink action."""
+        import tempfile
+        with tempfile.TemporaryDirectory() as target_dir:
+            with patch('sys.argv', ['filematcher', self.test_dir1, self.test_dir2,
+                                    '--action', 'symlink',
+                                    '--target-dir', target_dir]):
+                with patch('sys.stdin.isatty', return_value=False):
+                    f = io.StringIO()
+                    with redirect_stdout(f):
+                        exit_code = main()
+                    # Preview mode should succeed
+                    self.assertEqual(exit_code, 0)
 
 
 class TestFormatterEdgeCases(BaseFileMatcherTest):

@@ -285,11 +285,11 @@ class TestExecuteAllActions(unittest.TestCase):
         call_count = [0]
         original_execute = execute_action
 
-        def mock_execute(dup, master, action, fallback_symlink=False):
+        def mock_execute(dup, master, action, fallback_symlink=False, target_dir=None, dir2_base=None):
             call_count[0] += 1
             if call_count[0] == 1:
                 return (False, "Mocked error", action)
-            return original_execute(dup, master, action, fallback_symlink)
+            return original_execute(dup, master, action, fallback_symlink, target_dir, dir2_base)
 
         with patch('filematcher.actions.execute_action', side_effect=mock_execute):
             success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
@@ -465,6 +465,135 @@ class TestAuditLogging(unittest.TestCase):
         logger, _ = create_audit_logger(log_path)
         # Check propagate is False
         self.assertFalse(logger.propagate)
+
+
+class TestTargetDir(unittest.TestCase):
+    """Tests for --target-dir functionality."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.master_dir = Path(self.temp_dir) / "master"
+        self.dup_dir = Path(self.temp_dir) / "dups"
+        self.target_dir = Path(self.temp_dir) / "target"
+        self.master_dir.mkdir()
+        self.dup_dir.mkdir()
+        self.target_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def test_hardlink_to_target_dir(self):
+        """Hardlink created in target-dir, original deleted."""
+        master = self.master_dir / "file.txt"
+        dup = self.dup_dir / "file.txt"
+        master.write_text("content")
+        dup.write_text("content")
+
+        success, error, action = execute_action(
+            str(dup), str(master), "hardlink",
+            target_dir=str(self.target_dir),
+            dir2_base=str(self.dup_dir)
+        )
+
+        self.assertTrue(success)
+        self.assertEqual(error, "")
+        target_file = self.target_dir / "file.txt"
+        self.assertTrue(target_file.exists())
+        self.assertFalse(dup.exists())
+        self.assertTrue(is_hardlink_to(str(master), str(target_file)))
+
+    def test_symlink_to_target_dir(self):
+        """Symlink created in target-dir, original deleted."""
+        master = self.master_dir / "file.txt"
+        dup = self.dup_dir / "file.txt"
+        master.write_text("content")
+        dup.write_text("content")
+
+        success, error, action = execute_action(
+            str(dup), str(master), "symlink",
+            target_dir=str(self.target_dir),
+            dir2_base=str(self.dup_dir)
+        )
+
+        self.assertTrue(success)
+        self.assertEqual(error, "")
+        target_file = self.target_dir / "file.txt"
+        self.assertTrue(target_file.is_symlink())
+        self.assertFalse(dup.exists())
+        self.assertEqual(target_file.resolve(), master.resolve())
+
+    def test_preserves_subdirectory_structure(self):
+        """Nested paths in dir2 are preserved in target-dir."""
+        subdir = self.dup_dir / "sub" / "dir"
+        subdir.mkdir(parents=True)
+        master = self.master_dir / "file.txt"
+        dup = subdir / "file.txt"
+        master.write_text("content")
+        dup.write_text("content")
+
+        success, error, action = execute_action(
+            str(dup), str(master), "hardlink",
+            target_dir=str(self.target_dir),
+            dir2_base=str(self.dup_dir)
+        )
+
+        self.assertTrue(success)
+        target_file = self.target_dir / "sub" / "dir" / "file.txt"
+        self.assertTrue(target_file.exists())
+        self.assertFalse(dup.exists())
+
+    def test_target_dir_creates_parent_directories(self):
+        """Parent directories created automatically if they don't exist."""
+        subdir = self.dup_dir / "deep" / "nested" / "path"
+        subdir.mkdir(parents=True)
+        master = self.master_dir / "file.txt"
+        dup = subdir / "file.txt"
+        master.write_text("content")
+        dup.write_text("content")
+
+        success, error, action = execute_action(
+            str(dup), str(master), "hardlink",
+            target_dir=str(self.target_dir),
+            dir2_base=str(self.dup_dir)
+        )
+
+        self.assertTrue(success)
+        target_file = self.target_dir / "deep" / "nested" / "path" / "file.txt"
+        self.assertTrue(target_file.exists())
+        self.assertTrue(is_hardlink_to(str(master), str(target_file)))
+
+    def test_target_dir_not_under_dir2_fails(self):
+        """Duplicate not under dir2_base returns error."""
+        master = self.master_dir / "file.txt"
+        dup = self.master_dir / "other_file.txt"  # Not under dup_dir
+        master.write_text("content")
+        dup.write_text("content")
+
+        success, error, action = execute_action(
+            str(dup), str(master), "hardlink",
+            target_dir=str(self.target_dir),
+            dir2_base=str(self.dup_dir)
+        )
+
+        self.assertFalse(success)
+        self.assertIn("not under dir2", error)
+
+    def test_without_target_dir_behaves_normally(self):
+        """Without target_dir parameter, in-place linking works normally."""
+        master = self.master_dir / "file.txt"
+        dup = self.dup_dir / "file.txt"
+        master.write_text("content")
+        dup.write_text("content")
+
+        success, error, action = execute_action(
+            str(dup), str(master), "hardlink",
+            target_dir=None,
+            dir2_base=None
+        )
+
+        self.assertTrue(success)
+        self.assertTrue(dup.exists())  # Original location still exists
+        self.assertTrue(is_hardlink_to(str(master), str(dup)))
 
 
 if __name__ == "__main__":
