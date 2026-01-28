@@ -58,6 +58,9 @@ from filematcher.hashing import (
     create_hasher,
     get_file_hash,
     get_sparse_hash,
+    LARGE_FILE_THRESHOLD,
+    SPARSE_SAMPLE_SIZE,
+    READ_CHUNK_SIZE,
 )
 
 # Import from filesystem submodule (extracted module)
@@ -71,8 +74,14 @@ from filematcher.filesystem import (
     is_in_directory,
 )
 
+# Import from types submodule (shared type definitions)
+from filematcher.types import (
+    DuplicateGroup,
+    FailedOperation,
+)
+
 # Import from actions submodule (extracted module)
-# This import is safe - actions.py depends only on filesystem.py and stdlib
+# This import is safe - actions.py depends only on filesystem.py, types.py, and stdlib
 from filematcher.actions import (
     format_file_size,
     safe_replace_with_link,
@@ -151,6 +160,8 @@ __all__ = [
     # Structured output types
     "GroupLine",
     "SpaceInfo",
+    "DuplicateGroup",
+    "FailedOperation",
     # Color helper functions
     "colorize",
     "green",
@@ -171,6 +182,10 @@ __all__ = [
     "get_file_hash",
     "get_sparse_hash",
     "create_hasher",
+    # Hashing constants
+    "LARGE_FILE_THRESHOLD",
+    "SPARSE_SAMPLE_SIZE",
+    "READ_CHUNK_SIZE",
     # Directory operations
     "index_directory",
     "find_matching_files",

@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from filematcher.filesystem import is_hardlink_to, is_symlink_to
+from filematcher.types import DuplicateGroup, FailedOperation
 
 logger = logging.getLogger(__name__)
 
@@ -56,8 +57,8 @@ def safe_replace_with_link(duplicate: Path, master: Path, action: str) -> tuple[
     except OSError as e:
         try:
             temp_path.rename(duplicate)
-        except OSError:
-            pass
+        except OSError as rollback_err:
+            logger.error(f"CRITICAL: Rollback failed for {duplicate}, temp file left as {temp_path}: {rollback_err}")
         return (False, f"Failed to create {action}: {e}")
 
 
@@ -105,8 +106,8 @@ def execute_action(
             if target_path.exists() or target_path.is_symlink():
                 try:
                     target_path.unlink()
-                except OSError:
-                    pass
+                except OSError as cleanup_err:
+                    logger.warning(f"Could not clean up partial target {target_path}: {cleanup_err}")
             return (False, f"Failed to create {action} in target dir: {e}", action)
 
     if action == 'hardlink':
@@ -143,7 +144,7 @@ def determine_exit_code(success_count: int, failure_count: int) -> int:
 
 
 def execute_all_actions(
-    duplicate_groups: list[tuple[str, list[str], str, str]],
+    duplicate_groups: list[DuplicateGroup],
     action: str,
     fallback_symlink: bool = False,
     verbose: bool = False,
@@ -151,28 +152,28 @@ def execute_all_actions(
     file_hashes: dict[str, str] | None = None,
     target_dir: str | None = None,
     dir2_base: str | None = None
-) -> tuple[int, int, int, int, list[tuple[str, str]]]:
+) -> tuple[int, int, int, int, list[FailedOperation]]:
     """Process all duplicate groups with continue-on-error. Returns (success, fail, skip, bytes, failed_list)."""
     success_count = 0
     failure_count = 0
     skipped_count = 0
     space_saved = 0
-    failed_list: list[tuple[str, str]] = []
+    failed_list: list[FailedOperation] = []
 
-    total_duplicates = sum(len(dups) for _, dups, _, _ in duplicate_groups)
+    total_duplicates = sum(len(group.duplicates) for group in duplicate_groups)
     processed = 0
 
-    for master_file, duplicates, _reason, _hash in duplicate_groups:
-        if not os.path.exists(master_file):
-            logger.warning(f"Master file missing, skipping group: {master_file}")
+    for group in duplicate_groups:
+        if not os.path.exists(group.master_file):
+            logger.warning(f"Master file missing, skipping group: {group.master_file}")
             continue
 
         try:
-            master_size = os.path.getsize(master_file)
+            master_size = os.path.getsize(group.master_file)
         except OSError:
             master_size = 0
 
-        for dup in duplicates:
+        for dup in group.duplicates:
             processed += 1
 
             if verbose:
@@ -189,13 +190,13 @@ def execute_all_actions(
                 file_size = master_size
 
             success, error, actual_action = execute_action(
-                dup, master_file, action, fallback_symlink,
+                dup, group.master_file, action, fallback_symlink,
                 target_dir=target_dir, dir2_base=dir2_base
             )
 
             if audit_logger:
                 file_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
-                log_operation(audit_logger, actual_action, dup, master_file, file_size, file_hash, success, error)
+                log_operation(audit_logger, actual_action, dup, group.master_file, file_size, file_hash, success, error)
 
             if actual_action == "skipped":
                 skipped_count += 1
@@ -204,7 +205,7 @@ def execute_all_actions(
                 space_saved += file_size
             else:
                 failure_count += 1
-                failed_list.append((dup, error))
+                failed_list.append(FailedOperation(dup, error))
 
     return (success_count, failure_count, skipped_count, space_saved, failed_list)
 
@@ -288,7 +289,7 @@ def write_log_footer(
     failure_count: int,
     skipped_count: int,
     space_saved: int,
-    failed_list: list[tuple[str, str]]
+    failed_list: list[FailedOperation]
 ) -> None:
     """Write footer block to audit log with summary statistics."""
     total = success_count + failure_count + skipped_count
@@ -307,7 +308,7 @@ def write_log_footer(
     if failed_list:
         audit_logger.info("")
         audit_logger.info("Failed files:")
-        for path, err in failed_list:
-            audit_logger.info(f"  - {path}: {err}")
+        for failure in failed_list:
+            audit_logger.info(f"  - {failure.file_path}: {failure.error_message}")
 
     audit_logger.info("=" * 80)

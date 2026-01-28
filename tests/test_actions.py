@@ -24,6 +24,8 @@ from filematcher import (
     log_operation,
     write_log_header,
     write_log_footer,
+    DuplicateGroup,
+    FailedOperation,
 )
 
 
@@ -255,8 +257,8 @@ class TestExecuteAllActions(unittest.TestCase):
         dup2.write_text("content2")
 
         groups = [
-            (str(master1), [str(dup1)], "test", "hash1"),
-            (str(master2), [str(dup2)], "test", "hash2"),
+            DuplicateGroup(str(master1), [str(dup1)], "test", "hash1"),
+            DuplicateGroup(str(master2), [str(dup2)], "test", "hash2"),
         ]
 
         success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
@@ -277,8 +279,8 @@ class TestExecuteAllActions(unittest.TestCase):
         dup2.write_text("content2")
 
         groups = [
-            (str(master1), [str(dup1)], "test", "hash1"),
-            (str(master2), [str(dup2)], "test", "hash2"),
+            DuplicateGroup(str(master1), [str(dup1)], "test", "hash1"),
+            DuplicateGroup(str(master2), [str(dup2)], "test", "hash2"),
         ]
 
         # Mock first call to fail
@@ -305,7 +307,7 @@ class TestExecuteAllActions(unittest.TestCase):
         master.write_text("content")
         missing_dup = str(self.dup_dir / "nonexistent.txt")
 
-        groups = [(str(master), [missing_dup], "test", "hash1")]
+        groups = [DuplicateGroup(str(master), [missing_dup], "test", "hash1")]
 
         success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
         self.assertEqual(skipped, 1)
@@ -317,7 +319,7 @@ class TestExecuteAllActions(unittest.TestCase):
         dup = self.dup_dir / "dup.txt"
         dup.write_text("content")
 
-        groups = [(missing_master, [str(dup)], "test", "hash1")]
+        groups = [DuplicateGroup(missing_master, [str(dup)], "test", "hash1")]
 
         success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
         # Entire group skipped, not counted as failure
@@ -331,7 +333,7 @@ class TestExecuteAllActions(unittest.TestCase):
         dup = self.dup_dir / "dup.txt"
         dup.hardlink_to(master)  # Already linked
 
-        groups = [(str(master), [str(dup)], "test", "hash1")]
+        groups = [DuplicateGroup(str(master), [str(dup)], "test", "hash1")]
 
         success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
         self.assertEqual(skipped, 1)
@@ -344,7 +346,7 @@ class TestExecuteAllActions(unittest.TestCase):
         dup = self.dup_dir / "dup.txt"
         dup.write_text("content")
 
-        groups = [(str(master), [str(dup)], "test", "hash1")]
+        groups = [DuplicateGroup(str(master), [str(dup)], "test", "hash1")]
 
         with patch('filematcher.actions.execute_action', return_value=(False, "Test error", "hardlink")):
             success, failure, skipped, space_saved, failed_list = execute_all_actions(groups, "hardlink")
@@ -426,7 +428,7 @@ class TestAuditLogging(unittest.TestCase):
         """Log footer contains summary statistics."""
         log_path = Path(self.temp_dir) / "test.log"
         logger, _ = create_audit_logger(log_path)
-        write_log_footer(logger, 10, 2, 1, 1024000, [("/fail1.txt", "Error 1"), ("/fail2.txt", "Error 2")])
+        write_log_footer(logger, 10, 2, 1, 1024000, [FailedOperation("/fail1.txt", "Error 1"), FailedOperation("/fail2.txt", "Error 2")])
         for handler in logger.handlers:
             handler.flush()
         content = log_path.read_text()

@@ -16,6 +16,7 @@ from filematcher.actions import (
     create_audit_logger, write_log_header, log_operation, write_log_footer,
     execute_all_actions, determine_exit_code,
 )
+from filematcher.types import DuplicateGroup
 from filematcher.formatters import (
     SpaceInfo, TextActionFormatter, JsonActionFormatter, ActionFormatter,
     format_confirmation_prompt, calculate_space_savings,
@@ -156,16 +157,15 @@ def main() -> int:
 
     handler = logging.StreamHandler(sys.stderr)
     handler.setFormatter(logging.Formatter('%(message)s'))
-    logger.handlers = [handler]
-    logger.setLevel(log_level)
 
-    directory_logger = logging.getLogger('filematcher.directory')
-    directory_logger.handlers = [handler]
-    directory_logger.setLevel(log_level)
-
-    cli_logger = logging.getLogger('filematcher.cli')
-    cli_logger.handlers = [handler]
-    cli_logger.setLevel(log_level)
+    # Configure filematcher loggers for CLI use
+    # Clear and set to ensure correct output stream (especially important across test runs)
+    for log in [logger,
+                logging.getLogger('filematcher.directory'),
+                logging.getLogger('filematcher.cli')]:
+        log.handlers.clear()
+        log.addHandler(handler)
+        log.setLevel(log_level)
 
     color_mode = determine_color_mode(args)
     color_config = ColorConfig(mode=color_mode, stream=sys.stdout)
@@ -208,7 +208,7 @@ def main() -> int:
             total_already_hardlinked += len(hardlinked_dups)
 
             if actionable_dups:
-                master_results.append((master_file, actionable_dups, reason, file_hash))
+                master_results.append(DuplicateGroup(master_file, actionable_dups, reason, file_hash))
                 total_masters += 1
                 total_duplicates += len(actionable_dups)
 

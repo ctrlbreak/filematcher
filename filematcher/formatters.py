@@ -29,6 +29,8 @@ from filematcher.colors import (
     terminal_rows_for_line,
 )
 
+from filematcher.types import DuplicateGroup, FailedOperation
+
 # Import from actions module (file size formatting)
 from filematcher.actions import format_file_size
 
@@ -137,7 +139,7 @@ class ActionFormatter(ABC):
         skipped_count: int,
         space_saved: int,
         log_path: str,
-        failed_list: list[tuple[str, str]]
+        failed_list: list[FailedOperation]
     ) -> None:
         """Output execution summary after actions complete."""
         ...
@@ -312,7 +314,7 @@ class JsonActionFormatter(ActionFormatter):
         skipped_count: int,
         space_saved: int,
         log_path: str,
-        failed_list: list[tuple[str, str]]
+        failed_list: list[FailedOperation]
     ) -> None:
         failures = [
             {"path": path, "error": error}
@@ -579,7 +581,7 @@ class TextActionFormatter(ActionFormatter):
         skipped_count: int,
         space_saved: int,
         log_path: str,
-        failed_list: list[tuple[str, str]]
+        failed_list: list[FailedOperation]
     ) -> None:
         print()
         print("Execution complete:")
@@ -785,7 +787,7 @@ def format_statistics_footer(
 
 
 def calculate_space_savings(
-    duplicate_groups: list[tuple[str, list[str], str, str]]
+    duplicate_groups: list[DuplicateGroup]
 ) -> SpaceInfo:
     """Calculate space that would be saved by deduplication."""
     if not duplicate_groups:
