@@ -56,7 +56,6 @@ Progress: [####################] 100% (17/17 phases through v1.4)
 ## Pending Todos
 
 1. **Update JSON output header to object format** (output) - Consider `{"header": {"name": "filematcher"}}` (future)
-2. **Codebase cleanup - fix antipatterns and improvements** (code-quality) - Critical bugs, architecture issues, and polish items identified in code analysis
 
 ## Session Continuity
 
