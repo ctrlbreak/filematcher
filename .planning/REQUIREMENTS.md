@@ -12,7 +12,7 @@ Requirements for package structure refactoring. Each maps to roadmap phases.
 - [x] **PKG-01**: Create `filematcher/` package directory with `__init__.py`
 - [x] **PKG-02**: Add `__main__.py` enabling `python -m filematcher` invocation
 - [x] **PKG-03**: Update pyproject.toml entry point to `filematcher.cli:main`
-- [ ] **PKG-04**: No circular imports between modules
+- [x] **PKG-04**: No circular imports between modules
 
 ### Module Organization
 
@@ -34,9 +34,9 @@ Requirements for package structure refactoring. Each maps to roadmap phases.
 
 ### Test Migration
 
-- [ ] **TEST-01**: All 217 tests pass after refactoring
-- [ ] **TEST-02**: Test imports updated to `from filematcher import X` pattern
-- [ ] **TEST-03**: No major test file rewrites required (import changes only)
+- [x] **TEST-01**: All 218 tests pass after refactoring (217 original + 1 circular import test)
+- [x] **TEST-02**: Test imports updated to `from filematcher import X` pattern
+- [x] **TEST-03**: No major test file rewrites required (import changes only)
 
 ## Future Requirements
 
@@ -73,7 +73,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PKG-01 | Phase 11 | Complete |
 | PKG-02 | Phase 11 | Complete |
 | PKG-03 | Phase 15 | Complete |
-| PKG-04 | Phase 17 | Pending |
+| PKG-04 | Phase 17 | Complete |
 | MOD-01 | Phase 12 | Complete |
 | MOD-02 | Phase 12 | Complete |
 | MOD-03 | Phase 13 | Complete |
@@ -86,9 +86,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COMPAT-02 | Phase 16 | Complete |
 | COMPAT-03 | Phase 16 | Complete |
 | COMPAT-04 | Phase 16 | Complete |
-| TEST-01 | Phase 17 | Pending |
-| TEST-02 | Phase 17 | Pending |
-| TEST-03 | Phase 17 | Pending |
+| TEST-01 | Phase 17 | Complete |
+| TEST-02 | Phase 17 | Complete |
+| TEST-03 | Phase 17 | Complete |
 
 **Coverage:**
 - v1.4 requirements: 19 total
@@ -97,4 +97,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-01-27*
-*Last updated: 2026-01-27 - Phase 16 COMPAT requirements complete*
+*Last updated: 2026-01-28 - All v1.4 requirements complete*

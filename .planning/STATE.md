@@ -95,7 +95,9 @@ Resume file: None
 
 ## Next Steps
 
-v1.4 Package Structure milestone is complete. Potential future work:
+v1.4 Package Structure milestone is complete. Run `/gsd:audit-milestone` to verify all requirements and cross-phase integration before archiving.
+
+Potential future work:
 - Consider v1.5 milestone for performance improvements
 - Address pending todos (JSON header format, verbose execution output)
 - Monitor user feedback for feature requests

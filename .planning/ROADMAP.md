@@ -4,7 +4,7 @@
 
 - v1.1 Deduplication - Phases 1-4 (shipped 2026-01-20)
 - v1.3 Code Unification - Phases 5-10 (shipped 2026-01-23)
-- **v1.4 Package Structure** - Phases 11-17 (in progress)
+- **v1.4 Package Structure** - Phases 11-17 (shipped 2026-01-28)
 
 ## Phases
 
@@ -118,7 +118,7 @@ Plans:
 
 </details>
 
-### v1.4 Package Structure (In Progress)
+### v1.4 Package Structure (SHIPPED 2026-01-28)
 
 **Milestone Goal:** Refactor single-file implementation to package structure for better code navigation and AI tooling compatibility while maintaining full backward compatibility.
 
@@ -225,9 +225,10 @@ Plans:
   2. No circular imports (verified via fresh Python subprocess)
   3. Package imports cleanly from fresh venv
 **Plans**: 1 plan
+**Completed**: 2026-01-28
 
 Plans:
-- [ ] 17-01-PLAN.md - Update test imports to filematcher package
+- [x] 17-01-PLAN.md - Update test imports to filematcher package
 
 ## Progress
 
@@ -252,7 +253,7 @@ Phases execute in numeric order: 11 -> 12 -> 13 -> 14 -> 15 -> 16 -> 17
 | 14. Formatters and Directory | v1.4 | 2/2 | Complete | 2026-01-27 |
 | 15. Logging and CLI | v1.4 | 1/1 | Complete | 2026-01-27 |
 | 16. Backward Compatibility | v1.4 | 1/1 | Complete | 2026-01-27 |
-| 17. Verification | v1.4 | 0/1 | Not started | - |
+| 17. Verification | v1.4 | 1/1 | Complete | 2026-01-28 |
 
 ---
-*Last updated: 2026-01-27 - Phase 17 planned*
+*Last updated: 2026-01-28 - v1.4 Package Structure milestone complete*
