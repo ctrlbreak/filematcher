@@ -432,5 +432,98 @@ class TestCrossFilesystemWarnings(BaseFileMatcherTest):
                 self.assertNotIn("[!cross-fs]", output)
 
 
+class TestIsInDirectory(unittest.TestCase):
+    """Tests for is_in_directory() function - verifies path boundary checking."""
+
+    def test_file_in_directory(self):
+        """File directly in directory returns True."""
+        from filematcher import is_in_directory
+        self.assertTrue(is_in_directory("/tmp/mydir/file.txt", "/tmp/mydir"))
+
+    def test_file_in_subdirectory(self):
+        """File in subdirectory returns True."""
+        from filematcher import is_in_directory
+        self.assertTrue(is_in_directory("/tmp/mydir/sub/file.txt", "/tmp/mydir"))
+
+    def test_file_not_in_directory(self):
+        """File in different directory returns False."""
+        from filematcher import is_in_directory
+        self.assertFalse(is_in_directory("/tmp/other/file.txt", "/tmp/mydir"))
+
+    def test_prefix_collision_rejected(self):
+        """Directory with similar prefix but different path is rejected.
+
+        This is a regression test for a bug where /tmp/test_dir1/file.txt
+        would incorrectly match /tmp/test_dir because of naive startswith().
+        """
+        from filematcher import is_in_directory
+        # /tmp/test_dir1 should NOT be considered inside /tmp/test_dir
+        self.assertFalse(is_in_directory("/tmp/test_dir1/file.txt", "/tmp/test_dir"))
+        self.assertFalse(is_in_directory("/tmp/test_dir123/file.txt", "/tmp/test_dir"))
+        self.assertFalse(is_in_directory("/tmp/test_dir_extra/file.txt", "/tmp/test_dir"))
+
+    def test_exact_directory_match(self):
+        """File path equal to directory itself returns True."""
+        from filematcher import is_in_directory
+        # A directory is considered "in" itself
+        self.assertTrue(is_in_directory("/tmp/mydir", "/tmp/mydir"))
+
+    def test_trailing_slash_handling(self):
+        """Handles directories with and without trailing slashes."""
+        from filematcher import is_in_directory
+        self.assertTrue(is_in_directory("/tmp/mydir/file.txt", "/tmp/mydir/"))
+        self.assertTrue(is_in_directory("/tmp/mydir/file.txt", "/tmp/mydir"))
+
+
+class TestIsHardlinkToSymlinkHandling(unittest.TestCase):
+    """Tests that is_hardlink_to() correctly handles symlinks.
+
+    Regression test: is_hardlink_to() previously used os.stat() which follows
+    symlinks. A symlink would incorrectly report as a hardlink because both
+    paths resolve to the same inode. Now uses os.lstat() to check the actual
+    file, not the symlink target.
+    """
+
+    def setUp(self):
+        import tempfile
+        import shutil
+        self._shutil = shutil
+        self.temp_dir = tempfile.mkdtemp()
+        self.original_file = os.path.join(self.temp_dir, "original.txt")
+        with open(self.original_file, "w") as f:
+            f.write("content")
+
+    def tearDown(self):
+        self._shutil.rmtree(self.temp_dir)
+
+    def test_symlink_not_detected_as_hardlink(self):
+        """Symlink to a file should NOT be detected as a hardlink."""
+        symlink_path = os.path.join(self.temp_dir, "symlink.txt")
+        os.symlink(self.original_file, symlink_path)
+
+        # The symlink points to the original, but they are NOT hardlinks
+        self.assertFalse(is_hardlink_to(self.original_file, symlink_path))
+        self.assertFalse(is_hardlink_to(symlink_path, self.original_file))
+
+    def test_hardlink_still_detected(self):
+        """Actual hardlinks should still be detected correctly."""
+        hardlink_path = os.path.join(self.temp_dir, "hardlink.txt")
+        os.link(self.original_file, hardlink_path)
+
+        self.assertTrue(is_hardlink_to(self.original_file, hardlink_path))
+        self.assertTrue(is_hardlink_to(hardlink_path, self.original_file))
+
+    def test_symlink_to_hardlink_not_detected_as_hardlink(self):
+        """Symlink pointing to a hardlink should not be detected as hardlink."""
+        hardlink_path = os.path.join(self.temp_dir, "hardlink.txt")
+        os.link(self.original_file, hardlink_path)
+
+        symlink_path = os.path.join(self.temp_dir, "symlink.txt")
+        os.symlink(hardlink_path, symlink_path)
+
+        # symlink -> hardlink, but symlink itself is not a hardlink
+        self.assertFalse(is_hardlink_to(self.original_file, symlink_path))
+
+
 if __name__ == "__main__":
     unittest.main() 
