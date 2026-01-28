@@ -1,5 +1,34 @@
 # Project Milestones: File Matcher
 
+## v1.4.0 Package Structure (Shipped: 2026-01-28)
+
+**Delivered:** Refactored 2,455-line monolith to 8-module filematcher/ package with acyclic dependency hierarchy, full backward compatibility, and no circular imports.
+
+**Phases completed:** 11-17 (10 plans total)
+
+**Key accomplishments:**
+
+- Package scaffolding with 67 re-exports and `python -m filematcher` support
+- 8 logical modules: colors.py, hashing.py, filesystem.py, actions.py, formatters.py, directory.py, cli.py
+- Full backward compatibility: `python file_matcher.py`, `filematcher` command, all imports work
+- Thin wrapper pattern: file_matcher.py reduced from 2,455 to 26 lines
+- Test migration: 218 tests pass with filematcher package imports
+- Circular import verification via subprocess testing
+
+**Stats:**
+
+- 2,220 lines of Python (filematcher package + wrapper)
+- 218 tests (217 original + 1 circular import test)
+- 7 phases, 10 plans
+- 68 files changed, 12,065 insertions, 3,483 deletions
+- 2 days (2026-01-27 → 2026-01-28)
+
+**Git range:** `v1.3.0` → `v1.4.0`
+
+**What's next:** Consider v1.5 for performance improvements, verbose execution output, or JSON header format update.
+
+---
+
 ## v1.3.0 Code Unification (Shipped: 2026-01-23)
 
 **Delivered:** Unified output architecture with JSON output for scripting, TTY-aware color, and single formatter hierarchy eliminating 513 lines of duplicate code.

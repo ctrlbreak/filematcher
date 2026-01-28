@@ -2,17 +2,44 @@
 
 ## What This Is
 
-A Python CLI utility that finds files with identical content across two directory hierarchies and deduplicates them using hard links, symbolic links, or deletion. Features preview-by-default safety, master directory protection, comprehensive audit logging, JSON output for scripting, and TTY-aware color output.
+A Python CLI utility that finds files with identical content across two directory hierarchies and deduplicates them using hard links, symbolic links, or deletion. Features preview-by-default safety, master directory protection, comprehensive audit logging, JSON output for scripting, and TTY-aware color output. Implemented as a proper Python package (filematcher/) with full backward compatibility.
 
 ## Core Value
 
 Safely deduplicate files across directories while preserving the master copy and logging all changes.
 
+## Current State
+
+**Shipped:** v1.4.0 (2026-01-28)
+
+Architecture: filematcher/ package with 8 modules and thin file_matcher.py wrapper for backward compatibility.
+
+```
+filematcher/
+  __init__.py     (216 lines - 67 re-exports)
+  __main__.py     (7 lines - python -m entry point)
+  cli.py          (614 lines - CLI entry point)
+  colors.py       (328 lines - ANSI colors, ColorConfig)
+  hashing.py      (139 lines - MD5/SHA-256, sparse sampling)
+  filesystem.py   (158 lines - hardlink/symlink detection)
+  actions.py      (437 lines - action execution, audit logging)
+  formatters.py   (1174 lines - Text/JSON formatters)
+  directory.py    (207 lines - directory indexing)
+
+file_matcher.py   (26 lines - backward compat wrapper)
+```
+
+**Tech stack:**
+- argparse for CLI
+- hashlib for content hashing
+- pathlib for file operations
+- os.link/symlink for deduplication actions
+- logging module for audit trails
+- ActionFormatter ABC with Text/JSON implementations
+
 ## Requirements
 
 ### Validated
-
-<!-- Shipped and confirmed working. -->
 
 - ✓ Find files with identical content across two directories — v1.1
 - ✓ Compare files using content hashing (MD5 or SHA-256) — v1.1
@@ -35,19 +62,16 @@ Safely deduplicate files across directories while preserving the master copy and
 - ✓ TTY-aware color output with `--color`/`--no-color` flags — v1.3
 - ✓ Progress to stderr, data to stdout (Unix convention) — v1.3
 - ✓ Deterministic output ordering — v1.3
+- ✓ filematcher/ package structure with 8 logical modules — v1.4
+- ✓ Backward compatibility for `python file_matcher.py` invocation — v1.4
+- ✓ Pip install functionality (`filematcher` command) — v1.4
+- ✓ All 218 tests pass with package imports — v1.4
 
 ### Active
 
-<!-- Current scope. Building toward these. -->
-
-- [ ] Split file_matcher.py into filematcher/ package structure — v1.4
-- [ ] Maintain backward compatibility for `python file_matcher.py` invocation — v1.4
-- [ ] Maintain pip install functionality (`filematcher` command) — v1.4
-- [ ] All existing tests pass without major rewrites — v1.4
+(No active requirements — milestone just shipped)
 
 ### Out of Scope
-
-<!-- Explicit boundaries. Includes reasoning to prevent re-adding. -->
 
 - Merging directories — tool compares, doesn't reorganize
 - Renaming files to match master — links preserve original names
@@ -58,25 +82,6 @@ Safely deduplicate files across directories while preserving the master copy and
 - CSV/XML output — JSON is more flexible; CSV can be derived from JSON with jq
 - Interactive output selection — flags are sufficient
 - Progress bars — current verbose mode sufficient; adds dependency complexity
-
-## Context
-
-**Current state:** v1.4 milestone — refactoring to package structure.
-
-- 2,455 lines Python (file_matcher.py)
-- 217 tests, all passing
-- Pure Python standard library (no external dependencies)
-- Python 3.9+ compatibility
-
-**Architecture:** Single-file implementation (`file_matcher.py`) being refactored to `filematcher/` package with ActionFormatter hierarchy for all output modes (compare, hardlink, symlink, delete). CLI parsing via argparse, logging via standard library.
-
-**Tech stack:**
-- argparse for CLI
-- hashlib for content hashing
-- pathlib for file operations
-- os.link/symlink for deduplication actions
-- logging module for audit trails
-- ActionFormatter ABC with Text/JSON implementations
 
 ## Constraints
 
@@ -100,15 +105,17 @@ Safely deduplicate files across directories while preserving the master copy and
 | stderr for progress/status | Unix convention enables clean piping of data output | ✓ Good |
 | 16-color ANSI codes | Maximum terminal compatibility vs 256-color/truecolor | ✓ Good |
 | NO_COLOR environment support | Industry standard (no-color.org) for accessibility | ✓ Good |
+| Re-export all symbols from package | Full backward compatibility during/after migration | ✓ Good |
+| Direct imports for leaf modules | No circular import risk for hashing, filesystem, colors | ✓ Good |
+| Thin wrapper pattern | file_matcher.py re-exports from filematcher, 26 lines | ✓ Good |
+| Audit logging in actions.py | Cohesive module, both concern file modifications | ✓ Good |
 
-## Current Milestone: v1.4 Package Structure
+## Next Milestone Goals
 
-**Goal:** Split file_matcher.py into a proper Python package for better code navigation and AI tooling compatibility.
-
-**Target features:**
-- filematcher/ package with logical module separation
-- Backward-compatible file_matcher.py wrapper
-- All 217 tests passing with minimal import changes
+Pending user input. Potential directions:
+- v1.5 Performance improvements
+- Address pending todos (JSON header format, verbose execution output)
+- Monitor user feedback for feature requests
 
 ---
-*Last updated: 2026-01-27 after v1.4 milestone started*
+*Last updated: 2026-01-28 after v1.4 milestone*
