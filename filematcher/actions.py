@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -163,6 +164,9 @@ def execute_all_actions(
     total_duplicates = sum(len(group.duplicates) for group in duplicate_groups)
     processed = 0
 
+    if verbose:
+        is_tty = hasattr(sys.stderr, 'isatty') and sys.stderr.isatty()
+
     for group in duplicate_groups:
         if not os.path.exists(group.master_file):
             logger.warning(f"Master file missing, skipping group: {group.master_file}")
@@ -177,9 +181,6 @@ def execute_all_actions(
         for dup in group.duplicates:
             processed += 1
 
-            if verbose:
-                print(f"Processing {processed}/{total_duplicates}...", file=sys.stderr)
-
             if not os.path.exists(dup):
                 logger.info(f"Duplicate no longer exists: {dup}")
                 skipped_count += 1
@@ -190,6 +191,21 @@ def execute_all_actions(
             except OSError as e:
                 logger.debug(f"Could not get size for {dup}: {e}")
                 file_size = master_size
+
+            if verbose:
+                dup_basename = os.path.basename(dup)
+                size_str = format_file_size(file_size)
+                # Format action verb: hardlink->Hardlinking, symlink->Symlinking, delete->Deleting
+                action_verb = "Deleting" if action == Action.DELETE else f"{action.title()}ing"
+                if is_tty:
+                    progress_line = f"\r[{processed}/{total_duplicates}] {action_verb} {dup_basename} ({size_str})"
+                    term_width = shutil.get_terminal_size().columns
+                    if len(progress_line) > term_width:
+                        progress_line = progress_line[:term_width-3] + "..."
+                    sys.stderr.write(progress_line.ljust(term_width) + '\r')
+                    sys.stderr.flush()
+                else:
+                    logger.debug(f"[{processed}/{total_duplicates}] {action_verb} {dup_basename} ({size_str})")
 
             success, error, actual_action = execute_action(
                 dup, group.master_file, action, fallback_symlink,
@@ -208,6 +224,11 @@ def execute_all_actions(
             else:
                 failure_count += 1
                 failed_list.append(FailedOperation(dup, error))
+
+    if verbose:
+        if is_tty:
+            sys.stderr.write('\r' + ' ' * shutil.get_terminal_size().columns + '\r')
+            sys.stderr.flush()
 
     return (success_count, failure_count, skipped_count, space_saved, failed_list)
 
