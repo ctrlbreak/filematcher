@@ -29,7 +29,7 @@ from filematcher.colors import (
     terminal_rows_for_line,
 )
 
-from filematcher.types import DuplicateGroup, FailedOperation
+from filematcher.types import Action, DuplicateGroup, FailedOperation
 
 # Import from actions module (file size formatting)
 from filematcher.actions import format_file_size
@@ -742,10 +742,10 @@ def format_confirmation_prompt(
     space_str = format_file_size(space_savings)
 
     prompt_parts = []
-    if action == 'delete':
+    if action == Action.DELETE:
         prompt_parts.append("WARNING: This action is IRREVERSIBLE.")
     prompt_parts.append(f"{duplicate_count} files will be {action_verb}. ~{space_str} will be saved.")
-    if cross_fs_count > 0 and action == 'hardlink':
+    if cross_fs_count > 0 and action == Action.HARDLINK:
         prompt_parts.append(f"Note: {cross_fs_count} files on different filesystem will use symlink fallback.")
     prompt_parts.append("Proceed? [y/N] ")
 
@@ -778,7 +778,7 @@ def format_statistics_footer(
     else:
         lines.append(f"Space to be reclaimed: {space_str}")
 
-    if action == 'compare':
+    if action == Action.COMPARE:
         lines.extend(["", "Use --action to deduplicate (hardlink, symlink, or delete)"])
     elif preview_mode and not will_execute:
         lines.extend(["", "Use --execute to apply changes"])

@@ -5,7 +5,19 @@ Provides structured types for clarity and type safety.
 
 from __future__ import annotations
 
+from enum import Enum
 from typing import NamedTuple
+
+
+class Action(str, Enum):
+    """Actions that can be performed on duplicate files."""
+    COMPARE = "compare"    # Compare only, no modifications
+    HARDLINK = "hardlink"  # Replace duplicate with hardlink to master
+    SYMLINK = "symlink"    # Replace duplicate with symlink to master
+    DELETE = "delete"      # Delete the duplicate file
+
+    def __str__(self) -> str:
+        return self.value
 
 
 class DuplicateGroup(NamedTuple):

@@ -16,7 +16,7 @@ from filematcher.actions import (
     create_audit_logger, write_log_header, log_operation, write_log_footer,
     execute_all_actions, determine_exit_code,
 )
-from filematcher.types import DuplicateGroup
+from filematcher.types import Action, DuplicateGroup
 from filematcher.formatters import (
     SpaceInfo, TextActionFormatter, JsonActionFormatter, ActionFormatter,
     format_confirmation_prompt, calculate_space_savings,
@@ -46,14 +46,14 @@ def build_file_hash_lookup(matches: dict[str, tuple[list[str], list[str]]]) -> d
     return lookup
 
 
-def get_cross_fs_for_hardlink(action: str, cross_fs_files: set[str]) -> set[str] | None:
+def get_cross_fs_for_hardlink(action: Action, cross_fs_files: set[str]) -> set[str] | None:
     """Return cross-filesystem files set only for hardlink action."""
-    return cross_fs_files if action == 'hardlink' else None
+    return cross_fs_files if action == Action.HARDLINK else None
 
 
-def get_cross_fs_count(action: str, cross_fs_files: set[str]) -> int:
+def get_cross_fs_count(action: Action, cross_fs_files: set[str]) -> int:
     """Return count of cross-filesystem files only for hardlink action."""
-    return len(cross_fs_files) if action == 'hardlink' else 0
+    return len(cross_fs_files) if action == Action.HARDLINK else 0
 
 
 def build_file_sizes(paths: list[str]) -> dict[str, int]:
@@ -132,16 +132,19 @@ def main() -> int:
 
     args = parser.parse_args()
 
+    # Convert string action to enum for type safety
+    args.action = Action(args.action)
+
     if args.json and args.execute and not args.yes:
         parser.error("--json with --execute requires --yes flag to confirm (no interactive prompts in JSON mode)")
-    if args.execute and args.action == 'compare':
+    if args.execute and args.action == Action.COMPARE:
         parser.error("compare action doesn't modify files - remove --execute flag")
     if args.log and not args.execute:
         parser.error("--log requires --execute")
-    if args.fallback_symlink and args.action != 'hardlink':
+    if args.fallback_symlink and args.action != Action.HARDLINK:
         parser.error("--fallback-symlink only applies to --action hardlink")
     if args.target_dir:
-        if args.action not in ('hardlink', 'symlink'):
+        if args.action not in (Action.HARDLINK, Action.SYMLINK):
             parser.error("--target-dir only applies to --action hardlink or --action symlink")
         if not os.path.isdir(args.target_dir):
             parser.error(f"--target-dir must be an existing directory: {args.target_dir}")
@@ -216,12 +219,12 @@ def main() -> int:
             logger.info(f"Skipped {total_already_hardlinked} files already hardlinked to master (no space savings)")
 
         cross_fs_files = set()
-        if args.action == 'hardlink':
+        if args.action == Action.HARDLINK:
             for master_file, duplicates, reason, _ in master_results:
                 cross_fs_files.update(check_cross_filesystem(master_file, duplicates))
 
         preview_mode = not args.execute
-        execute_mode = args.action != 'compare' and args.execute
+        execute_mode = args.action != Action.COMPARE and args.execute
 
         if args.json:
             action_formatter = JsonActionFormatter(
@@ -253,7 +256,7 @@ def main() -> int:
                 formatter.format_banner()
 
             if args.summary:
-                if args.action == 'compare':
+                if args.action == Action.COMPARE:
                     formatter.format_compare_summary(
                         match_count=len(matches),
                         matched_files1=matched_files1,
@@ -307,7 +310,7 @@ def main() -> int:
                     if color_config.is_tty:
                         print()
 
-                if args.show_unmatched and args.action == 'compare':
+                if args.show_unmatched and args.action == Action.COMPARE:
                     formatter.format_unmatched_section(
                         dir1_label=args.dir1,
                         unmatched1=unmatched1,

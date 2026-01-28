@@ -76,6 +76,7 @@ from filematcher.filesystem import (
 
 # Import from types submodule (shared type definitions)
 from filematcher.types import (
+    Action,
     DuplicateGroup,
     FailedOperation,
 )
@@ -162,6 +163,7 @@ __all__ = [
     "SpaceInfo",
     "DuplicateGroup",
     "FailedOperation",
+    "Action",
     # Color helper functions
     "colorize",
     "green",

@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 from filematcher.filesystem import is_hardlink_to, is_symlink_to
-from filematcher.types import DuplicateGroup, FailedOperation
+from filematcher.types import Action, DuplicateGroup, FailedOperation
 
 logger = logging.getLogger(__name__)
 
@@ -41,11 +41,11 @@ def safe_replace_with_link(duplicate: Path, master: Path, action: str) -> tuple[
         return (False, f"Failed to rename to temp: {e}")
 
     try:
-        if action == 'hardlink':
+        if action == Action.HARDLINK:
             duplicate.hardlink_to(master)
-        elif action == 'symlink':
+        elif action == Action.SYMLINK:
             duplicate.symlink_to(master.resolve())
-        elif action == 'delete':
+        elif action == Action.DELETE:
             pass
         else:
             temp_path.rename(duplicate)
@@ -91,9 +91,9 @@ def execute_action(
         target_path.parent.mkdir(parents=True, exist_ok=True)
 
         try:
-            if action == 'hardlink':
+            if action == Action.HARDLINK:
                 target_path.hardlink_to(master_path)
-            elif action == 'symlink':
+            elif action == Action.SYMLINK:
                 target_path.symlink_to(master_path.resolve())
             else:
                 return (False, f"Target-dir mode only supports hardlink/symlink, not {action}", action)
@@ -110,24 +110,24 @@ def execute_action(
                     logger.warning(f"Could not clean up partial target {target_path}: {cleanup_err}")
             return (False, f"Failed to create {action} in target dir: {e}", action)
 
-    if action == 'hardlink':
-        success, error = safe_replace_with_link(dup_path, master_path, 'hardlink')
+    if action == Action.HARDLINK:
+        success, error = safe_replace_with_link(dup_path, master_path, Action.HARDLINK)
         if not success and fallback_symlink:
             error_lower = error.lower()
             if 'cross-device' in error_lower or 'invalid cross-device link' in error_lower or 'errno 18' in error_lower:
-                success, error = safe_replace_with_link(dup_path, master_path, 'symlink')
+                success, error = safe_replace_with_link(dup_path, master_path, Action.SYMLINK)
                 if success:
                     return (True, "", "symlink (fallback)")
                 return (False, error, "symlink (fallback)")
-        return (success, error, "hardlink")
+        return (success, error, Action.HARDLINK)
 
-    elif action == 'symlink':
-        success, error = safe_replace_with_link(dup_path, master_path, 'symlink')
-        return (success, error, "symlink")
+    elif action == Action.SYMLINK:
+        success, error = safe_replace_with_link(dup_path, master_path, Action.SYMLINK)
+        return (success, error, Action.SYMLINK)
 
-    elif action == 'delete':
-        success, error = safe_replace_with_link(dup_path, master_path, 'delete')
-        return (success, error, "delete")
+    elif action == Action.DELETE:
+        success, error = safe_replace_with_link(dup_path, master_path, Action.DELETE)
+        return (success, error, Action.DELETE)
 
     else:
         return (False, f"Unknown action: {action}", action)
