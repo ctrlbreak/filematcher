@@ -91,6 +91,51 @@ def build_log_flags(
     return flags
 
 
+def execute_with_logging(
+    dir1: str,
+    dir2: str,
+    action: Action,
+    master_results: list[DuplicateGroup],
+    matches: dict[str, tuple[list[str], list[str]]],
+    base_flags: list[str],
+    verbose: bool = False,
+    yes: bool = False,
+    fallback_symlink: bool = False,
+    log_path: str | None = None,
+    target_dir: str | None = None,
+) -> tuple[int, int, int, int, list[str], Path]:
+    """Execute actions with audit logging and return results."""
+    log_path_obj = Path(log_path) if log_path else None
+    audit_logger, actual_log_path = create_audit_logger(log_path_obj)
+
+    flags = build_log_flags(
+        base_flags,
+        verbose=verbose,
+        yes=yes,
+        fallback_symlink=fallback_symlink,
+        log_path=log_path,
+        target_dir=target_dir
+    )
+
+    write_log_header(audit_logger, dir1, dir2, dir1, action, flags)
+    file_hash_lookup = build_file_hash_lookup(matches)
+
+    success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
+        master_results,
+        action,
+        fallback_symlink=fallback_symlink,
+        verbose=verbose,
+        audit_logger=audit_logger,
+        file_hashes=file_hash_lookup,
+        target_dir=target_dir,
+        dir2_base=dir2
+    )
+
+    write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
+
+    return success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path
+
+
 def main() -> int:
     """Main entry point. Returns 0 on success, 1 on error."""
     parser = argparse.ArgumentParser(description='Find files with identical content across two directories.')
@@ -336,32 +381,18 @@ def main() -> int:
 
         elif execute_mode:
             if args.json:
-                log_path = Path(args.log) if args.log else None
-                audit_logger, actual_log_path = create_audit_logger(log_path)
-
-                flags = build_log_flags(
-                    ['--execute', '--json', '--yes'],
+                success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
+                    dir1=args.dir1,
+                    dir2=args.dir2,
+                    action=args.action,
+                    master_results=master_results,
+                    matches=matches,
+                    base_flags=['--execute', '--json', '--yes'],
                     verbose=args.verbose,
                     fallback_symlink=args.fallback_symlink,
                     log_path=args.log,
                     target_dir=args.target_dir
                 )
-
-                write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
-                file_hash_lookup = build_file_hash_lookup(matches)
-
-                success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
-                    master_results,
-                    args.action,
-                    fallback_symlink=args.fallback_symlink,
-                    verbose=args.verbose,
-                    audit_logger=audit_logger,
-                    file_hashes=file_hash_lookup,
-                    target_dir=args.target_dir,
-                    dir2_base=args.dir2
-                )
-
-                write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
 
                 sorted_results = sorted(master_results, key=lambda x: x[0])
                 for i, (master_file, duplicates, reason, file_hash) in enumerate(sorted_results):
@@ -435,33 +466,19 @@ def main() -> int:
                     action_formatter_exec_header.format_unified_header(args.action, args.dir1, args.dir2)
                     print()
 
-                log_path = Path(args.log) if args.log else None
-                audit_logger, actual_log_path = create_audit_logger(log_path)
-
-                flags = build_log_flags(
-                    ['--execute'],
+                success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
+                    dir1=args.dir1,
+                    dir2=args.dir2,
+                    action=args.action,
+                    master_results=master_results,
+                    matches=matches,
+                    base_flags=['--execute'],
                     verbose=args.verbose,
                     yes=args.yes,
                     fallback_symlink=args.fallback_symlink,
                     log_path=args.log,
                     target_dir=args.target_dir
                 )
-
-                write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
-                file_hash_lookup = build_file_hash_lookup(matches)
-
-                success_count, failure_count, skipped_count, space_saved, failed_list = execute_all_actions(
-                    master_results,
-                    args.action,
-                    fallback_symlink=args.fallback_symlink,
-                    verbose=args.verbose,
-                    audit_logger=audit_logger,
-                    file_hashes=file_hash_lookup,
-                    target_dir=args.target_dir,
-                    dir2_base=args.dir2
-                )
-
-                write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
 
                 action_formatter_exec = TextActionFormatter(
                     verbose=args.verbose,
