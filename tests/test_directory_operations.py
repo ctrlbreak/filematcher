@@ -2,8 +2,11 @@
 
 import io
 import os
+import subprocess
+import sys
 import unittest
 from contextlib import redirect_stdout
+from pathlib import Path
 from unittest.mock import patch
 
 from filematcher import (
@@ -61,18 +64,18 @@ class TestDirectoryOperations(BaseFileMatcherTest):
         """Test with the actual test directories in the project."""
         # Get the absolute path of the current script's directory
         current_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        
+
         # Construct paths to the test directories relative to the script
         test_dir1 = os.path.join(current_dir, "test_dir1")
         test_dir2 = os.path.join(current_dir, "test_dir2")
-        
+
         # Only run this test if the directories exist
         if os.path.isdir(test_dir1) and os.path.isdir(test_dir2):
             matches, unmatched1, unmatched2 = find_matching_files(test_dir1, test_dir2)
-            
+
             # We expect at least one match based on our exploration
             self.assertGreater(len(matches), 0)
-            
+
             # Log details about matches for debugging
             for file_hash, (files1, files2) in matches.items():
                 print(f"\nHash match: {file_hash}")
@@ -80,6 +83,41 @@ class TestDirectoryOperations(BaseFileMatcherTest):
                 print(f"Files in test_dir2: {files2}")
         else:
             self.skipTest("Test directories not found")
+
+    def test_no_circular_imports(self):
+        """Verify filematcher package imports cleanly in fresh subprocess (PKG-04)."""
+        # Test importing all major exports in fresh Python process
+        result = subprocess.run(
+            [sys.executable, '-c', '''
+from filematcher import (
+    main,
+    find_matching_files,
+    index_directory,
+    get_file_hash,
+    get_sparse_hash,
+    execute_action,
+    execute_all_actions,
+    safe_replace_with_link,
+    ColorConfig,
+    ColorMode,
+    ActionFormatter,
+    TextActionFormatter,
+    JsonActionFormatter,
+    is_hardlink_to,
+    is_symlink_to,
+    check_cross_filesystem,
+    create_audit_logger,
+)
+print("All imports successful")
+'''],
+            capture_output=True,
+            text=True,
+            cwd=str(Path(__file__).parent.parent)
+        )
+        self.assertEqual(result.returncode, 0, f"Import failed: {result.stderr}")
+        self.assertIn("All imports successful", result.stdout)
+        self.assertNotIn("ImportError", result.stderr)
+        self.assertNotIn("circular", result.stderr.lower())
 
 
 class TestDifferentNamesOnly(unittest.TestCase):
