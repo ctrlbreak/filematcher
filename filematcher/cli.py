@@ -296,7 +296,9 @@ def main() -> int:
                             file_sizes=file_sizes,
                             cross_fs_files=cross_fs_to_show,
                             group_index=i + 1,
-                            total_groups=len(sorted_results)
+                            total_groups=len(sorted_results),
+                            target_dir=args.target_dir,
+                            dir2_base=args.dir2
                         )
 
                         if i < len(sorted_results) - 1 and not args.json and not color_config.is_tty:
@@ -370,7 +372,9 @@ def main() -> int:
                         file_sizes=file_sizes,
                         cross_fs_files=cross_fs_to_show,
                         group_index=i + 1,
-                        total_groups=len(sorted_results)
+                        total_groups=len(sorted_results),
+                        target_dir=args.target_dir,
+                        dir2_base=args.dir2
                     )
 
                 if color_config.is_tty:

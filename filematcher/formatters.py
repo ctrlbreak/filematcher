@@ -33,6 +33,17 @@ from filematcher.colors import (
 from filematcher.actions import format_file_size
 
 
+def compute_target_path(duplicate: str, target_dir: str, dir2_base: str) -> str | None:
+    """Compute the target path for a duplicate when using --target-dir."""
+    try:
+        dup_path = Path(duplicate).resolve()
+        dir2_path = Path(dir2_base).resolve()
+        rel_path = dup_path.relative_to(dir2_path)
+        return str(Path(target_dir) / rel_path)
+    except ValueError:
+        return None
+
+
 @dataclass
 class SpaceInfo:
     """Space savings calculation results.
@@ -98,7 +109,9 @@ class ActionFormatter(ABC):
         file_sizes: dict[str, int] | None = None,
         cross_fs_files: set[str] | None = None,
         group_index: int | None = None,
-        total_groups: int | None = None
+        total_groups: int | None = None,
+        target_dir: str | None = None,
+        dir2_base: str | None = None
     ) -> None:
         """Output a duplicate group showing master and duplicates."""
         ...
@@ -227,7 +240,9 @@ class JsonActionFormatter(ActionFormatter):
         file_sizes: dict[str, int] | None = None,
         cross_fs_files: set[str] | None = None,
         group_index: int | None = None,
-        total_groups: int | None = None
+        total_groups: int | None = None,
+        target_dir: str | None = None,
+        dir2_base: str | None = None
     ) -> None:
         self._action_type = action
         self._data["action"] = action
@@ -246,6 +261,10 @@ class JsonActionFormatter(ActionFormatter):
                     dup_obj["sizeBytes"] = os.path.getsize(dup)
                 except OSError:
                     dup_obj["sizeBytes"] = 0
+            if target_dir and dir2_base:
+                target_path = compute_target_path(dup, target_dir, dir2_base)
+                if target_path:
+                    dup_obj["targetPath"] = target_path
             dup_objects.append(dup_obj)
 
         group: dict = {
@@ -487,7 +506,9 @@ class TextActionFormatter(ActionFormatter):
         file_sizes: dict[str, int] | None = None,
         cross_fs_files: set[str] | None = None,
         group_index: int | None = None,
-        total_groups: int | None = None
+        total_groups: int | None = None,
+        target_dir: str | None = None,
+        dir2_base: str | None = None
     ) -> None:
         inline_progress = self.cc.is_tty and group_index is not None and total_groups is not None
 
@@ -499,7 +520,9 @@ class TextActionFormatter(ActionFormatter):
             file_sizes=file_sizes,
             cross_fs_files=cross_fs_files,
             preview_mode=self.preview_mode,
-            will_execute=self.will_execute
+            will_execute=self.will_execute,
+            target_dir=target_dir,
+            dir2_base=dir2_base
         )
 
         if self.verbose and file_hash:
@@ -662,7 +685,9 @@ def format_duplicate_group(
     file_sizes: dict[str, int] | None = None,
     cross_fs_files: set[str] | None = None,
     preview_mode: bool = True,
-    will_execute: bool = False
+    will_execute: bool = False,
+    target_dir: str | None = None,
+    dir2_base: str | None = None
 ) -> list[GroupLine]:
     """Format a duplicate group returning structured GroupLine objects."""
     if action == "compare":
@@ -676,7 +701,15 @@ def format_duplicate_group(
     else:
         action_label = "DUP:?"
 
-    secondary_files = [(dup, action_label) for dup in duplicates]
+    # When target_dir is specified, show target paths instead of duplicate paths
+    if target_dir and dir2_base:
+        secondary_files = []
+        for dup in duplicates:
+            target_path = compute_target_path(dup, target_dir, dir2_base)
+            display_path = target_path if target_path else dup
+            secondary_files.append((display_path, action_label))
+    else:
+        secondary_files = [(dup, action_label) for dup in duplicates]
 
     return format_group_lines(
         primary_file=master_file,
