@@ -598,5 +598,109 @@ class TestTargetDir(unittest.TestCase):
         self.assertTrue(is_hardlink_to(str(master), str(dup)))
 
 
+class TestVerboseExecutionOutput(unittest.TestCase):
+    """Tests for verbose execution output during action processing."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.mkdtemp()
+        self.master_dir = Path(self.temp_dir) / "master"
+        self.dup_dir = Path(self.temp_dir) / "duplicates"
+        self.master_dir.mkdir()
+        self.dup_dir.mkdir()
+
+    def tearDown(self):
+        shutil.rmtree(self.temp_dir)
+
+    def create_test_file(self, name: str, content: str) -> Path:
+        """Helper to create test files in temp directory."""
+        path = self.temp_dir / Path(name)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        Path(path).write_text(content)
+        return Path(path)
+
+    def test_verbose_execution_completes_without_error(self):
+        """Test that verbose execution mode completes without error."""
+        master = self.master_dir / "master.txt"
+        dup = self.dup_dir / "duplicate.txt"
+        master.write_text("test content")
+        dup.write_text("test content")
+
+        groups = [DuplicateGroup(str(master), [str(dup)], "test", "abc123")]
+
+        # Should complete without raising
+        success, fail, skip, space, failed = execute_all_actions(
+            groups,
+            "delete",
+            verbose=True
+        )
+
+        self.assertEqual(success, 1)
+        self.assertEqual(fail, 0)
+
+    def test_verbose_execution_with_hardlink(self):
+        """Test verbose mode with hardlink action."""
+        master = self.master_dir / "master.txt"
+        dup = self.dup_dir / "duplicate.txt"
+        master.write_text("test content")
+        dup.write_text("test content")
+
+        groups = [DuplicateGroup(str(master), [str(dup)], "test", "abc123")]
+
+        success, fail, skip, space, failed = execute_all_actions(
+            groups,
+            "hardlink",
+            verbose=True
+        )
+
+        self.assertEqual(success, 1)
+        self.assertEqual(fail, 0)
+        self.assertTrue(is_hardlink_to(str(master), str(dup)))
+
+    def test_verbose_execution_with_multiple_files(self):
+        """Test verbose mode processes multiple files correctly."""
+        master1 = self.master_dir / "file1.txt"
+        master2 = self.master_dir / "file2.txt"
+        dup1 = self.dup_dir / "dup1.txt"
+        dup2 = self.dup_dir / "dup2.txt"
+
+        master1.write_text("content1")
+        master2.write_text("content2")
+        dup1.write_text("content1")
+        dup2.write_text("content2")
+
+        groups = [
+            DuplicateGroup(str(master1), [str(dup1)], "test", "hash1"),
+            DuplicateGroup(str(master2), [str(dup2)], "test", "hash2"),
+        ]
+
+        success, fail, skip, space, failed = execute_all_actions(
+            groups,
+            "delete",
+            verbose=True
+        )
+
+        self.assertEqual(success, 2)
+        self.assertEqual(fail, 0)
+
+    def test_verbose_execution_with_symlink(self):
+        """Test verbose mode with symlink action."""
+        master = self.master_dir / "master.txt"
+        dup = self.dup_dir / "duplicate.txt"
+        master.write_text("test content")
+        dup.write_text("test content")
+
+        groups = [DuplicateGroup(str(master), [str(dup)], "test", "abc123")]
+
+        success, fail, skip, space, failed = execute_all_actions(
+            groups,
+            "symlink",
+            verbose=True
+        )
+
+        self.assertEqual(success, 1)
+        self.assertEqual(fail, 0)
+        self.assertTrue(dup.is_symlink())
+
+
 if __name__ == "__main__":
     unittest.main()
