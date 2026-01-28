@@ -71,7 +71,8 @@ def build_log_flags(
     verbose: bool = False,
     yes: bool = False,
     fallback_symlink: bool = False,
-    log_path: str | None = None
+    log_path: str | None = None,
+    target_dir: str | None = None
 ) -> list[str]:
     """Build flags list for audit log header."""
     flags = list(base_flags)
@@ -83,6 +84,8 @@ def build_log_flags(
         flags.append('--fallback-symlink')
     if log_path:
         flags.append(f'--log {log_path}')
+    if target_dir:
+        flags.append(f'--target-dir {target_dir}')
     return flags
 
 
@@ -111,6 +114,8 @@ def main() -> int:
                         help='Path for audit log file (default: filematcher_YYYYMMDD_HHMMSS.log)')
     parser.add_argument('--fallback-symlink', action='store_true',
                         help='Use symlink instead of hardlink for cross-filesystem duplicates')
+    parser.add_argument('--target-dir', '-t', type=str, metavar='PATH',
+                        help='Create links in this directory instead of in-place (dir2 files deleted after linking)')
     parser.add_argument('--different-names-only', '-d', action='store_true',
                         help='Only report files with identical content but different names (exclude same-name matches)')
     parser.add_argument('--json', '-j', action='store_true',
@@ -134,6 +139,11 @@ def main() -> int:
         parser.error("--log requires --execute")
     if args.fallback_symlink and args.action != 'hardlink':
         parser.error("--fallback-symlink only applies to --action hardlink")
+    if args.target_dir:
+        if args.action not in ('hardlink', 'symlink'):
+            parser.error("--target-dir only applies to --action hardlink or --action symlink")
+        if not os.path.isdir(args.target_dir):
+            parser.error(f"--target-dir must be an existing directory: {args.target_dir}")
 
     master_path = Path(args.dir1).resolve()
 
@@ -327,7 +337,8 @@ def main() -> int:
                     ['--execute', '--json', '--yes'],
                     verbose=args.verbose,
                     fallback_symlink=args.fallback_symlink,
-                    log_path=args.log
+                    log_path=args.log,
+                    target_dir=args.target_dir
                 )
 
                 write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
@@ -339,7 +350,9 @@ def main() -> int:
                     fallback_symlink=args.fallback_symlink,
                     verbose=args.verbose,
                     audit_logger=audit_logger,
-                    file_hashes=file_hash_lookup
+                    file_hashes=file_hash_lookup,
+                    target_dir=args.target_dir,
+                    dir2_base=args.dir2
                 )
 
                 write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
@@ -422,7 +435,8 @@ def main() -> int:
                     verbose=args.verbose,
                     yes=args.yes,
                     fallback_symlink=args.fallback_symlink,
-                    log_path=args.log
+                    log_path=args.log,
+                    target_dir=args.target_dir
                 )
 
                 write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
@@ -434,7 +448,9 @@ def main() -> int:
                     fallback_symlink=args.fallback_symlink,
                     verbose=args.verbose,
                     audit_logger=audit_logger,
-                    file_hashes=file_hash_lookup
+                    file_hashes=file_hash_lookup,
+                    target_dir=args.target_dir,
+                    dir2_base=args.dir2
                 )
 
                 write_log_footer(audit_logger, success_count, failure_count, skipped_count, space_saved, failed_list)
