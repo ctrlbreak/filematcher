@@ -5,20 +5,20 @@
 See: .planning/PROJECT.md (updated 2026-01-27)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.4 Package Structure - Phase 16 complete
+**Current focus:** v1.4 Package Structure - COMPLETE
 
 ## Current Position
 
-Phase: 16 of 17 (Backward Compatibility)
+Phase: 17 of 17 (Verification and Cleanup)
 Plan: 01 of 01 complete
-Status: Phase 16 complete
-Last activity: 2026-01-27 - Verified backward compatibility (COMPAT-01 through COMPAT-04)
+Status: v1.4 Package Structure COMPLETE
+Last activity: 2026-01-28 - Migrated test imports, added circular import verification
 
-Progress: [#################---] 94% (16/17 phases complete)
+Progress: [####################] 100% (17/17 phases complete)
 
 ## Milestone Summary
 
-### v1.4 Package Structure (in progress)
+### v1.4 Package Structure (COMPLETE - 2026-01-28)
 
 - Phases 11-17 (7 phases)
 - 20 requirements mapped
@@ -30,6 +30,7 @@ Progress: [#################---] 94% (16/17 phases complete)
 - Phase 14 complete: Formatters and directory modules (formatters.py, directory.py)
 - Phase 15 complete: CLI module (cli.py), file_matcher.py now thin wrapper
 - Phase 16 complete: Backward compatibility verified (COMPAT-01-04)
+- Phase 17 complete: Test imports migrated, circular imports verified clean
 
 ### v1.3 Code Unification (shipped 2026-01-23)
 
@@ -47,9 +48,10 @@ Progress: [#################---] 94% (16/17 phases complete)
 
 ## Test Suite
 
-- Total tests: 217
+- Total tests: 218
 - All passing
 - Coverage: filematcher package fully tested
+- Circular import test added (PKG-04)
 
 ## Accumulated Decisions
 
@@ -75,6 +77,8 @@ Progress: [#################---] 94% (16/17 phases complete)
 | 15-01 | Direct import in __init__.py for CLI | All modules extracted, no circular import risk, __getattr__ removed |
 | 15-01 | Configure filematcher.cli logger in main() | Submodule has own logger that needs configuration |
 | 15-01 | Thin wrapper with wildcard re-export | file_matcher.py backward compatibility via from filematcher import * |
+| 17-01 | Keep backward compat tests using file_matcher.py | Subprocess tests verify backward compatibility continues to work |
+| 17-01 | Added circular import test to test_directory_operations.py | File already tests package structure concerns |
 
 ## Pending Todos
 
@@ -85,16 +89,16 @@ Progress: [#################---] 94% (16/17 phases complete)
 
 ## Session Continuity
 
-Last session: 2026-01-27
-Stopped at: Completed 16-01-PLAN.md
+Last session: 2026-01-28
+Stopped at: Completed 17-01-PLAN.md (v1.4 Package Structure COMPLETE)
 Resume file: None
 
 ## Next Steps
 
-Execute Phase 17: Verification and Cleanup
-- Update test imports to from filematcher import X pattern
-- Verify no circular imports
-- Use `/gsd:plan-phase 17` to research and plan
+v1.4 Package Structure milestone is complete. Potential future work:
+- Consider v1.5 milestone for performance improvements
+- Address pending todos (JSON header format, verbose execution output)
+- Monitor user feedback for feature requests
 
 ---
-*Last updated: 2026-01-27 - Phase 16 complete*
+*Last updated: 2026-01-28 - v1.4 Package Structure COMPLETE*
