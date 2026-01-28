@@ -2,6 +2,23 @@
 
 All notable changes to the File Matcher project will be documented in this file.
 
+## [1.4.0] - 2026-01-28
+
+### Changed
+- **Package Structure**: Refactored from single-file `file_matcher.py` to `filematcher/` package
+- **Module Organization**: Code split into focused modules (cli, colors, hashing, filesystem, actions, formatters, directory)
+- **Entry Point**: `filematcher` command now uses `filematcher.cli:main` via pyproject.toml
+
+### Added
+- **Circular Import Test**: Automated test verifies no circular imports in package structure
+
+### Technical Details
+- 7 modules in filematcher/ package: cli.py, colors.py, hashing.py, filesystem.py, actions.py, formatters.py, directory.py
+- Full backward compatibility: `python file_matcher.py` and `from file_matcher import` still work
+- file_matcher.py is now a thin wrapper that re-exports from filematcher package
+- 218 unit tests (217 original + 1 circular import test), all passing
+- Python 3.9+ required
+
 ## [1.3.0] - 2026-01-23
 
 ### Changed

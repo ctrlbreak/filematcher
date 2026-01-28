@@ -15,9 +15,15 @@ A Python CLI utility that finds files with identical content across two director
 ## Installation
 
 ```bash
+# Install via pip (recommended)
+pip install .
+filematcher <master_dir> <duplicate_dir>
+
+# Or run directly without installing
+python file_matcher.py <master_dir> <duplicate_dir>
+
+# For development (editable install)
 pip install -e .
-# Or just run directly:
-python file_matcher.py <dir1> <dir2>
 ```
 
 ## Quick Start
@@ -395,7 +401,7 @@ Note: JSON output (`--json`) never includes color codes regardless of flags.
 ## Testing
 
 ```bash
-# Run all tests
+# Run all tests (218 tests)
 python3 run_tests.py
 
 # Run specific test module
@@ -403,6 +409,23 @@ python3 -m tests.test_actions
 python3 -m tests.test_safe_defaults
 python3 -m tests.test_master_directory
 ```
+
+## Package Structure
+
+File Matcher is organized as a Python package:
+
+```
+filematcher/
+├── cli.py           # Command-line interface and main()
+├── colors.py        # TTY-aware color output
+├── hashing.py       # MD5/SHA-256 content hashing
+├── filesystem.py    # Filesystem helpers
+├── actions.py       # Action execution and audit logging
+├── formatters.py    # Text and JSON output formatters
+└── directory.py     # Directory indexing and matching
+```
+
+The `file_matcher.py` script remains for backward compatibility and re-exports all public symbols from the package.
 
 ## Requirements
 
