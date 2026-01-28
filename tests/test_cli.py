@@ -9,7 +9,7 @@ from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
-from file_matcher import main, execute_action, is_hardlink_to
+from filematcher import main, execute_action, is_hardlink_to
 from tests.test_base import BaseFileMatcherTest
 
 

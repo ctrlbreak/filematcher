@@ -5,7 +5,7 @@ import random
 import shutil
 import unittest
 
-from file_matcher import get_file_hash, format_file_size
+from filematcher import get_file_hash, format_file_size
 from tests.test_base import BaseFileMatcherTest
 
 

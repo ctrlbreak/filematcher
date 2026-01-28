@@ -11,7 +11,7 @@ from contextlib import redirect_stdout, redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
-from file_matcher import main
+from filematcher import main
 from tests.test_base import BaseFileMatcherTest
 
 

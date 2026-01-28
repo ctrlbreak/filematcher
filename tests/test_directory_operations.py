@@ -6,7 +6,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
-from file_matcher import (
+from filematcher import (
     index_directory, find_matching_files, get_file_hash,
     is_symlink_to, execute_action, is_hardlink_to,
     filter_hardlinked_duplicates, main

@@ -276,24 +276,24 @@ class TestTerminalRowCalculation(unittest.TestCase):
 
     def test_strip_ansi_plain_text(self):
         """strip_ansi returns plain text unchanged."""
-        from file_matcher import strip_ansi
+        from filematcher import strip_ansi
         self.assertEqual(strip_ansi('hello world'), 'hello world')
 
     def test_strip_ansi_removes_color_codes(self):
         """strip_ansi removes ANSI color escape sequences."""
-        from file_matcher import strip_ansi, GREEN, RESET, BOLD_GREEN
+        from filematcher import strip_ansi, GREEN, RESET, BOLD_GREEN
         self.assertEqual(strip_ansi(f'{GREEN}hello{RESET}'), 'hello')
         self.assertEqual(strip_ansi(f'{BOLD_GREEN}label:{RESET}path'), 'label:path')
 
     def test_visible_len_plain_text(self):
         """visible_len returns correct length for plain text."""
-        from file_matcher import visible_len
+        from filematcher import visible_len
         self.assertEqual(visible_len('hello'), 5)
         self.assertEqual(visible_len('hello world'), 11)
 
     def test_visible_len_with_ansi(self):
         """visible_len excludes ANSI codes from length."""
-        from file_matcher import visible_len, GREEN, RESET, BOLD_GREEN, YELLOW
+        from filematcher import visible_len, GREEN, RESET, BOLD_GREEN, YELLOW
         # 5 visible chars, ANSI codes add length but not visibility
         colored = f'{GREEN}hello{RESET}'
         self.assertEqual(visible_len(colored), 5)
@@ -303,18 +303,18 @@ class TestTerminalRowCalculation(unittest.TestCase):
 
     def test_terminal_rows_short_line(self):
         """Short lines take 1 row."""
-        from file_matcher import terminal_rows_for_line
+        from filematcher import terminal_rows_for_line
         self.assertEqual(terminal_rows_for_line('hello', 80), 1)
         self.assertEqual(terminal_rows_for_line('x' * 40, 80), 1)
 
     def test_terminal_rows_exact_width(self):
         """Line exactly terminal width takes 1 row."""
-        from file_matcher import terminal_rows_for_line
+        from filematcher import terminal_rows_for_line
         self.assertEqual(terminal_rows_for_line('x' * 80, 80), 1)
 
     def test_terminal_rows_wrapping(self):
         """Lines longer than terminal width wrap to multiple rows."""
-        from file_matcher import terminal_rows_for_line
+        from filematcher import terminal_rows_for_line
         # 81 chars on 80-col terminal = 2 rows
         self.assertEqual(terminal_rows_for_line('x' * 81, 80), 2)
         # 160 chars = exactly 2 rows
@@ -324,7 +324,7 @@ class TestTerminalRowCalculation(unittest.TestCase):
 
     def test_terminal_rows_excludes_ansi_codes(self):
         """ANSI codes should not affect row calculation."""
-        from file_matcher import terminal_rows_for_line, GREEN, RESET
+        from filematcher import terminal_rows_for_line, GREEN, RESET
         # 100 visible chars = 2 rows on 80-col terminal
         plain_path = 'x' * 100
         colored_path = f'{GREEN}{plain_path}{RESET}'
@@ -335,7 +335,7 @@ class TestTerminalRowCalculation(unittest.TestCase):
 
     def test_terminal_rows_edge_cases(self):
         """Edge cases: empty string, zero/negative width."""
-        from file_matcher import terminal_rows_for_line
+        from filematcher import terminal_rows_for_line
         # Empty string still takes 1 row (newline)
         self.assertEqual(terminal_rows_for_line('', 80), 1)
         # Zero or negative width defaults to 1 row

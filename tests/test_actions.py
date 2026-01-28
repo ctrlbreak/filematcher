@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 import logging
 
-from file_matcher import (
+from filematcher import (
     is_hardlink_to,
     safe_replace_with_link,
     execute_action,

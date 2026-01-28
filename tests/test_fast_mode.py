@@ -4,8 +4,8 @@ import os
 import random
 import unittest
 
-import file_matcher
-from file_matcher import get_file_hash, get_sparse_hash, find_matching_files
+import filematcher
+from filematcher import get_file_hash, get_sparse_hash, find_matching_files
 from tests.test_base import BaseFileMatcherTest
 
 
@@ -114,24 +114,24 @@ class TestFastMode(BaseFileMatcherTest):
         # Find matches using fast mode
         # Monkeypatch the size threshold temporarily
         original_threshold = 100*1024*1024  # Save original
-        file_matcher.get_file_hash.__defaults__ = (file_matcher.get_file_hash.__defaults__[0], 
+        filematcher.get_file_hash.__defaults__ = (filematcher.get_file_hash.__defaults__[0],
                                                  False, size_threshold)
-        
+
         try:
             matches_fast, unmatched1_fast, unmatched2_fast = find_matching_files(
                 temp_dir1, temp_dir2, fast_mode=True)
-                
+
             # Results should be the same regardless of mode
             self.assertEqual(len(matches_normal), len(matches_fast))
             self.assertEqual(len(unmatched1_normal), len(unmatched1_fast))
             self.assertEqual(len(unmatched2_normal), len(unmatched2_fast))
-            
+
             # Check that we have 2 matches (one for small files, one for large files)
             self.assertEqual(len(matches_fast), 2)
-            
+
         finally:
             # Restore original threshold
-            file_matcher.get_file_hash.__defaults__ = (file_matcher.get_file_hash.__defaults__[0], 
+            filematcher.get_file_hash.__defaults__ = (filematcher.get_file_hash.__defaults__[0],
                                                     False, original_threshold)
 
 

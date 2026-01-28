@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from file_matcher import index_directory, find_matching_files, get_file_hash
+from filematcher import index_directory, find_matching_files, get_file_hash
 
 class TestRealDirectories(unittest.TestCase):
     """Tests that validate file matching using the actual test directories."""

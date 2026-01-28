@@ -18,7 +18,7 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import patch
 
-from file_matcher import main
+from filematcher import main
 from tests.test_base import BaseFileMatcherTest
 
 
@@ -580,7 +580,7 @@ class TestJsonOutputMocked(BaseFileMatcherTest):
         """Cross-filesystem duplicates have crossFilesystem=true."""
         # The JsonActionFormatter receives cross_fs_files set from the caller
         # We test that it correctly populates the crossFilesystem field
-        from file_matcher import JsonActionFormatter
+        from filematcher import JsonActionFormatter
 
         formatter = JsonActionFormatter(verbose=False, preview_mode=True)
         formatter.set_directories('/master', '/duplicate')
@@ -616,7 +616,7 @@ class TestJsonOutputMocked(BaseFileMatcherTest):
 
     def test_json_execution_with_failures(self):
         """Execution mode with failures includes failure details."""
-        from file_matcher import JsonActionFormatter
+        from filematcher import JsonActionFormatter
 
         formatter = JsonActionFormatter(verbose=False, preview_mode=False)  # Execute mode
         formatter.set_directories('/master', '/duplicate')
@@ -667,7 +667,7 @@ class TestJsonOutputMocked(BaseFileMatcherTest):
 
     def test_json_execution_failures_sorted(self):
         """Execution failures are sorted by path for determinism."""
-        from file_matcher import JsonActionFormatter
+        from filematcher import JsonActionFormatter
 
         formatter = JsonActionFormatter(verbose=False, preview_mode=False)
         formatter.set_directories('/master', '/duplicate')
