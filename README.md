@@ -105,6 +105,40 @@ Hard links cannot span filesystems. Use `--fallback-symlink` to automatically us
 filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
 ```
 
+### Target Directory Mode
+
+Use `--target-dir` to create links in a different location instead of replacing files in dir2. This is useful for creating a deduplicated copy while preserving the original dir2:
+
+```bash
+# Create hardlinks in /backup instead of modifying dir2
+filematcher dir1 dir2 --action hardlink --target-dir /backup --execute
+
+# Create symlinks in a new location
+filematcher dir1 dir2 --action symlink --target-dir /links --execute
+```
+
+**How it works:**
+1. For each duplicate in dir2, computes the relative path from dir2
+2. Creates the link at the same relative path under target-dir (creating subdirectories as needed)
+3. Deletes the original file in dir2
+
+**Example:**
+```
+Before:
+  dir1/file.txt (master)
+  dir2/subdir/dup.txt (duplicate)
+
+After --target-dir /backup:
+  dir1/file.txt (master, unchanged)
+  dir2/subdir/dup.txt (deleted)
+  /backup/subdir/dup.txt (hardlink to master)
+```
+
+**Notes:**
+- Only works with `--action hardlink` or `--action symlink`
+- Target directory must exist
+- Nested directory structure from dir2 is preserved in target
+
 ## Command-Line Options
 
 | Option | Short | Description |
@@ -120,6 +154,7 @@ filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
 | `--yes` | `-y` | Skip confirmation prompt |
 | `--log` | `-l` | Custom audit log path |
 | `--fallback-symlink` | | Use symlink if hardlink fails |
+| `--target-dir` | `-t` | Create links in this directory instead of dir2 (hardlink/symlink only) |
 | `--json` | `-j` | Output results in JSON format for scripting |
 | `--quiet` | `-q` | Suppress progress messages and headers (data and errors still shown) |
 
@@ -178,6 +213,7 @@ filematcher dir1 dir2 --action hardlink --execute --yes --json
 | `duplicateGroups[].duplicates[].sizeBytes` | number | File size in bytes |
 | `duplicateGroups[].duplicates[].action` | string | Action to apply |
 | `duplicateGroups[].duplicates[].crossFilesystem` | boolean | True if on different filesystem than master |
+| `duplicateGroups[].duplicates[].targetPath` | string | Target path when using --target-dir (optional) |
 | `statistics.groupCount` | number | Number of duplicate groups |
 | `statistics.duplicateCount` | number | Total duplicate files |
 | `statistics.masterCount` | number | Number of master files |
@@ -401,7 +437,7 @@ Note: JSON output (`--json`) never includes color codes regardless of flags.
 ## Testing
 
 ```bash
-# Run all tests (218 tests)
+# Run all tests (228 tests)
 python3 run_tests.py
 
 # Run specific test module
