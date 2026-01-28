@@ -38,8 +38,8 @@ def check_cross_filesystem(master_file: str, duplicates: list[str]) -> set[str]:
 def is_hardlink_to(file1: str, file2: str) -> bool:
     """Check if two files share the same inode and device (already hardlinked)."""
     try:
-        stat1 = os.stat(file1)
-        stat2 = os.stat(file2)
+        stat1 = os.lstat(file1)
+        stat2 = os.lstat(file2)
         return stat1.st_ino == stat2.st_ino and stat1.st_dev == stat2.st_dev
     except OSError:
         return False
@@ -76,4 +76,8 @@ def filter_hardlinked_duplicates(
 
 def is_in_directory(filepath: str, directory: str) -> bool:
     """Check if a file path is within a directory."""
-    return filepath.startswith(directory + os.sep) or filepath.startswith(directory)
+    try:
+        Path(filepath).relative_to(directory)
+        return True
+    except ValueError:
+        return False
