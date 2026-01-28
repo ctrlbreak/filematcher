@@ -65,7 +65,9 @@ def execute_action(
     duplicate: str,
     master: str,
     action: str,
-    fallback_symlink: bool = False
+    fallback_symlink: bool = False,
+    target_dir: str | None = None,
+    dir2_base: str | None = None
 ) -> tuple[bool, str, str]:
     """Execute an action on a duplicate file. Returns (success, error, actual_action_used)."""
     dup_path = Path(duplicate)
@@ -75,6 +77,37 @@ def execute_action(
         return (True, "symlink to master", "skipped")
     if is_hardlink_to(duplicate, master):
         return (True, "hardlink to master", "skipped")
+
+    # Target directory mode: create link in target_dir, delete original
+    if target_dir and dir2_base:
+        dir2_path = Path(dir2_base).resolve()
+        try:
+            rel_path = dup_path.resolve().relative_to(dir2_path)
+        except ValueError:
+            return (False, f"Duplicate {duplicate} not under dir2 {dir2_base}", action)
+
+        target_path = Path(target_dir) / rel_path
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            if action == 'hardlink':
+                target_path.hardlink_to(master_path)
+            elif action == 'symlink':
+                target_path.symlink_to(master_path.resolve())
+            else:
+                return (False, f"Target-dir mode only supports hardlink/symlink, not {action}", action)
+
+            # Delete original
+            dup_path.unlink()
+            return (True, "", action)
+        except OSError as e:
+            # Clean up target if created
+            if target_path.exists() or target_path.is_symlink():
+                try:
+                    target_path.unlink()
+                except OSError:
+                    pass
+            return (False, f"Failed to create {action} in target dir: {e}", action)
 
     if action == 'hardlink':
         success, error = safe_replace_with_link(dup_path, master_path, 'hardlink')
@@ -115,7 +148,9 @@ def execute_all_actions(
     fallback_symlink: bool = False,
     verbose: bool = False,
     audit_logger: logging.Logger | None = None,
-    file_hashes: dict[str, str] | None = None
+    file_hashes: dict[str, str] | None = None,
+    target_dir: str | None = None,
+    dir2_base: str | None = None
 ) -> tuple[int, int, int, int, list[tuple[str, str]]]:
     """Process all duplicate groups with continue-on-error. Returns (success, fail, skip, bytes, failed_list)."""
     success_count = 0
@@ -154,7 +189,8 @@ def execute_all_actions(
                 file_size = master_size
 
             success, error, actual_action = execute_action(
-                dup, master_file, action, fallback_symlink
+                dup, master_file, action, fallback_symlink,
+                target_dir=target_dir, dir2_base=dir2_base
             )
 
             if audit_logger:
