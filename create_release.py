@@ -6,10 +6,10 @@ This script creates a release package for distribution on GitHub.
 It creates a clean archive with only the necessary files for users.
 
 To create a release package:
-# Update version in create_release.py and file_matcher.py
-python3 create_release.py 1.1.0
-git tag -a v1.1.0 -m "Release version 1.1.0"
-git push origin v1.1.0
+# Update version in create_release.py and pyproject.toml
+python3 create_release.py 1.4.0
+git tag -a v1.4.0 -m "Release version 1.4.0"
+git push origin v1.4.0
 # Then upload the new archives to GitHub
 """
 
@@ -20,7 +20,7 @@ import tarfile
 from datetime import datetime
 from pathlib import Path
 
-def create_release_package(version="1.1.0"):
+def create_release_package(version="1.4.0"):
     """Create a release package for the specified version."""
     
     # Create release directory
@@ -32,6 +32,7 @@ def create_release_package(version="1.1.0"):
     # Files to include in release
     include_files = [
         "file_matcher.py",
+        "pyproject.toml",
         "README.md",
         "CHANGELOG.md",
         f"RELEASE_NOTES_v{version}.md",
@@ -39,9 +40,10 @@ def create_release_package(version="1.1.0"):
         "requirements.txt",
         "run_tests.py"
     ]
-    
+
     # Directories to include
     include_dirs = [
+        "filematcher",
         "tests"
     ]
     
@@ -51,10 +53,13 @@ def create_release_package(version="1.1.0"):
             shutil.copy2(file, release_dir)
             print(f"✓ Added {file}")
     
-    # Copy directories
+    # Copy directories (excluding __pycache__)
+    def ignore_pycache(directory, files):
+        return [f for f in files if f == '__pycache__' or f.endswith('.pyc')]
+
     for dir_name in include_dirs:
         if os.path.exists(dir_name):
-            shutil.copytree(dir_name, os.path.join(release_dir, dir_name))
+            shutil.copytree(dir_name, os.path.join(release_dir, dir_name), ignore=ignore_pycache)
             print(f"✓ Added directory {dir_name}")
     
     # Create test directories for users
@@ -69,9 +74,18 @@ def create_release_package(version="1.1.0"):
 
 ## Quick Start
 
-1. **No installation required** - this is a standalone Python script
-2. **Requirements**: Python 3.9 or higher
-3. **Usage**: python3 file_matcher.py <dir1> <dir2> [options]
+### Option 1: Install via pip (recommended)
+```bash
+pip install .
+filematcher <master_dir> <duplicate_dir> [options]
+```
+
+### Option 2: Run directly
+```bash
+python3 file_matcher.py <master_dir> <duplicate_dir> [options]
+```
+
+**Requirements**: Python 3.9 or higher
 
 ## Running Tests
 
@@ -85,33 +99,36 @@ python3 run_tests.py
 ### Finding Duplicate Files
 
 ```bash
-# Basic comparison
-python3 file_matcher.py test_dir1 test_dir2
+# Basic comparison (dir1 is master, dir2 has duplicates)
+filematcher test_dir1 test_dir2
 
 # Show files with no matches
-python3 file_matcher.py test_dir1 test_dir2 --show-unmatched
+filematcher test_dir1 test_dir2 --show-unmatched
 
 # Fast mode for large files
-python3 file_matcher.py test_dir1 test_dir2 --fast
+filematcher test_dir1 test_dir2 --fast
 
 # Summary counts only
-python3 file_matcher.py test_dir1 test_dir2 --summary
+filematcher test_dir1 test_dir2 --summary
+
+# JSON output for scripting
+filematcher test_dir1 test_dir2 --json
 ```
 
 ### Deduplicating Files
 
 ```bash
 # Preview hard link deduplication (safe - no changes made)
-python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink
+filematcher master_dir duplicate_dir --action hardlink
 
 # Execute deduplication with confirmation
-python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink --execute
+filematcher master_dir duplicate_dir --action hardlink --execute
 
 # Execute without prompt (for scripts)
-python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink --execute --yes
+filematcher master_dir duplicate_dir --action hardlink --execute --yes
 
 # With custom log file
-python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink --execute --log changes.log
+filematcher master_dir duplicate_dir --action hardlink --execute --log changes.log
 ```
 
 ## Features
@@ -122,6 +139,8 @@ python3 file_matcher.py dir1 dir2 --master dir1 --action hardlink --execute --lo
 - **Deduplicate** with hard links, symbolic links, or deletion
 - Safe by default: preview changes before executing
 - Audit logging of all modifications
+- JSON output for scripting
+- TTY-aware color output
 - No external dependencies
 
 For more information, see README.md
@@ -141,22 +160,32 @@ Dependencies: None (standard library only)
 
 ## What's New in {version}
 
-Full file deduplication capability:
+Package structure refactoring for better code organization:
 
-- Master directory designation with validation (--master flag)
-- Preview-by-default with safe execution model (--execute required)
-- Three deduplication actions: hardlink, symlink, delete
-- Cross-filesystem detection with automatic symlink fallback
-- Comprehensive audit logging with timestamps
-- 114 unit tests covering all functionality
+- Refactored to filematcher/ package structure
+- pip installable via pyproject.toml
+- Full backward compatibility with file_matcher.py
+- JSON output for scripting (--json flag)
+- TTY-aware color output (--color/--no-color flags)
+- Unified output format across all modes
+- 218 unit tests covering all functionality
 
 ## File Structure
 
-- file_matcher.py - Main script (1,374 lines)
+- filematcher/ - Main package
+  - cli.py - Command-line interface and main()
+  - colors.py - TTY-aware color output
+  - hashing.py - MD5/SHA-256 content hashing
+  - filesystem.py - Filesystem helpers
+  - actions.py - Action execution and audit logging
+  - formatters.py - Text and JSON output formatters
+  - directory.py - Directory indexing and matching
+- file_matcher.py - Backward compatibility wrapper
+- pyproject.toml - Package configuration
 - README.md - Complete documentation
 - CHANGELOG.md - Version history
 - LICENSE - MIT license
-- tests/ - Unit test suite (114 tests)
+- tests/ - Unit test suite (218 tests)
 - test_dir1/, test_dir2/ - Example test directories
 - complex_test/ - Advanced test scenarios
 """
@@ -200,12 +229,12 @@ Full file deduplication capability:
 
 if __name__ == "__main__":
     import sys
-    
-    version = "1.1.0"
+
+    version = "1.4.0"
     if len(sys.argv) > 1:
         version = sys.argv[1]
-    
+
     print(f"Creating File Matcher release package v{version}")
     print("=" * 50)
-    
+
     create_release_package(version)
