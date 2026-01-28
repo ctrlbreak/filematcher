@@ -69,7 +69,11 @@ file_matcher.py   (26 lines - backward compat wrapper)
 
 ### Active
 
-(No active requirements — milestone just shipped)
+**v1.5 Interactive Execute:**
+- [ ] Per-file confirmation prompts in execute mode (yes/no/all/cancel)
+- [ ] Consistent output structure with preview mode
+- [ ] Visual feedback during interactive execution
+- [ ] Maintain `--yes` flag behavior (skip all prompts)
 
 ### Out of Scope
 
@@ -110,12 +114,15 @@ file_matcher.py   (26 lines - backward compat wrapper)
 | Thin wrapper pattern | file_matcher.py re-exports from filematcher, 26 lines | ✓ Good |
 | Audit logging in actions.py | Cohesive module, both concern file modifications | ✓ Good |
 
-## Next Milestone Goals
+## Current Milestone: v1.5 Interactive Execute
 
-Pending user input. Potential directions:
-- v1.5 Performance improvements
-- Address pending todos (JSON header format, verbose execution output)
-- Monitor user feedback for feature requests
+**Goal:** Redesign execute mode with per-file interactive confirmation that maintains consistency with preview mode output.
+
+**Target features:**
+- Per-file yes/no/all/cancel prompts during execute mode
+- Output structure consistent with preview mode (same group display)
+- Visual feedback showing progress and results inline
+- `--yes` flag continues to skip all prompts
 
 ---
-*Last updated: 2026-01-28 after v1.4 milestone*
+*Last updated: 2026-01-28 after starting v1.5 milestone*
