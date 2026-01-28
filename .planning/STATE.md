@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 Phase: None (between milestones)
 Plan: N/A
 Status: v1.4 Package Structure SHIPPED
-Last activity: 2026-01-28 — milestone archived
+Last activity: 2026-01-28 — Completed quick task 009: Add --target-dir flag
 
 Progress: [####################] 100% (17/17 phases through v1.4)
 
@@ -42,9 +42,15 @@ Progress: [####################] 100% (17/17 phases through v1.4)
 
 ## Test Suite
 
-- Total tests: 218
+- Total tests: 228
 - All passing
 - Coverage: filematcher package fully tested
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 009 | Add --target-dir flag for hardlink/symlink actions | 2026-01-28 | 1f712f0 | [009-add-target-directory-flag](./quick/009-add-target-directory-flag/) |
 
 ## Pending Todos
 
