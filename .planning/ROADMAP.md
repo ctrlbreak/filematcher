@@ -13,7 +13,7 @@ Transform execute mode from batch-only to interactive-by-default with per-file y
 
 ## Phases
 
-- [ ] **Phase 18: Formatter Extensions** - Add prompt formatting methods to ActionFormatter ABC
+- [x] **Phase 18: Formatter Extensions** - Add prompt formatting methods to ActionFormatter ABC
 - [ ] **Phase 19: Interactive Core** - Build per-group prompt loop with y/n/a/q handling
 - [ ] **Phase 20: CLI Integration** - Wire flags, TTY validation, and routing logic
 - [ ] **Phase 21: Error Handling & Polish** - Error recovery, cancellation, and final summary
@@ -33,8 +33,8 @@ Transform execute mode from batch-only to interactive-by-default with per-file y
   5. No mode-specific formatting functions exist outside formatters.py
 **Plans:** 2 plans
 Plans:
-- [ ] 18-01-PLAN.md - Extend ActionFormatter ABC with prompt methods
-- [ ] 18-02-PLAN.md - Add unit tests for new formatter methods
+- [x] 18-01-PLAN.md - Extend ActionFormatter ABC with prompt methods
+- [x] 18-02-PLAN.md - Add unit tests for new formatter methods
 
 ### Phase 19: Interactive Core
 
@@ -81,7 +81,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 18. Formatter Extensions | v1.5 | 0/2 | Planned | - |
+| 18. Formatter Extensions | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 19. Interactive Core | v1.5 | 0/TBD | Not started | - |
 | 20. CLI Integration | v1.5 | 0/TBD | Not started | - |
 | 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
