@@ -31,7 +31,10 @@ Transform execute mode from batch-only to interactive-by-default with per-file y
   3. New `format_confirmation_status()` method outputs checkmark/x after user decision
   4. TextActionFormatter and JsonActionFormatter both implement new methods
   5. No mode-specific formatting functions exist outside formatters.py
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 18-01-PLAN.md - Extend ActionFormatter ABC with prompt methods
+- [ ] 18-02-PLAN.md - Add unit tests for new formatter methods
 
 ### Phase 19: Interactive Core
 
@@ -78,7 +81,7 @@ Transform execute mode from batch-only to interactive-by-default with per-file y
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 18. Formatter Extensions | v1.5 | 0/TBD | Not started | - |
+| 18. Formatter Extensions | v1.5 | 0/2 | Planned | - |
 | 19. Interactive Core | v1.5 | 0/TBD | Not started | - |
 | 20. CLI Integration | v1.5 | 0/TBD | Not started | - |
 | 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
