@@ -14,7 +14,7 @@ Transform execute mode from batch-only to interactive-by-default with per-file y
 ## Phases
 
 - [x] **Phase 18: Formatter Extensions** - Add prompt formatting methods to ActionFormatter ABC
-- [ ] **Phase 19: Interactive Core** - Build per-group prompt loop with y/n/a/q handling
+- [x] **Phase 19: Interactive Core** - Build per-group prompt loop with y/n/a/q handling
 - [ ] **Phase 20: CLI Integration** - Wire flags, TTY validation, and routing logic
 - [ ] **Phase 21: Error Handling & Polish** - Error recovery, cancellation, and final summary
 
@@ -50,8 +50,8 @@ Plans:
   6. `q` response stops prompting immediately
 **Plans:** 2 plans
 Plans:
-- [ ] 19-01-PLAN.md - Core interactive functions (interactive_execute, prompt_for_group, _normalize_response)
-- [ ] 19-02-PLAN.md - Unit tests for interactive loop functions
+- [x] 19-01-PLAN.md - Core interactive functions (interactive_execute, prompt_for_group, _normalize_response)
+- [x] 19-02-PLAN.md - Unit tests for interactive loop functions
 
 ### Phase 20: CLI Integration
 
@@ -85,7 +85,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 18. Formatter Extensions | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
-| 19. Interactive Core | v1.5 | 0/2 | Not started | - |
+| 19. Interactive Core | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 20. CLI Integration | v1.5 | 0/TBD | Not started | - |
 | 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
 

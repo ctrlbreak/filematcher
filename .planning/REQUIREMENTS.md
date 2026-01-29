@@ -8,17 +8,17 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
 
 ### Interactive Confirmation (INT)
 
-- [ ] **INT-01**: Per-file prompts with y/n/a/q responses during execute mode
+- [x] **INT-01**: Per-file prompts with y/n/a/q responses during execute mode
   - `y` = yes, execute action on this group
   - `n` = no, skip this group, continue to next
   - `a` = all, execute action on this and all remaining groups
   - `q` = quit, stop processing (no more actions)
 
-- [ ] **INT-02**: Progress indicator showing group position in each prompt
+- [x] **INT-02**: Progress indicator showing group position in each prompt
   - Format: `[3/10]` or similar prefix on prompt line
   - User knows how many prompts remain
 
-- [ ] **INT-03**: Case-insensitive response handling
+- [x] **INT-03**: Case-insensitive response handling
   - Accept `y`, `Y`, `yes`, `YES` etc.
   - Accept `n`, `N`, `no`, `NO` etc.
   - Invalid input re-prompts with error message
@@ -38,15 +38,15 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
   - Statistics upfront: X groups, Y files, Z space to reclaim
   - Then per-group prompting begins
 
-- [ ] **OUT-02**: Same group display format as preview mode
+- [x] **OUT-02**: Same group display format as preview mode
   - Reuse existing `format_duplicate_group()` method
   - MASTER and WILL labels match preview output
 
-- [ ] **OUT-03**: Prompt appears immediately after each group
+- [x] **OUT-03**: Prompt appears immediately after each group
   - Display group → prompt → response → status → next group
   - Not: display all → prompt batch → execute all
 
-- [ ] **OUT-04**: Confirmation status shown after response
+- [x] **OUT-04**: Confirmation status shown after response
   - Show `✓ Confirmed` or `✗ Skipped` after each decision
   - Visual feedback that input was received
 
@@ -80,13 +80,13 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
 
 ### Code Architecture (ARCH)
 
-- [ ] **ARCH-01**: Consistent flow between compare, preview, and execute modes
+- [x] **ARCH-01**: Consistent flow between compare, preview, and execute modes
   - All modes use same formatter methods for group display
   - Statistics use same calculation functions
   - Only differences: banners, prompts, and action execution
   - Avoid duplicating display/formatting logic between modes
 
-- [ ] **ARCH-02**: Single code path for group formatting
+- [x] **ARCH-02**: Single code path for group formatting
   - Reuse `format_duplicate_group()` in all modes
   - No mode-specific formatting functions
   - Parameters control behavior (preview_mode, execute status), not separate methods
@@ -110,22 +110,22 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| INT-01 | Phase 19 | Pending |
-| INT-02 | Phase 19 | Pending |
-| INT-03 | Phase 19 | Pending |
+| INT-01 | Phase 19 | Complete |
+| INT-02 | Phase 19 | Complete |
+| INT-03 | Phase 19 | Complete |
 | INT-04 | Phase 20 | Pending |
 | INT-05 | Phase 20 | Pending |
 | OUT-01 | Phase 20 | Pending |
-| OUT-02 | Phase 18 | Pending |
-| OUT-03 | Phase 19 | Pending |
-| OUT-04 | Phase 18 | Pending |
+| OUT-02 | Phase 18 | Complete |
+| OUT-03 | Phase 19 | Complete |
+| OUT-04 | Phase 18 | Complete |
 | ERR-01 | Phase 21 | Pending |
 | ERR-02 | Phase 21 | Pending |
 | ERR-03 | Phase 21 | Pending |
 | FLAG-01 | Phase 20 | Pending |
 | FLAG-02 | Phase 20 | Pending |
-| ARCH-01 | Phase 18 | Pending |
-| ARCH-02 | Phase 18 | Pending |
+| ARCH-01 | Phase 18 | Complete |
+| ARCH-02 | Phase 18 | Complete |
 
 ---
 *Requirements defined: 2026-01-28*
