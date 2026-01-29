@@ -198,6 +198,43 @@ class ActionFormatter(ABC):
         """Finalize output (flush buffers, print JSON, etc.)."""
         ...
 
+    @abstractmethod
+    def format_group_prompt(
+        self,
+        group_index: int,
+        total_groups: int,
+        action: str
+    ) -> str:
+        """Format the interactive prompt for a duplicate group.
+
+        Args:
+            group_index: Current group number (1-indexed)
+            total_groups: Total number of groups
+            action: Action type (delete, hardlink, symlink)
+
+        Returns:
+            Prompt string for input() call. Caller handles actual prompting.
+        """
+        ...
+
+    @abstractmethod
+    def format_confirmation_status(self, confirmed: bool) -> None:
+        """Output confirmation symbol after user decision.
+
+        Outputs on the SAME line as the prompt (user already typed response).
+        - confirmed=True: green checkmark
+        - confirmed=False: yellow X mark
+        """
+        ...
+
+    @abstractmethod
+    def format_remaining_count(self, remaining: int) -> None:
+        """Output message after 'a' (all) response.
+
+        Shows how many groups will be processed automatically.
+        """
+        ...
+
 
 class JsonActionFormatter(ActionFormatter):
     """JSON output formatter using accumulator pattern."""
