@@ -48,7 +48,10 @@ Plans:
   4. Invalid input re-prompts with error message
   5. `a` response confirms current and all remaining groups without further prompts
   6. `q` response stops prompting immediately
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 19-01-PLAN.md - Core interactive functions (interactive_execute, prompt_for_group, _normalize_response)
+- [ ] 19-02-PLAN.md - Unit tests for interactive loop functions
 
 ### Phase 20: CLI Integration
 
@@ -82,7 +85,7 @@ Plans:
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
 | 18. Formatter Extensions | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
-| 19. Interactive Core | v1.5 | 0/TBD | Not started | - |
+| 19. Interactive Core | v1.5 | 0/2 | Not started | - |
 | 20. CLI Integration | v1.5 | 0/TBD | Not started | - |
 | 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
 
