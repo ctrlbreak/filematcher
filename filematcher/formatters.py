@@ -429,6 +429,23 @@ class JsonActionFormatter(ActionFormatter):
     def format_execute_prompt_separator(self) -> None: pass
     def format_execute_banner_line(self) -> str: return ""
 
+    def format_group_prompt(
+        self,
+        group_index: int,
+        total_groups: int,
+        action: str
+    ) -> str:
+        # JSON mode never prompts interactively
+        return ""
+
+    def format_confirmation_status(self, confirmed: bool) -> None:
+        # No-op: JSON mode doesn't show inline status
+        pass
+
+    def format_remaining_count(self, remaining: int) -> None:
+        # No-op: JSON mode doesn't show inline messages
+        pass
+
     def _convert_statistics_to_summary(self) -> dict:
         stats = self._data.get("statistics", {})
         return {
@@ -685,6 +702,29 @@ class TextActionFormatter(ActionFormatter):
 
     def finalize(self) -> None:
         pass
+
+    def format_group_prompt(
+        self,
+        group_index: int,
+        total_groups: int,
+        action: str
+    ) -> str:
+        """Format interactive prompt with progress and action verb."""
+        verb = _ACTION_PROMPT_VERBS.get(Action(action), f"Process {action}?")
+        progress = dim(f"[{group_index}/{total_groups}]", self.cc)
+        return f"{progress} {verb} [y/n/a/q] "
+
+    def format_confirmation_status(self, confirmed: bool) -> None:
+        """Output checkmark or X after user response."""
+        if confirmed:
+            print(green("\u2713", self.cc), end="")
+        else:
+            print(yellow("\u2717", self.cc), end="")
+        print()  # Complete the line
+
+    def format_remaining_count(self, remaining: int) -> None:
+        """Output message after 'a' (all) response."""
+        print(f"Processing {remaining} remaining groups...")
 
 
 # Helper functions
