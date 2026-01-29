@@ -55,6 +55,28 @@ def _normalize_response(response: str) -> str | None:
     return None
 
 
+def prompt_for_group(
+    formatter: ActionFormatter,
+    group_index: int,
+    total_groups: int,
+    action: str
+) -> str:
+    """Prompt user for group decision, re-prompt on invalid input.
+
+    Returns normalized single-char response: 'y', 'n', 'a', or 'q'.
+    Raises: KeyboardInterrupt, EOFError (for caller to handle)
+    """
+    while True:
+        prompt_text = formatter.format_group_prompt(group_index, total_groups, action)
+        response = input(prompt_text).strip()
+
+        normalized = _normalize_response(response)
+        if normalized is not None:
+            return normalized
+
+        print("Invalid response. Please enter y (yes), n (no), a (all), or q (quit).")
+
+
 def build_file_hash_lookup(matches: dict[str, tuple[list[str], list[str]]]) -> dict[str, str]:
     """Build a mapping of file paths to their content hashes."""
     lookup: dict[str, str] = {}
