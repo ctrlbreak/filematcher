@@ -14,9 +14,9 @@ from filematcher.filesystem import (
 )
 from filematcher.actions import (
     create_audit_logger, write_log_header, log_operation, write_log_footer,
-    execute_all_actions, determine_exit_code,
+    execute_all_actions, execute_action, determine_exit_code,
 )
-from filematcher.types import Action, DuplicateGroup
+from filematcher.types import Action, DuplicateGroup, FailedOperation
 from filematcher.formatters import (
     SpaceInfo, TextActionFormatter, JsonActionFormatter, ActionFormatter,
     format_confirmation_prompt, calculate_space_savings,
@@ -75,6 +75,191 @@ def prompt_for_group(
             return normalized
 
         print("Invalid response. Please enter y (yes), n (no), a (all), or q (quit).")
+
+
+def interactive_execute(
+    groups: list[DuplicateGroup],
+    action: Action,
+    formatter: ActionFormatter,
+    fallback_symlink: bool = False,
+    audit_logger: logging.Logger | None = None,
+    file_hashes: dict[str, str] | None = None,
+    target_dir: str | None = None,
+    dir2_base: str | None = None,
+    verbose: bool = False,
+    file_sizes_map: dict[str, dict[str, int]] | None = None,
+    cross_fs_files: set[str] | None = None,
+) -> tuple[int, int, int, int, list[FailedOperation], int, int]:
+    """Execute with per-group interactive confirmation.
+
+    Displays each group, prompts y/n/a/q, executes immediately on confirmation.
+
+    Args:
+        groups: List of DuplicateGroup tuples to process
+        action: Action to execute (hardlink, symlink, delete)
+        formatter: ActionFormatter for display/prompts
+        fallback_symlink: Use symlink for cross-filesystem hardlinks
+        audit_logger: Logger for audit trail
+        file_hashes: Map of file path to hash
+        target_dir: Target directory for links
+        dir2_base: Base dir2 path for relative path computation
+        verbose: Show verbose output
+        file_sizes_map: Pre-computed file sizes keyed by master file
+        cross_fs_files: Set of files on different filesystem
+
+    Returns:
+        Tuple of (success_count, failure_count, skipped_count, space_saved,
+                  failed_list, confirmed_count, user_skipped_count)
+    """
+    success_count = 0
+    failure_count = 0
+    skipped_count = 0
+    space_saved = 0
+    failed_list: list[FailedOperation] = []
+    confirmed_count = 0
+    user_skipped_count = 0
+    confirm_all = False
+
+    total_groups = len(groups)
+
+    try:
+        for i, group in enumerate(groups, start=1):
+            master_file, duplicates, reason, file_hash = group
+
+            # Get pre-computed file sizes if available
+            file_sizes = file_sizes_map.get(master_file) if file_sizes_map else None
+
+            # Display the group
+            formatter.format_duplicate_group(
+                master_file,
+                duplicates,
+                action=action.value,
+                file_hash=file_hash if verbose else None,
+                file_sizes=file_sizes,
+                cross_fs_files=cross_fs_files,
+                group_index=i,
+                total_groups=total_groups,
+                target_dir=target_dir,
+                dir2_base=dir2_base
+            )
+
+            if confirm_all:
+                # Auto-confirm: show status, execute immediately
+                formatter.format_confirmation_status(confirmed=True)
+                # Execute this group - mirror execute_all_actions pattern
+                for dup in duplicates:
+                    # Get file size BEFORE action (for space_saved calculation)
+                    file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
+
+                    # Call execute_action with correct signature: (duplicate, master, action, ...)
+                    success, error, actual_action = execute_action(
+                        dup, master_file, action.value,
+                        fallback_symlink=fallback_symlink,
+                        target_dir=target_dir,
+                        dir2_base=dir2_base
+                    )
+
+                    # Log operation if audit logger provided
+                    if audit_logger:
+                        log_operation(audit_logger, actual_action, dup, master_file,
+                                      file_size, dup_hash, success, error)
+
+                    # Track counts per execute_all_actions pattern
+                    if actual_action == "skipped":
+                        skipped_count += 1
+                    elif success:
+                        success_count += 1
+                        space_saved += file_size
+                    else:
+                        failure_count += 1
+                        failed_list.append(FailedOperation(dup, error))
+                confirmed_count += 1
+                continue
+
+            # Prompt for decision
+            response = prompt_for_group(formatter, i, total_groups, action.value)
+
+            if response == 'y':
+                formatter.format_confirmation_status(confirmed=True)
+                # Execute this group - mirror execute_all_actions pattern
+                for dup in duplicates:
+                    # Get file size BEFORE action (for space_saved calculation)
+                    file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
+
+                    # Call execute_action with correct signature: (duplicate, master, action, ...)
+                    success, error, actual_action = execute_action(
+                        dup, master_file, action.value,
+                        fallback_symlink=fallback_symlink,
+                        target_dir=target_dir,
+                        dir2_base=dir2_base
+                    )
+
+                    # Log operation if audit logger provided
+                    if audit_logger:
+                        log_operation(audit_logger, actual_action, dup, master_file,
+                                      file_size, dup_hash, success, error)
+
+                    # Track counts per execute_all_actions pattern
+                    if actual_action == "skipped":
+                        skipped_count += 1
+                    elif success:
+                        success_count += 1
+                        space_saved += file_size
+                    else:
+                        failure_count += 1
+                        failed_list.append(FailedOperation(dup, error))
+                confirmed_count += 1
+
+            elif response == 'n':
+                formatter.format_confirmation_status(confirmed=False)
+                user_skipped_count += 1
+
+            elif response == 'a':
+                formatter.format_confirmation_status(confirmed=True)
+                remaining = total_groups - i
+                if remaining > 0:
+                    formatter.format_remaining_count(remaining)
+                # Execute this group - mirror execute_all_actions pattern
+                for dup in duplicates:
+                    # Get file size BEFORE action (for space_saved calculation)
+                    file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
+
+                    # Call execute_action with correct signature: (duplicate, master, action, ...)
+                    success, error, actual_action = execute_action(
+                        dup, master_file, action.value,
+                        fallback_symlink=fallback_symlink,
+                        target_dir=target_dir,
+                        dir2_base=dir2_base
+                    )
+
+                    # Log operation if audit logger provided
+                    if audit_logger:
+                        log_operation(audit_logger, actual_action, dup, master_file,
+                                      file_size, dup_hash, success, error)
+
+                    # Track counts per execute_all_actions pattern
+                    if actual_action == "skipped":
+                        skipped_count += 1
+                    elif success:
+                        success_count += 1
+                        space_saved += file_size
+                    else:
+                        failure_count += 1
+                        failed_list.append(FailedOperation(dup, error))
+                confirmed_count += 1
+                confirm_all = True
+
+            elif response == 'q':
+                break
+
+    except (KeyboardInterrupt, EOFError):
+        print()  # Newline after ^C
+
+    return (success_count, failure_count, skipped_count, space_saved,
+            failed_list, confirmed_count, user_skipped_count)
 
 
 def build_file_hash_lookup(matches: dict[str, tuple[list[str], list[str]]]) -> dict[str, str]:
