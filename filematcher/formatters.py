@@ -24,6 +24,9 @@ from filematcher.colors import (
     ColorMode,
     ColorConfig,
     GroupLine,
+    dim,
+    green,
+    yellow,
     red,
     cyan,
     bold_yellow,
@@ -732,6 +735,12 @@ _ACTION_VERBS = {
     "hardlink": "replaced with hard links",
     "symlink": "replaced with symbolic links",
     "delete": "permanently deleted"
+}
+
+_ACTION_PROMPT_VERBS = {
+    Action.DELETE: "Delete duplicate?",
+    Action.HARDLINK: "Create hardlink?",
+    Action.SYMLINK: "Create symlink?",
 }
 
 
