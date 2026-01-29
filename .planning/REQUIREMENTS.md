@@ -108,25 +108,26 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
 
 ## Traceability
 
-| Requirement | Phase | Success Criteria |
-|-------------|-------|------------------|
-| INT-01 | TBD | y/n/a/q responses recognized and acted upon |
-| INT-02 | TBD | Prompt shows [X/Y] progress |
-| INT-03 | TBD | Case variations accepted |
-| INT-04 | TBD | Non-TTY fails with helpful message |
-| INT-05 | TBD | --yes skips prompts, --execute alone prompts |
-| OUT-01 | TBD | Statistics shown before groups |
-| OUT-02 | TBD | Group display matches preview format |
-| OUT-03 | TBD | Prompt immediately follows group display |
-| OUT-04 | TBD | ✓/✗ status shown after response |
-| ERR-01 | TBD | Errors logged and skipped, execution continues |
-| ERR-02 | TBD | q response shows summary and exits cleanly |
-| ERR-03 | TBD | Final summary shows confirmed/skipped + success/failed + space + log |
-| FLAG-01 | TBD | --json --execute without --yes errors |
-| FLAG-02 | TBD | --quiet --execute runs without prompts |
-| ARCH-01 | TBD | All modes share same formatter/display code |
-| ARCH-02 | TBD | format_duplicate_group() used in all modes |
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| INT-01 | Phase 19 | Pending |
+| INT-02 | Phase 19 | Pending |
+| INT-03 | Phase 19 | Pending |
+| INT-04 | Phase 20 | Pending |
+| INT-05 | Phase 20 | Pending |
+| OUT-01 | Phase 20 | Pending |
+| OUT-02 | Phase 18 | Pending |
+| OUT-03 | Phase 19 | Pending |
+| OUT-04 | Phase 18 | Pending |
+| ERR-01 | Phase 21 | Pending |
+| ERR-02 | Phase 21 | Pending |
+| ERR-03 | Phase 21 | Pending |
+| FLAG-01 | Phase 20 | Pending |
+| FLAG-02 | Phase 20 | Pending |
+| ARCH-01 | Phase 18 | Pending |
+| ARCH-02 | Phase 18 | Pending |
 
 ---
 *Requirements defined: 2026-01-28*
 *Based on research: SUMMARY-v1.5.md*
+*Phase assignments: 2026-01-29*
