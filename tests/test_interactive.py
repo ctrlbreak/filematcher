@@ -122,5 +122,192 @@ class TestPromptForGroup(unittest.TestCase):
             self.assertEqual(result, 'y')
 
 
+class TestInteractiveExecute(unittest.TestCase):
+    """Tests for interactive_execute() main loop."""
+
+    def setUp(self):
+        """Create test fixtures."""
+        self.test_dir = tempfile.mkdtemp()
+        self.formatter = TextActionFormatter(
+            verbose=False,
+            preview_mode=False,
+            action='delete',
+            color_config=ColorConfig(mode=ColorMode.NEVER)
+        )
+
+        # Create test files with known content/size
+        self.master1 = os.path.join(self.test_dir, 'master1.txt')
+        self.dup1 = os.path.join(self.test_dir, 'dup1.txt')
+        self.master2 = os.path.join(self.test_dir, 'master2.txt')
+        self.dup2 = os.path.join(self.test_dir, 'dup2.txt')
+
+        for f in [self.master1, self.dup1, self.master2, self.dup2]:
+            with open(f, 'w') as fp:
+                fp.write('test content')  # 12 bytes each
+
+        # Create DuplicateGroup tuples
+        self.groups = [
+            DuplicateGroup(self.master1, [self.dup1], 'test', 'hash1'),
+            DuplicateGroup(self.master2, [self.dup2], 'test', 'hash2'),
+        ]
+
+    def tearDown(self):
+        """Clean up test directory."""
+        import shutil
+        shutil.rmtree(self.test_dir, ignore_errors=True)
+
+    def test_yes_executes_group(self):
+        """'y' response executes the action on that group."""
+        responses = iter(['y', 'n'])  # Confirm first, skip second
+
+        with patch('builtins.input', side_effect=lambda _: next(responses)):
+            result = interactive_execute(
+                groups=self.groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        self.assertEqual(confirmed, 1)
+        self.assertEqual(user_skipped, 1)
+        self.assertEqual(success, 1)  # One file successfully deleted
+        self.assertGreater(space, 0)  # space_saved should be > 0
+        # First duplicate should be deleted
+        self.assertFalse(os.path.exists(self.dup1))
+        # Second duplicate should still exist
+        self.assertTrue(os.path.exists(self.dup2))
+
+    def test_no_skips_group(self):
+        """'n' response skips the group without execution."""
+        responses = iter(['n', 'n'])
+
+        with patch('builtins.input', side_effect=lambda _: next(responses)):
+            result = interactive_execute(
+                groups=self.groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        self.assertEqual(confirmed, 0)
+        self.assertEqual(user_skipped, 2)
+        self.assertEqual(success, 0)
+        self.assertEqual(space, 0)  # No space saved
+        # Both duplicates should still exist
+        self.assertTrue(os.path.exists(self.dup1))
+        self.assertTrue(os.path.exists(self.dup2))
+
+    def test_all_confirms_remaining(self):
+        """'a' response confirms current and all remaining groups."""
+        with patch('builtins.input', return_value='a'):
+            result = interactive_execute(
+                groups=self.groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        self.assertEqual(confirmed, 2)
+        self.assertEqual(user_skipped, 0)
+        self.assertEqual(success, 2)  # Both files deleted
+        self.assertGreater(space, 0)  # space_saved should be > 0
+        # Both duplicates should be deleted
+        self.assertFalse(os.path.exists(self.dup1))
+        self.assertFalse(os.path.exists(self.dup2))
+
+    def test_quit_stops_immediately(self):
+        """'q' response stops processing without executing remaining."""
+        with patch('builtins.input', return_value='q'):
+            result = interactive_execute(
+                groups=self.groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        self.assertEqual(confirmed, 0)
+        self.assertEqual(user_skipped, 0)  # Quit is not "skipped"
+        self.assertEqual(success, 0)
+        # Both duplicates should still exist
+        self.assertTrue(os.path.exists(self.dup1))
+        self.assertTrue(os.path.exists(self.dup2))
+
+    def test_keyboard_interrupt_handled(self):
+        """Ctrl+C stops loop gracefully."""
+        with patch('builtins.input', side_effect=KeyboardInterrupt):
+            # Should not raise, should return partial results
+            result = interactive_execute(
+                groups=self.groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        # Should return zeros (no groups processed)
+        self.assertEqual(confirmed, 0)
+
+    def test_mixed_responses(self):
+        """Test y, n, y sequence."""
+        # Create 3 groups
+        master3 = os.path.join(self.test_dir, 'master3.txt')
+        dup3 = os.path.join(self.test_dir, 'dup3.txt')
+        with open(master3, 'w') as f:
+            f.write('content')
+        with open(dup3, 'w') as f:
+            f.write('content')
+
+        groups = self.groups + [DuplicateGroup(master3, [dup3], 'test', 'hash3')]
+        responses = iter(['y', 'n', 'y'])
+
+        with patch('builtins.input', side_effect=lambda _: next(responses)):
+            result = interactive_execute(
+                groups=groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        self.assertEqual(confirmed, 2)
+        self.assertEqual(user_skipped, 1)
+        self.assertEqual(success, 2)  # Two files deleted
+        self.assertFalse(os.path.exists(self.dup1))  # y - deleted
+        self.assertTrue(os.path.exists(self.dup2))   # n - kept
+        self.assertFalse(os.path.exists(dup3))       # y - deleted
+
+    def test_empty_groups_returns_zeros(self):
+        """Empty groups list returns all zeros."""
+        result = interactive_execute(
+            groups=[],
+            action=Action.DELETE,
+            formatter=self.formatter
+        )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        self.assertEqual(confirmed, 0)
+        self.assertEqual(user_skipped, 0)
+        self.assertEqual(success, 0)
+        self.assertEqual(space, 0)
+
+    def test_space_saved_tracked_correctly(self):
+        """Verify space_saved tracks file sizes for successful operations."""
+        # Create files with known sizes
+        large_dup = os.path.join(self.test_dir, 'large_dup.txt')
+        with open(large_dup, 'w') as f:
+            f.write('x' * 1000)  # 1000 bytes
+
+        groups = [DuplicateGroup(self.master1, [large_dup], 'test', 'hash_large')]
+
+        with patch('builtins.input', return_value='y'):
+            result = interactive_execute(
+                groups=groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        self.assertEqual(success, 1)
+        self.assertEqual(space, 1000)  # Exactly 1000 bytes saved
+
+
 if __name__ == '__main__':
     unittest.main()
