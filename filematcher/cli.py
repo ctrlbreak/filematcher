@@ -37,6 +37,24 @@ def confirm_execution(skip_confirm: bool = False, prompt: str = "Proceed? [y/N] 
     return response in ('y', 'yes')
 
 
+def _normalize_response(response: str) -> str | None:
+    """Normalize user response to single char or None if invalid.
+
+    Accepts: y, yes, n, no, a, all, q, quit (case-insensitive)
+    Returns: 'y', 'n', 'a', 'q', or None
+    """
+    response = response.casefold()
+    if response in ('y', 'yes'):
+        return 'y'
+    elif response in ('n', 'no'):
+        return 'n'
+    elif response in ('a', 'all'):
+        return 'a'
+    elif response in ('q', 'quit'):
+        return 'q'
+    return None
+
+
 def build_file_hash_lookup(matches: dict[str, tuple[list[str], list[str]]]) -> dict[str, str]:
     """Build a mapping of file paths to their content hashes."""
     lookup: dict[str, str] = {}
