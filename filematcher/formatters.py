@@ -234,6 +234,36 @@ class ActionFormatter(ABC):
         """
         ...
 
+    @abstractmethod
+    def format_file_error(self, file_path: str, error: str) -> None:
+        """Output error message for a failed file operation.
+
+        Args:
+            file_path: Path to the file that failed
+            error: System error message (e.g., "Permission denied")
+        """
+        ...
+
+    @abstractmethod
+    def format_quit_summary(
+        self,
+        confirmed_count: int,
+        skipped_count: int,
+        remaining_count: int,
+        space_saved: int,
+        log_path: str
+    ) -> None:
+        """Display summary when user quits early via 'q' or Ctrl+C.
+
+        Args:
+            confirmed_count: Number of groups processed
+            skipped_count: Number of groups user skipped with 'n'
+            remaining_count: Number of groups not yet started
+            space_saved: Bytes freed before quit
+            log_path: Path to audit log file
+        """
+        ...
+
 
 class JsonActionFormatter(ActionFormatter):
     """JSON output formatter using accumulator pattern."""
@@ -461,6 +491,29 @@ class JsonActionFormatter(ActionFormatter):
         # No-op: JSON mode doesn't show inline messages
         pass
 
+    def format_file_error(self, file_path: str, error: str) -> None:
+        """Accumulate error in errors array."""
+        if "errors" not in self._data:
+            self._data["errors"] = []
+        self._data["errors"].append({"path": file_path, "error": error})
+
+    def format_quit_summary(
+        self,
+        confirmed_count: int,
+        skipped_count: int,
+        remaining_count: int,
+        space_saved: int,
+        log_path: str
+    ) -> None:
+        """Add quit status to data for JSON output."""
+        self._data["quit"] = {
+            "processedCount": confirmed_count,
+            "skippedCount": skipped_count,
+            "remainingCount": remaining_count,
+            "spaceSavedBytes": space_saved,
+            "logPath": log_path
+        }
+
     def _convert_statistics_to_summary(self) -> dict:
         stats = self._data.get("statistics", {})
         return {
@@ -538,6 +591,14 @@ class JsonActionFormatter(ActionFormatter):
         # Add execution summary if present (execute mode)
         if "execution" in self._data:
             output_data["execution"] = self._data["execution"]
+
+        # Add errors array if present (operation failures)
+        if "errors" in self._data:
+            output_data["errors"] = self._data["errors"]
+
+        # Add quit status if present (user quit early)
+        if "quit" in self._data:
+            output_data["quit"] = self._data["quit"]
 
         print(json.dumps(output_data, indent=2))
 
@@ -762,6 +823,27 @@ class TextActionFormatter(ActionFormatter):
     def format_remaining_count(self, remaining: int) -> None:
         """Output message after 'a' (all) response."""
         print(f"Processing {remaining} remaining groups...")
+
+    def format_file_error(self, file_path: str, error: str) -> None:
+        """Print indented error line with red X marker."""
+        x_mark = red("\u2717", self.cc)
+        print(f"  {x_mark} {file_path}: {error}")
+
+    def format_quit_summary(
+        self,
+        confirmed_count: int,
+        skipped_count: int,
+        remaining_count: int,
+        space_saved: int,
+        log_path: str
+    ) -> None:
+        """Print quit message block with processing summary."""
+        print()
+        print(f"Quit: {confirmed_count} processed, {skipped_count} skipped, {remaining_count} remaining")
+        if space_saved > 0:
+            print(f"Freed {format_file_size(space_saved)} (quit before completing all)")
+        print("Re-run command to process remaining files")
+        print(f"Audit log: {log_path}")
 
 
 # Helper functions
