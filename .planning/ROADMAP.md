@@ -16,6 +16,7 @@ Transform execute mode from batch-only to interactive-by-default with per-file y
 - [x] **Phase 18: Formatter Extensions** - Add prompt formatting methods to ActionFormatter ABC
 - [x] **Phase 19: Interactive Core** - Build per-group prompt loop with y/n/a/q handling
 - [x] **Phase 20: CLI Integration** - Wire flags, TTY validation, and routing logic
+- [ ] **Phase 20.1: JSON Header Object Format** - Restructure JSON output with unified header object (INSERTED)
 - [ ] **Phase 21: Error Handling & Polish** - Error recovery, cancellation, and final summary
 
 ## Phase Details
@@ -70,10 +71,32 @@ Plans:
 - [x] 20-01-PLAN.md - Fail-fast flag validation and banner formatting
 - [x] 20-02-PLAN.md - Mode routing and integration tests
 
+### Phase 20.1: JSON Header Object Format (INSERTED)
+
+**Goal**: Restructure JSON output with unified header object for better machine parsing
+**Depends on**: Phase 20
+**Requirements**: JSON-01 (new)
+**Success Criteria** (what must be TRUE):
+  1. Both compare and action mode JSON output have a `header` object containing metadata
+  2. Header contains: timestamp, mode, action, hashAlgorithm, directories
+  3. Directory keys unified to `master`/`duplicate` across all modes
+  4. Data arrays remain at root level (matches, duplicateGroups)
+  5. All existing JSON tests updated to new format
+  6. Breaking change documented in release notes
+**Plans:** 1 plan
+Plans:
+- [ ] 20.1-01-PLAN.md - Update JsonActionFormatter and tests for header structure
+
+**Context from brainstorm:**
+- Current JSON has metadata scattered at root level
+- Inconsistent field names between compare/action modes (dir1/dir2 vs master/duplicate)
+- This is a breaking change for JSON consumers
+- Consider adding version field to header for schema evolution
+
 ### Phase 21: Error Handling & Polish
 
 **Goal**: Ensure robust error recovery and comprehensive feedback
-**Depends on**: Phase 20
+**Depends on**: Phase 20.1
 **Requirements**: ERR-01, ERR-02, ERR-03
 **Success Criteria** (what must be TRUE):
   1. Permission/access errors on individual files are logged and skipped (execution continues)
@@ -90,6 +113,7 @@ Plans:
 | 18. Formatter Extensions | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 19. Interactive Core | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 20. CLI Integration | v1.5 | 2/2 | ✓ Complete | 2026-01-30 |
+| 20.1 JSON Header Object Format | v1.5 | 0/1 | Not started | - |
 | 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
 
 ---
