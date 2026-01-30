@@ -36,18 +36,18 @@ class TestFlagValidation(BaseFileMatcherTest):
         self.assertIn("unrecognized arguments", error_output)
 
     def test_action_shows_preview(self):
-        """--action (no --execute) should show PREVIEW MODE."""
+        """--action (no --execute) should show (PREVIEW) indicator."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
-            self.assertIn("PREVIEW MODE", output)
+            self.assertIn("(PREVIEW)", output)
 
     def test_action_choices_valid(self):
         """--action accepts hardlink, symlink, delete (shows preview)."""
         for action in ['hardlink', 'symlink', 'delete']:
             with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', action]):
                 output = self.run_main_with_args([])
-                # Should show preview mode
-                self.assertIn("PREVIEW MODE", output)
+                # Should show preview mode indicator
+                self.assertIn("(PREVIEW)", output)
 
     def test_action_invalid_choice(self):
         """--action with invalid choice should fail."""
@@ -86,15 +86,15 @@ class TestPreviewBanner(BaseFileMatcherTest):
         """Preview banner should appear at start of output."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink']):
             output = self.run_main_with_args([])
-            # Verify "PREVIEW MODE" in output
-            self.assertIn("PREVIEW MODE", output)
+            # Verify "(PREVIEW)" indicator in output
+            self.assertIn("(PREVIEW)", output)
             self.assertIn("Use --execute to apply changes", output)
             # Verify it's at the top (first non-empty line after logging output)
             lines = output.split('\n')
-            # Find first line that starts with '=' (the banner)
+            # Find first line that contains the banner (has mode and groups info)
             banner_index = None
             for i, line in enumerate(lines):
-                if line.startswith('==='):
+                if 'mode:' in line and 'groups' in line and '(PREVIEW)' in line:
                     banner_index = i
                     break
             self.assertIsNotNone(banner_index, "Banner should appear in output")
@@ -112,13 +112,13 @@ class TestPreviewBanner(BaseFileMatcherTest):
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2]):
             output = self.run_main_with_args([])
             self.assertNotIn(PREVIEW_BANNER, output)
-            self.assertNotIn("PREVIEW MODE", output)
+            self.assertNotIn("(PREVIEW)", output)
 
     def test_banner_shown_with_summary(self):
         """Preview banner should appear even with --summary flag."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2, '--action', 'hardlink', '--summary']):
             output = self.run_main_with_args([])
-            self.assertIn("PREVIEW MODE", output)
+            self.assertIn("(PREVIEW)", output)
             self.assertIn("Use --execute to apply changes", output)
 
 
