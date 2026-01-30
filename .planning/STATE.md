@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 Phase: 21 of 21 (Error Handling & Polish)
 Plan: Not yet planned
 Status: Ready to plan
-Last activity: 2026-01-30 - Completed Phase 20 (CLI Integration)
+Last activity: 2026-01-30 - Completed quick task 011: Unify banners
 
 Progress: [==============      ] 75% (3/4 phases complete)
 
@@ -68,6 +68,12 @@ Progress: [==============      ] 75% (3/4 phases complete)
 ## Blockers/Concerns
 
 None.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 011 | Unify compare mode and execute mode banners | 2026-01-30 | 39881b0 | [011-unify-the-compare-mode-and-execute-mode-](./quick/011-unify-the-compare-mode-and-execute-mode-/) |
 
 ## Session Continuity
 
