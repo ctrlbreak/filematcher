@@ -167,11 +167,12 @@ class TestInteractiveExecute(unittest.TestCase):
                 formatter=self.formatter
             )
 
-        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
         self.assertEqual(confirmed, 1)
         self.assertEqual(user_skipped, 1)
         self.assertEqual(success, 1)  # One file successfully deleted
         self.assertGreater(space, 0)  # space_saved should be > 0
+        self.assertFalse(user_quit)
         # First duplicate should be deleted
         self.assertFalse(os.path.exists(self.dup1))
         # Second duplicate should still exist
@@ -188,11 +189,12 @@ class TestInteractiveExecute(unittest.TestCase):
                 formatter=self.formatter
             )
 
-        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
         self.assertEqual(confirmed, 0)
         self.assertEqual(user_skipped, 2)
         self.assertEqual(success, 0)
         self.assertEqual(space, 0)  # No space saved
+        self.assertFalse(user_quit)
         # Both duplicates should still exist
         self.assertTrue(os.path.exists(self.dup1))
         self.assertTrue(os.path.exists(self.dup2))
@@ -206,11 +208,12 @@ class TestInteractiveExecute(unittest.TestCase):
                 formatter=self.formatter
             )
 
-        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
         self.assertEqual(confirmed, 2)
         self.assertEqual(user_skipped, 0)
         self.assertEqual(success, 2)  # Both files deleted
         self.assertGreater(space, 0)  # space_saved should be > 0
+        self.assertFalse(user_quit)
         # Both duplicates should be deleted
         self.assertFalse(os.path.exists(self.dup1))
         self.assertFalse(os.path.exists(self.dup2))
@@ -224,10 +227,12 @@ class TestInteractiveExecute(unittest.TestCase):
                 formatter=self.formatter
             )
 
-        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
         self.assertEqual(confirmed, 0)
         self.assertEqual(user_skipped, 0)  # Quit is not "skipped"
         self.assertEqual(success, 0)
+        self.assertTrue(user_quit)  # User quit via 'q'
+        self.assertEqual(remaining, 1)  # 1 remaining group (quit on first)
         # Both duplicates should still exist
         self.assertTrue(os.path.exists(self.dup1))
         self.assertTrue(os.path.exists(self.dup2))
@@ -242,9 +247,10 @@ class TestInteractiveExecute(unittest.TestCase):
                 formatter=self.formatter
             )
 
-        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
         # Should return zeros (no groups processed)
         self.assertEqual(confirmed, 0)
+        self.assertTrue(user_quit)  # User quit via Ctrl+C
 
     def test_mixed_responses(self):
         """Test y, n, y sequence."""
@@ -266,10 +272,11 @@ class TestInteractiveExecute(unittest.TestCase):
                 formatter=self.formatter
             )
 
-        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
         self.assertEqual(confirmed, 2)
         self.assertEqual(user_skipped, 1)
         self.assertEqual(success, 2)  # Two files deleted
+        self.assertFalse(user_quit)
         self.assertFalse(os.path.exists(self.dup1))  # y - deleted
         self.assertTrue(os.path.exists(self.dup2))   # n - kept
         self.assertFalse(os.path.exists(dup3))       # y - deleted
@@ -282,11 +289,12 @@ class TestInteractiveExecute(unittest.TestCase):
             formatter=self.formatter
         )
 
-        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
         self.assertEqual(confirmed, 0)
         self.assertEqual(user_skipped, 0)
         self.assertEqual(success, 0)
         self.assertEqual(space, 0)
+        self.assertFalse(user_quit)
 
     def test_space_saved_tracked_correctly(self):
         """Verify space_saved tracks file sizes for successful operations."""
@@ -304,9 +312,10 @@ class TestInteractiveExecute(unittest.TestCase):
                 formatter=self.formatter
             )
 
-        success, failure, skipped, space, failed, confirmed, user_skipped = result
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
         self.assertEqual(success, 1)
         self.assertEqual(space, 1000)  # Exactly 1000 bytes saved
+        self.assertFalse(user_quit)
 
 
 if __name__ == '__main__':

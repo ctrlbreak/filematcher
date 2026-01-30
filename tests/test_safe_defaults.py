@@ -455,7 +455,7 @@ class TestModeRouting(BaseFileMatcherTest):
             self.assertIn("-" * 40, output)
 
     def test_execute_interactive_q_exits_cleanly(self):
-        """Pressing 'q' in interactive mode should exit cleanly."""
+        """Pressing 'q' in interactive mode should return EXIT_USER_QUIT (130)."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
                    '--action', 'delete', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
@@ -463,8 +463,8 @@ class TestModeRouting(BaseFileMatcherTest):
                     f = io.StringIO()
                     with redirect_stdout(f):
                         result = main()
-                    # Should exit with 0 (clean exit)
-                    self.assertEqual(result, 0)
+                    # Should exit with 130 (EXIT_USER_QUIT - Unix SIGINT convention)
+                    self.assertEqual(result, 130)
 
     def test_execute_interactive_a_confirms_all(self):
         """Pressing 'a' should confirm current and all remaining groups."""

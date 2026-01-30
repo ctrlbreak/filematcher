@@ -247,7 +247,14 @@ def create_audit_logger(log_path: Path | None = None) -> tuple[logging.Logger, P
     audit_logger.setLevel(logging.INFO)
     audit_logger.handlers = []
 
-    file_handler = logging.FileHandler(log_path, encoding='utf-8')
+    try:
+        file_handler = logging.FileHandler(log_path, encoding='utf-8')
+    except OSError as e:
+        # Audit trail is required for destructive operations
+        print(f"Error: Cannot create audit log '{log_path}': {e}", file=sys.stderr)
+        print("Audit trail is required for destructive operations. Aborting.", file=sys.stderr)
+        sys.exit(2)
+
     file_handler.setFormatter(logging.Formatter('%(message)s'))
     audit_logger.addHandler(file_handler)
     audit_logger.propagate = False
