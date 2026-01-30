@@ -531,6 +531,7 @@ class TextActionFormatter(ActionFormatter):
         space_bytes: int
     ) -> None:
         """Output unified banner with statistics and mode indicator."""
+        print()  # Separator from scanning phase output
         action_bold = bold(action, self.cc)
         space_str = format_file_size(space_bytes)
 
