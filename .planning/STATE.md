@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 21 of 21 (Error Handling & Polish)
-Plan: 02 of 02 (complete)
+Plan: 03 of 03 (complete)
 Status: Phase complete
-Last activity: 2026-01-30 - Completed Phase 21-02 execution summary and tests
+Last activity: 2026-01-30 - Completed Phase 21-03 integration tests
 
-Progress: [====================] 100% (5/5 phases, 6/6 plans complete)
+Progress: [====================] 100% (5/5 phases, 7/7 plans complete)
 
 ## Milestone History
 
@@ -41,7 +41,7 @@ Progress: [====================] 100% (5/5 phases, 6/6 plans complete)
 
 ## Test Suite
 
-- Total tests: 295
+- Total tests: 305
 - All passing
 - Coverage: filematcher package fully tested
 
@@ -70,6 +70,8 @@ Progress: [====================] 100% (5/5 phases, 6/6 plans complete)
 | 21-02 | Three-way distinction in summary | User confirmed, user skipped, failed |
 | 21-02 | Dual-format space display | Human-readable AND bytes for clarity |
 | 21-02 | EXIT_PARTIAL (2) on any failures | Scripts can detect incomplete operations |
+| 21-03 | Patch in CLI module namespace | execute_action imported at module level |
+| 21-03 | MagicMock with spec | Type-safe mocking for formatter call tracking |
 
 ## Pending Todos
 
@@ -90,7 +92,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Completed Phase 21 Plan 02
+Stopped at: Completed Phase 21 Plan 03
 Resume file: None
 
 ## Roadmap Evolution
@@ -103,4 +105,4 @@ Resume file: None
 v1.5 milestone complete. Ready for release or additional polish.
 
 ---
-*Last updated: 2026-01-30 - Completed Phase 21-02 execution summary and tests*
+*Last updated: 2026-01-30 - Completed Phase 21-03 integration tests*
