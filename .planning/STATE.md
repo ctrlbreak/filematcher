@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.5 Interactive Execute - Phase 21 Error Handling & Polish
+**Current focus:** v1.5 Interactive Execute - Phase 20.1 complete, ready for Phase 21
 
 ## Current Position
 
-Phase: 21 of 21 (Error Handling & Polish)
-Plan: Not yet planned
-Status: Ready to plan
-Last activity: 2026-01-30 - Completed quick task 013: Remove dead code (confirm_execution, format_confirmation_prompt)
+Phase: 20.1 of 21 (JSON Header Object Format)
+Plan: 01 of 01 (complete)
+Status: Phase complete
+Last activity: 2026-01-30 - Completed Phase 20.1 JSON header restructuring
 
-Progress: [==============      ] 75% (3/4 phases complete)
+Progress: [===============     ] 80% (4/5 phases complete)
 
 ## Milestone History
 
@@ -41,7 +41,7 @@ Progress: [==============      ] 75% (3/4 phases complete)
 
 ## Test Suite
 
-- Total tests: 284
+- Total tests: 286
 - All passing
 - Coverage: filematcher package fully tested
 
@@ -60,10 +60,13 @@ Progress: [==============      ] 75% (3/4 phases complete)
 | 19-02 | subTest for variant testing | Comprehensive case handling (y/Y/yes/YES) with clear failure reporting |
 | 20-01 | Fail-fast at parser level | Non-TTY validation exits with code 2 before file scanning |
 | 20-02 | Unified banner display | Same banner format for interactive and batch modes |
+| 20.1-01 | Version 2.0 indicates breaking schema change | Major restructuring signals incompatibility with v1 consumers |
+| 20.1-01 | Header constructed in finalize() | Timestamp generated at output time, not initialization |
+| 20.1-01 | Compare mode has no action field | Only preview/execute modes include action field |
 
 ## Pending Todos
 
-1. **Update JSON output header to object format** (output) - Consider `{"header": {"name": "filematcher"}}` (future)
+None - JSON header todo completed in Phase 20.1.
 
 ## Blockers/Concerns
 
@@ -80,13 +83,16 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Phase 20 verified and complete
+Stopped at: Completed Phase 20.1 Plan 01
 Resume file: None
+
+## Roadmap Evolution
+
+- Phase 20.1 inserted after Phase 20: JSON Header Object Format (from todo research) - COMPLETE
 
 ## Next Steps
 
-1. Run `/gsd:discuss-phase 21` to gather context for Error Handling & Polish
-2. Or `/gsd:plan-phase 21` to plan directly
+1. Continue to Phase 21 for Error Handling & Polish
 
 ---
-*Last updated: 2026-01-30 - Completed quick task 013*
+*Last updated: 2026-01-30 - Completed Phase 20.1-01 JSON header restructuring*
