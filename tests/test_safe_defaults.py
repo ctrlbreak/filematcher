@@ -9,7 +9,7 @@ import unittest
 from contextlib import redirect_stdout, redirect_stderr
 from unittest.mock import patch
 
-from filematcher import main, PREVIEW_BANNER, confirm_execution
+from filematcher import main, PREVIEW_BANNER
 from tests.test_base import BaseFileMatcherTest
 import json
 
