@@ -107,16 +107,6 @@ class ActionFormatter(ABC):
         ...
 
     @abstractmethod
-    def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
-        """Output the header with action type and directories."""
-        ...
-
-    @abstractmethod
-    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
-        """Output one-liner summary after header."""
-        ...
-
-    @abstractmethod
     def format_warnings(self, warnings: list[str]) -> None:
         """Output warning messages."""
         ...
@@ -278,16 +268,6 @@ class JsonActionFormatter(ActionFormatter):
         space_bytes: int
     ) -> None:
         pass
-
-    def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
-        self._data["action"] = action
-
-    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
-        if "statistics" not in self._data or not self._data["statistics"]:
-            self._data["statistics"] = {}
-        self._data["statistics"]["summaryDuplicateGroups"] = group_count
-        self._data["statistics"]["summaryDuplicateFiles"] = duplicate_count
-        self._data["statistics"]["summarySpaceReclaimable"] = space_savings
 
     def format_warnings(self, warnings: list[str]) -> None:
         self._data["warnings"] = list(warnings)
@@ -464,9 +444,9 @@ class JsonActionFormatter(ActionFormatter):
     def _convert_statistics_to_summary(self) -> dict:
         stats = self._data.get("statistics", {})
         return {
-            "matchCount": stats.get("groupCount", stats.get("summaryDuplicateGroups", 0)),
-            "matchedFilesDir1": stats.get("summaryDuplicateFiles", 0),
-            "matchedFilesDir2": stats.get("summaryDuplicateFiles", 0),
+            "matchCount": stats.get("groupCount", 0),
+            "matchedFilesDir1": stats.get("duplicateCount", 0),
+            "matchedFilesDir2": stats.get("duplicateCount", 0),
             "unmatchedFilesDir1": 0,
             "unmatchedFilesDir2": 0
         }
@@ -578,20 +558,6 @@ class TextActionFormatter(ActionFormatter):
         if not self.will_execute and self.preview_mode:
             print(dim("Use --execute to apply changes", self.cc))
             print()
-
-    def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
-        # Note: compare mode uses format_banner() directly, not this method
-        if self.will_execute:
-            header = f"Action mode: {action} {dir1} vs {dir2}"
-        else:
-            state = "PREVIEW" if self.preview_mode else "EXECUTING"
-            header = f"Action mode ({state}): {action} {dir1} vs {dir2}"
-        print(cyan(header, self.cc))
-
-    def format_summary_line(self, group_count: int, duplicate_count: int, space_savings: int) -> None:
-        space_str = format_file_size(space_savings)
-        print(cyan(f"Found {group_count} duplicate groups ({duplicate_count} files, {space_str} reclaimable)", self.cc))
-        print()
 
     def format_warnings(self, warnings: list[str]) -> None:
         for warning in warnings:

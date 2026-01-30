@@ -202,37 +202,37 @@ class TestUnifiedHeaders(unittest.TestCase):
         self.assertIn("test_dir2", result.stdout)
 
     def test_action_mode_preview_header(self):
-        """Action mode preview should show 'Action mode (PREVIEW): action'."""
+        """Action mode preview should show unified banner with (PREVIEW) indicator."""
         result = subprocess.run(
             [sys.executable, "file_matcher.py", self.test_dir1, self.test_dir2,
              "--action", "hardlink"],
             capture_output=True,
             text=True
         )
-        self.assertIn("Action mode (PREVIEW)", result.stdout)
-        self.assertIn("hardlink", result.stdout)
+        self.assertIn("hardlink mode:", result.stdout)
+        self.assertIn("(PREVIEW)", result.stdout)
 
     def test_action_mode_symlink_header(self):
-        """Action mode with symlink should show symlink in header."""
+        """Action mode with symlink should show unified banner with symlink."""
         result = subprocess.run(
             [sys.executable, "file_matcher.py", self.test_dir1, self.test_dir2,
              "--action", "symlink"],
             capture_output=True,
             text=True
         )
-        self.assertIn("Action mode (PREVIEW)", result.stdout)
-        self.assertIn("symlink", result.stdout)
+        self.assertIn("symlink mode:", result.stdout)
+        self.assertIn("(PREVIEW)", result.stdout)
 
     def test_action_mode_delete_header(self):
-        """Action mode with delete should show delete in header."""
+        """Action mode with delete should show unified banner with delete."""
         result = subprocess.run(
             [sys.executable, "file_matcher.py", self.test_dir1, self.test_dir2,
              "--action", "delete"],
             capture_output=True,
             text=True
         )
-        self.assertIn("Action mode (PREVIEW)", result.stdout)
-        self.assertIn("delete", result.stdout)
+        self.assertIn("delete mode:", result.stdout)
+        self.assertIn("(PREVIEW)", result.stdout)
 
 
 class TestCompareStatisticsFooter(unittest.TestCase):
