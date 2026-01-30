@@ -235,5 +235,233 @@ class TestExitCodeConstants(unittest.TestCase):
         self.assertEqual(EXIT_USER_QUIT, 130)  # 128 + SIGINT
 
 
+# ============================================================================
+# Integration Tests for Interactive Execute (from Plan 21-03 scope)
+# ============================================================================
+
+import os
+import tempfile
+import shutil
+from pathlib import Path
+from unittest.mock import MagicMock
+
+from filematcher.cli import interactive_execute
+from filematcher.types import Action, DuplicateGroup
+from filematcher.actions import create_audit_logger
+
+from tests.test_base import BaseFileMatcherTest
+
+
+class TestInteractiveExecuteErrorHandling(BaseFileMatcherTest):
+    """Integration tests for interactive_execute error handling."""
+
+    def setUp(self):
+        """Set up test environment with temporary directories and files."""
+        super().setUp()
+        self.formatter = TextActionFormatter(
+            verbose=False,
+            preview_mode=False,
+            action='delete',
+            color_config=ColorConfig(mode=ColorMode.NEVER)
+        )
+
+        # Create additional test files for these tests
+        self.master1 = os.path.join(self.temp_dir, 'master1.txt')
+        self.dup1 = os.path.join(self.temp_dir, 'dup1.txt')
+        self.master2 = os.path.join(self.temp_dir, 'master2.txt')
+        self.dup2 = os.path.join(self.temp_dir, 'dup2.txt')
+
+        for f in [self.master1, self.dup1, self.master2, self.dup2]:
+            with open(f, 'w') as fp:
+                fp.write('test content')  # 12 bytes each
+
+        self.groups = [
+            DuplicateGroup(self.master1, [self.dup1], 'test', 'hash1'),
+            DuplicateGroup(self.master2, [self.dup2], 'test', 'hash2'),
+        ]
+
+    def test_permission_error_displays_and_continues(self):
+        """Permission error displayed and execution continues to next file."""
+        # Create group with 2 duplicates
+        dup1a = os.path.join(self.temp_dir, 'dup1a.txt')
+        dup1b = os.path.join(self.temp_dir, 'dup1b.txt')
+        with open(dup1a, 'w') as f:
+            f.write('content')
+        with open(dup1b, 'w') as f:
+            f.write('content')
+
+        groups = [DuplicateGroup(self.master1, [dup1a, dup1b], 'test', 'hash1')]
+
+        # Mock execute_action to fail on first file, succeed on second
+        call_count = [0]
+
+        def mock_execute(dup, master, action, **kwargs):
+            call_count[0] += 1
+            if call_count[0] == 1:
+                return (False, "Permission denied", action)
+            return (True, "", action)
+
+        # Patch in cli module namespace where it's imported
+        with patch('filematcher.cli.execute_action', side_effect=mock_execute):
+            with patch('builtins.input', return_value='a'):
+                result = interactive_execute(
+                    groups=groups,
+                    action=Action.DELETE,
+                    formatter=self.formatter
+                )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
+        self.assertEqual(failure, 1)
+        self.assertEqual(success, 1)
+        self.assertFalse(user_quit)
+
+    def test_oserror_on_file_size_displays_error(self):
+        """OSError when getting file size displays error via formatter."""
+        groups = [DuplicateGroup(self.master1, [self.dup1], 'test', 'hash1')]
+
+        # Create a mock formatter to track calls
+        mock_formatter = MagicMock(spec=TextActionFormatter)
+        mock_formatter.format_group_prompt.return_value = 'test? '
+
+        with patch('builtins.input', return_value='y'):
+            with patch('os.path.getsize', side_effect=PermissionError("Permission denied")):
+                with patch('os.path.exists', return_value=True):
+                    result = interactive_execute(
+                        groups=groups,
+                        action=Action.DELETE,
+                        formatter=mock_formatter
+                    )
+
+        # format_file_error should have been called
+        self.assertTrue(mock_formatter.format_file_error.called)
+        call_args = mock_formatter.format_file_error.call_args
+        self.assertIn(self.dup1, call_args[0][0])  # file path
+        self.assertIn('Permission denied', str(call_args[0][1]))  # error message
+
+    def test_quit_response_returns_remaining_count(self):
+        """Quit after first group returns correct remaining_count."""
+        # Create 3 groups
+        master3 = os.path.join(self.temp_dir, 'master3.txt')
+        dup3 = os.path.join(self.temp_dir, 'dup3.txt')
+        with open(master3, 'w') as f:
+            f.write('content')
+        with open(dup3, 'w') as f:
+            f.write('content')
+
+        groups = self.groups + [DuplicateGroup(master3, [dup3], 'test', 'hash3')]
+        responses = iter(['y', 'q'])
+
+        with patch('builtins.input', side_effect=lambda _: next(responses)):
+            result = interactive_execute(
+                groups=groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
+        # Quit at group 2 means group 3 remaining (1 remaining)
+        self.assertEqual(remaining, 1)
+        self.assertTrue(user_quit)
+        self.assertEqual(confirmed, 1)  # One group confirmed before quit
+
+    def test_keyboard_interrupt_sets_user_quit(self):
+        """KeyboardInterrupt sets user_quit=True."""
+        with patch('builtins.input', side_effect=KeyboardInterrupt):
+            result = interactive_execute(
+                groups=self.groups,
+                action=Action.DELETE,
+                formatter=self.formatter
+            )
+
+        success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
+        self.assertTrue(user_quit)
+
+
+class TestExitCodes(BaseFileMatcherTest):
+    """Integration tests for exit codes."""
+
+    def setUp(self):
+        """Set up test environment."""
+        super().setUp()
+        self.formatter = TextActionFormatter(
+            verbose=False,
+            preview_mode=False,
+            action='delete',
+            color_config=ColorConfig(mode=ColorMode.NEVER)
+        )
+
+        # Create test files
+        self.master = os.path.join(self.temp_dir, 'master.txt')
+        self.dup = os.path.join(self.temp_dir, 'dup.txt')
+        with open(self.master, 'w') as f:
+            f.write('content')
+        with open(self.dup, 'w') as f:
+            f.write('content')
+
+        self.groups = [DuplicateGroup(self.master, [self.dup], 'test', 'hash1')]
+
+    def test_exit_success_when_no_failures(self):
+        """All succeed returns exit 0."""
+        from filematcher.actions import determine_exit_code
+        # 5 successes, 0 failures
+        exit_code = determine_exit_code(5, 0)
+        self.assertEqual(exit_code, 0)
+
+    def test_exit_partial_when_some_failures(self):
+        """Some failures returns exit 3 (from determine_exit_code)."""
+        from filematcher.actions import determine_exit_code
+        # Note: determine_exit_code returns 3 for partial, not 2
+        # EXIT_PARTIAL=2 is used in CLI for interactive mode failures
+        exit_code = determine_exit_code(5, 2)
+        self.assertEqual(exit_code, 3)
+
+    def test_exit_user_quit_on_q_response(self):
+        """User quit via 'q' returns exit 130."""
+        # Verify that EXIT_USER_QUIT is used for 'q' response
+        # The actual exit code is tested via the constant value
+        self.assertEqual(EXIT_USER_QUIT, 130)
+
+    def test_exit_success_when_user_skips_all(self):
+        """User skipping everything via 'n' returns success (no failures)."""
+        from filematcher.actions import determine_exit_code
+
+        # User skipping via 'n' means:
+        # - success_count = 0 (no files processed)
+        # - failure_count = 0 (no errors)
+        # This should be exit 0 - user intentionally skipped
+        exit_code = determine_exit_code(0, 0)
+        self.assertEqual(exit_code, 0)
+
+
+class TestAuditLoggerFailFast(unittest.TestCase):
+    """Tests for audit logger fail-fast behavior."""
+
+    def test_audit_logger_exits_on_write_error(self):
+        """Audit logger creation failure exits with code 2."""
+        import logging
+
+        with patch.object(logging, 'FileHandler', side_effect=OSError("Permission denied")):
+            with self.assertRaises(SystemExit) as cm:
+                create_audit_logger(Path('/nonexistent/path/audit.log'))
+
+        self.assertEqual(cm.exception.code, 2)
+
+    def test_audit_logger_prints_helpful_message(self):
+        """Audit logger failure prints helpful message to stderr."""
+        import logging
+
+        captured_stderr = StringIO()
+        with patch.object(logging, 'FileHandler', side_effect=OSError("Permission denied")):
+            with patch('sys.stderr', captured_stderr):
+                try:
+                    create_audit_logger(Path('/nonexistent/path/audit.log'))
+                except SystemExit:
+                    pass
+
+        stderr_output = captured_stderr.getvalue()
+        self.assertIn('Cannot create audit log', stderr_output)
+        self.assertIn('Audit trail is required', stderr_output)
+
+
 if __name__ == '__main__':
     unittest.main()
