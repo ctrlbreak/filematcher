@@ -241,23 +241,44 @@ class JsonActionFormatter(ActionFormatter):
     def __init__(self, verbose: bool = False, preview_mode: bool = True, action: str | None = None, will_execute: bool = False):
         super().__init__(verbose, preview_mode, action, will_execute)
         self._data: dict = {
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "mode": "preview" if preview_mode else "execute",
-            "action": "",
-            "directories": {
-                "master": "",
-                "duplicate": ""
-            },
             "warnings": [],
             "duplicateGroups": [],
             "statistics": {}
         }
+        # Track directories separately for header construction
+        self._master_dir = ""
+        self._duplicate_dir = ""
         # Track action type for execution results
         self._action_type = ""
         # Track hash algorithm for compare mode JSON
         self._hash_algorithm = "md5"
         # Track metadata for verbose mode (compare mode compatible)
         self._metadata: dict[str, dict] = {}
+
+    def _build_header(self, mode: str, action: str | None = None) -> dict:
+        """Build the header object with run metadata.
+
+        Args:
+            mode: One of "compare", "preview", or "execute"
+            action: Action type (only included for non-compare modes)
+
+        Returns:
+            Header dictionary with name, version, timestamp, mode, hashAlgorithm, directories
+        """
+        header: dict = {
+            "name": "filematcher",
+            "version": "2.0",
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "mode": mode,
+            "hashAlgorithm": self._hash_algorithm,
+            "directories": {
+                "master": self._master_dir,
+                "duplicate": self._duplicate_dir
+            }
+        }
+        if action and mode != "compare":
+            header["action"] = action
+        return header
 
     # No-op in JSON mode (data captured in structure)
     def format_banner(
@@ -286,7 +307,6 @@ class JsonActionFormatter(ActionFormatter):
         dir2_base: str | None = None
     ) -> None:
         self._action_type = action
-        self._data["action"] = action
         sorted_duplicates = sorted(duplicates)
         dup_objects = []
         for dup in sorted_duplicates:
@@ -338,7 +358,7 @@ class JsonActionFormatter(ActionFormatter):
         action: str,
         cross_fs_count: int = 0
     ) -> None:
-        self._data["action"] = action
+        self._action_type = action
         self._data["statistics"] = {
             "groupCount": group_count,
             "duplicateCount": duplicate_count,
@@ -371,8 +391,8 @@ class JsonActionFormatter(ActionFormatter):
         }
 
     def set_directories(self, master_dir: str, duplicate_dir: str) -> None:
-        self._data["directories"]["master"] = str(Path(master_dir).resolve())
-        self._data["directories"]["duplicate"] = str(Path(duplicate_dir).resolve())
+        self._master_dir = str(Path(master_dir).resolve())
+        self._duplicate_dir = str(Path(duplicate_dir).resolve())
 
     def set_hash_algorithm(self, algorithm: str) -> None:
         self._hash_algorithm = algorithm
@@ -402,12 +422,12 @@ class JsonActionFormatter(ActionFormatter):
         dir2_label: str,
         unmatched2: list[str]
     ) -> None:
-        self._data["unmatchedDir1"] = sorted(unmatched1)
-        self._data["unmatchedDir2"] = sorted(unmatched2)
+        self._data["unmatchedMaster"] = sorted(unmatched1)
+        self._data["unmatchedDuplicate"] = sorted(unmatched2)
         if "summary" not in self._data:
             self._data["summary"] = {}
-        self._data["summary"]["unmatchedFilesDir1"] = len(unmatched1)
-        self._data["summary"]["unmatchedFilesDir2"] = len(unmatched2)
+        self._data["summary"]["unmatchedFilesMaster"] = len(unmatched1)
+        self._data["summary"]["unmatchedFilesDuplicate"] = len(unmatched2)
 
         if self.verbose:
             for f in unmatched1 + unmatched2:
@@ -445,16 +465,16 @@ class JsonActionFormatter(ActionFormatter):
         stats = self._data.get("statistics", {})
         return {
             "matchCount": stats.get("groupCount", 0),
-            "matchedFilesDir1": stats.get("duplicateCount", 0),
-            "matchedFilesDir2": stats.get("duplicateCount", 0),
-            "unmatchedFilesDir1": 0,
-            "unmatchedFilesDir2": 0
+            "matchedFilesMaster": stats.get("duplicateCount", 0),
+            "matchedFilesDuplicate": stats.get("duplicateCount", 0),
+            "unmatchedFilesMaster": 0,
+            "unmatchedFilesDuplicate": 0
         }
 
     def finalize(self) -> None:
         """Finalize output by sorting collections and printing JSON."""
         if self._action == "compare":
-            # Convert to compare-mode JSON schema
+            # Convert to compare-mode JSON schema with header
             matches = []
             total_files = 0
             for group in self._data.get("duplicateGroups", []):
@@ -462,30 +482,28 @@ class JsonActionFormatter(ActionFormatter):
                 duplicates = [d["path"] for d in group.get("duplicates", [])]
                 match_entry = {
                     "hash": group.get("hash", ""),
-                    "filesDir1": [master],
-                    "filesDir2": sorted(duplicates)
+                    "filesMaster": [master],
+                    "filesDuplicate": sorted(duplicates)
                 }
                 matches.append(match_entry)
                 total_files += 1 + len(duplicates)
 
-            matches.sort(key=lambda m: m["filesDir1"][0] if m["filesDir1"] else "")
+            matches.sort(key=lambda m: m["filesMaster"][0] if m["filesMaster"] else "")
+
+            # Build header for compare mode
+            header = self._build_header(mode="compare")
 
             compare_data: dict = {
-                "timestamp": self._data["timestamp"],
-                "directories": {
-                    "dir1": self._data["directories"].get("master", ""),
-                    "dir2": self._data["directories"].get("duplicate", "")
-                },
-                "hashAlgorithm": self._hash_algorithm,
+                "header": header,
                 "matches": matches,
-                "unmatchedDir1": self._data.get("unmatchedDir1", []),
-                "unmatchedDir2": self._data.get("unmatchedDir2", []),
+                "unmatchedMaster": self._data.get("unmatchedMaster", []),
+                "unmatchedDuplicate": self._data.get("unmatchedDuplicate", []),
                 "summary": self._convert_statistics_to_summary()
             }
 
-            if "summary" in self._data and "unmatchedFilesDir1" in self._data["summary"]:
-                compare_data["summary"]["unmatchedFilesDir1"] = self._data["summary"]["unmatchedFilesDir1"]
-                compare_data["summary"]["unmatchedFilesDir2"] = self._data["summary"]["unmatchedFilesDir2"]
+            if "summary" in self._data and "unmatchedFilesMaster" in self._data["summary"]:
+                compare_data["summary"]["unmatchedFilesMaster"] = self._data["summary"]["unmatchedFilesMaster"]
+                compare_data["summary"]["unmatchedFilesDuplicate"] = self._data["summary"]["unmatchedFilesDuplicate"]
 
             if self.verbose and self._metadata:
                 compare_data["metadata"] = self._metadata
@@ -501,11 +519,27 @@ class JsonActionFormatter(ActionFormatter):
             print(json.dumps(compare_data, indent=2))
             return
 
-        # Action modes: sort for determinism and output
+        # Action modes: build header and sort for determinism
+        mode = "preview" if self.preview_mode else "execute"
+        header = self._build_header(mode=mode, action=self._action_type)
+
         self._data["duplicateGroups"].sort(key=lambda g: g["masterFile"])
         for group in self._data["duplicateGroups"]:
             group["duplicates"].sort(key=lambda d: d["path"])
-        print(json.dumps(self._data, indent=2))
+
+        # Build action mode output with header at top
+        output_data: dict = {
+            "header": header,
+            "warnings": self._data.get("warnings", []),
+            "duplicateGroups": self._data["duplicateGroups"],
+            "statistics": self._data.get("statistics", {})
+        }
+
+        # Add execution summary if present (execute mode)
+        if "execution" in self._data:
+            output_data["execution"] = self._data["execution"]
+
+        print(json.dumps(output_data, indent=2))
 
 
 class TextActionFormatter(ActionFormatter):
