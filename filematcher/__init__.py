@@ -25,7 +25,6 @@ from filematcher.colors import (
     GREEN,
     YELLOW,
     RED,
-    BLUE,
     CYAN,
     BOLD,
     DIM,
@@ -44,7 +43,6 @@ from filematcher.colors import (
     green,
     yellow,
     red,
-    blue,
     cyan,
     dim,
     bold,
@@ -104,7 +102,7 @@ from filematcher.formatters import (
     SpaceInfo,
     # Constants
     PREVIEW_BANNER,
-    EXECUTE_BANNER,
+    BANNER_SEPARATOR,
     # Formatter classes
     ActionFormatter,
     TextActionFormatter,
@@ -222,7 +220,7 @@ __all__ = [
     "format_confirmation_prompt",
     # Constants
     "PREVIEW_BANNER",
-    "EXECUTE_BANNER",
+    "BANNER_SEPARATOR",
     # Internal helpers (used by tests)
     "select_oldest",
     "build_file_hash_lookup",

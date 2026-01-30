@@ -28,7 +28,6 @@ from filematcher.colors import (
     green,
     yellow,
     red,
-    blue,
     cyan,
     bold,
     bold_yellow,
@@ -66,38 +65,7 @@ class SpaceInfo:
 
 
 PREVIEW_BANNER = "=== PREVIEW MODE - Use --execute to apply changes ==="
-EXECUTE_BANNER = "=== EXECUTE MODE! ==="
-EXECUTE_BANNER_SEPARATOR = "-" * 40
-
-
-def format_execute_banner(
-    action: str,
-    group_count: int,
-    duplicate_count: int,
-    space_bytes: int,
-    color_config: ColorConfig | None = None
-) -> tuple[str, str]:
-    """Format execute mode banner with statistics.
-
-    .. deprecated::
-        Use TextActionFormatter.format_banner() instead.
-        This function is kept for backward compatibility.
-
-    Args:
-        action: Action type (hardlink, symlink, delete)
-        group_count: Number of duplicate groups
-        duplicate_count: Total number of duplicate files
-        space_bytes: Space in bytes to be saved
-        color_config: Color configuration for bold formatting
-
-    Returns:
-        Tuple of (banner_line, separator_line)
-    """
-    cc = color_config or ColorConfig(mode=ColorMode.NEVER)
-    action_bold = bold(action, cc)
-    space_str = format_file_size(space_bytes)
-    banner = f"{action_bold} mode: {group_count} groups, {duplicate_count} files, {space_str} to save"
-    return (banner, EXECUTE_BANNER_SEPARATOR)
+BANNER_SEPARATOR = "-" * 40
 
 
 class ActionFormatter(ABC):
@@ -209,11 +177,6 @@ class ActionFormatter(ABC):
     @abstractmethod
     def format_execute_prompt_separator(self) -> None:
         """Output separator before execute prompt."""
-        ...
-
-    @abstractmethod
-    def format_execute_banner_line(self) -> str:
-        """Return the execute banner text."""
         ...
 
     @abstractmethod
@@ -480,7 +443,6 @@ class JsonActionFormatter(ActionFormatter):
     # No-ops for JSON mode
     def format_user_abort(self) -> None: pass
     def format_execute_prompt_separator(self) -> None: pass
-    def format_execute_banner_line(self) -> str: return ""
 
     def format_group_prompt(
         self,
@@ -595,9 +557,9 @@ class TextActionFormatter(ActionFormatter):
         if action == "compare":
             # Compare mode: informational, no action taken
             banner = f"{action_bold} mode: {group_count} groups, {duplicate_count} files, {space_str} reclaimable"
-            mode_indicator = blue(" (COMPARE)", self.cc)
+            mode_indicator = cyan(" (COMPARE)", self.cc)
             print(banner + mode_indicator)
-            print(EXECUTE_BANNER_SEPARATOR)
+            print(BANNER_SEPARATOR)
             return
 
         # Action modes (hardlink/symlink/delete)
@@ -610,7 +572,7 @@ class TextActionFormatter(ActionFormatter):
             mode_indicator = yellow(" (PREVIEW)", self.cc)
 
         print(banner + mode_indicator)
-        print(EXECUTE_BANNER_SEPARATOR)
+        print(BANNER_SEPARATOR)
 
         # Show preview hint if in preview mode
         if not self.will_execute and self.preview_mode:
@@ -618,9 +580,8 @@ class TextActionFormatter(ActionFormatter):
             print()
 
     def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
-        if action == "compare":
-            header = f"Compare mode: {dir1} vs {dir2}"
-        elif self.will_execute:
+        # Note: compare mode uses format_banner() directly, not this method
+        if self.will_execute:
             header = f"Action mode: {action} {dir1} vs {dir2}"
         else:
             state = "PREVIEW" if self.preview_mode else "EXECUTING"
@@ -774,9 +735,6 @@ class TextActionFormatter(ActionFormatter):
 
     def format_execute_prompt_separator(self) -> None:
         print()
-
-    def format_execute_banner_line(self) -> str:
-        return "" if self.will_execute else EXECUTE_BANNER
 
     def finalize(self) -> None:
         pass
