@@ -216,8 +216,8 @@ class TestExecuteMode(BaseFileMatcherTest):
             main()
         return f.getvalue()
 
-    def test_execute_shows_will_labels_then_banner(self):
-        """--execute should show 'WILL' labels (not WOULD/PREVIEW) then EXECUTE MODE banner."""
+    def test_execute_shows_will_labels_and_banner(self):
+        """--execute should show 'WILL' labels and execute banner."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
                    '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
@@ -228,30 +228,34 @@ class TestExecuteMode(BaseFileMatcherTest):
                     self.assertNotIn("WOULD HARDLINK", output)
                     # No PREVIEW banner when --execute is set
                     self.assertNotIn("PREVIEW MODE", output)
-                    # EXECUTE MODE banner shown before groups
-                    self.assertIn("EXECUTE MODE!", output)
+                    # Execute banner shows action and stats
+                    self.assertIn("hardlink mode:", output)
+                    self.assertIn("groups", output)
+                    # 40-dash separator shown
+                    self.assertIn("-" * 40, output)
 
     def test_execute_prompts_for_confirmation(self):
-        """--execute should prompt user before proceeding."""
+        """--execute without --yes should prompt with interactive format."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
                    '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='n') as mock_input:
                     self.run_main_with_args([])
                     mock_input.assert_called_once()
-                    # Verify prompt text
+                    # Interactive mode uses [y/n/a/q] format
                     call_args = mock_input.call_args[0][0] if mock_input.call_args[0] else ""
-                    self.assertIn("[y/N]", call_args)
+                    self.assertIn("[y/n/a/q]", call_args)
 
-    def test_execute_abort_shows_message(self):
-        """Declining confirmation should show abort message."""
+    def test_execute_skip_shows_summary(self):
+        """Skipping a group in interactive mode should show execution summary."""
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
                    '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='n'):
                     output = self.run_main_with_args([])
-                    self.assertIn("Aborted", output)
-                    self.assertIn("No changes made", output)
+                    # Should show execution summary even when skipping
+                    self.assertIn("Execution complete:", output)
+                    self.assertIn("Successful:", output)
 
     def test_execute_abort_exit_code_zero(self):
         """Aborting should exit with code 0 (not an error)."""

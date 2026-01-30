@@ -19,7 +19,7 @@ from filematcher.actions import (
 from filematcher.types import Action, DuplicateGroup, FailedOperation
 from filematcher.formatters import (
     SpaceInfo, TextActionFormatter, JsonActionFormatter, ActionFormatter,
-    format_confirmation_prompt, calculate_space_savings,
+    format_confirmation_prompt, calculate_space_savings, format_execute_banner,
 )
 from filematcher.directory import find_matching_files, select_master_file
 
@@ -611,6 +611,7 @@ def main() -> int:
 
         elif execute_mode:
             if args.json:
+                # JSON mode requires --yes, execute batch mode
                 success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
                     dir1=args.dir1,
                     dir2=args.dir2,
@@ -669,62 +670,99 @@ def main() -> int:
                 return determine_exit_code(success_count, failure_count)
 
             else:
-                print_preview_output(action_formatter, show_banner=True)
-                action_formatter.format_execute_prompt_separator()
-
-                banner_line = action_formatter.format_execute_banner_line()
-                if banner_line:
-                    print(banner_line)
-
-                confirm_space_info = calculate_space_savings(master_results)
-                cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
-                prompt = format_confirmation_prompt(
-                    confirm_space_info.duplicate_count, args.action,
-                    confirm_space_info.bytes_saved, cross_fs_count if args.fallback_symlink else 0
+                # Text mode: show banner for both interactive and batch modes
+                space_info = calculate_space_savings(master_results)
+                banner, separator = format_execute_banner(
+                    args.action.value,
+                    space_info.group_count,
+                    space_info.duplicate_count,
+                    space_info.bytes_saved,
+                    color_config
                 )
-                if not confirm_execution(skip_confirm=args.yes, prompt=prompt):
-                    action_formatter.format_user_abort()
-                    return 0
 
                 if not args.quiet:
-                    action_formatter_exec_header = TextActionFormatter(
+                    print(banner)
+                    print(separator)
+
+                if args.yes:
+                    # Batch mode - execute without prompts
+                    success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
+                        dir1=args.dir1,
+                        dir2=args.dir2,
+                        action=args.action,
+                        master_results=master_results,
+                        matches=matches,
+                        base_flags=['--execute', '--yes'],
+                        verbose=args.verbose,
+                        yes=args.yes,
+                        fallback_symlink=args.fallback_symlink,
+                        log_path=args.log,
+                        target_dir=args.target_dir
+                    )
+
+                    action_formatter_exec = TextActionFormatter(
                         verbose=args.verbose,
                         preview_mode=False,
                         action=args.action,
                         color_config=color_config
                     )
-                    action_formatter_exec_header.format_unified_header(args.action, args.dir1, args.dir2)
-                    print()
+                    action_formatter_exec.format_execution_summary(
+                        success_count=success_count,
+                        failure_count=failure_count,
+                        skipped_count=skipped_count,
+                        space_saved=space_saved,
+                        log_path=str(actual_log_path),
+                        failed_list=failed_list
+                    )
 
-                success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
-                    dir1=args.dir1,
-                    dir2=args.dir2,
-                    action=args.action,
-                    master_results=master_results,
-                    matches=matches,
-                    base_flags=['--execute'],
-                    verbose=args.verbose,
-                    yes=args.yes,
-                    fallback_symlink=args.fallback_symlink,
-                    log_path=args.log,
-                    target_dir=args.target_dir
-                )
+                    return determine_exit_code(success_count, failure_count)
+                else:
+                    # Interactive mode - prompt for each group
+                    file_hash_lookup = build_file_hash_lookup(matches)
+                    file_sizes_map: dict[str, dict[str, int]] = {}
+                    for master_file, duplicates, reason, file_hash in master_results:
+                        file_sizes_map[master_file] = build_file_sizes([master_file] + duplicates)
 
-                action_formatter_exec = TextActionFormatter(
-                    verbose=args.verbose,
-                    preview_mode=False,
-                    action=args.action,
-                    color_config=color_config
-                )
-                action_formatter_exec.format_execution_summary(
-                    success_count=success_count,
-                    failure_count=failure_count,
-                    skipped_count=skipped_count,
-                    space_saved=space_saved,
-                    log_path=str(actual_log_path),
-                    failed_list=failed_list
-                )
+                    cross_fs_to_show = get_cross_fs_for_hardlink(args.action, cross_fs_files)
 
-                return determine_exit_code(success_count, failure_count)
+                    # Create audit logger
+                    log_path_obj = Path(args.log) if args.log else None
+                    audit_logger, actual_log_path = create_audit_logger(log_path_obj)
+
+                    base_flags = ['--execute']
+                    flags = build_log_flags(base_flags, verbose=args.verbose,
+                                           fallback_symlink=args.fallback_symlink,
+                                           log_path=args.log, target_dir=args.target_dir)
+                    write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
+
+                    (success_count, failure_count, skipped_count, space_saved,
+                     failed_list, confirmed_count, user_skipped_count) = interactive_execute(
+                        groups=sorted(master_results, key=lambda x: x[0]),
+                        action=args.action,
+                        formatter=action_formatter,
+                        fallback_symlink=args.fallback_symlink,
+                        audit_logger=audit_logger,
+                        file_hashes=file_hash_lookup,
+                        target_dir=args.target_dir,
+                        dir2_base=args.dir2,
+                        verbose=args.verbose,
+                        file_sizes_map=file_sizes_map,
+                        cross_fs_files=cross_fs_to_show
+                    )
+
+                    write_log_footer(audit_logger, success_count, failure_count,
+                                   skipped_count, space_saved, failed_list)
+
+                    # Show execution summary
+                    action_formatter.format_execution_summary(
+                        success_count=success_count,
+                        failure_count=failure_count,
+                        skipped_count=skipped_count,
+                        space_saved=space_saved,
+                        log_path=str(actual_log_path),
+                        failed_list=failed_list
+                    )
+
+                    return determine_exit_code(success_count, failure_count)
 
     return 0
