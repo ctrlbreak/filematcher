@@ -52,17 +52,17 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
 
 ### Error Handling (ERR)
 
-- [ ] **ERR-01**: Permission/access errors skip file and continue
+- [x] **ERR-01**: Permission/access errors skip file and continue
   - Log error to audit log
   - Show error inline (e.g., `✗ Permission denied: /path`)
   - Continue to next file/group
 
-- [ ] **ERR-02**: Clean summary on cancellation (q response)
+- [x] **ERR-02**: Clean summary on cancellation (q response)
   - Show count of files already processed
   - Show count of files skipped
   - Exit cleanly (not an error)
 
-- [ ] **ERR-03**: Execution Complete summary shows comprehensive counts
+- [x] **ERR-03**: Execution Complete summary shows comprehensive counts
   - User decisions: N confirmed, M skipped
   - Execution results: X succeeded, Y failed
   - Space saved from successful actions
@@ -119,9 +119,9 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
 | OUT-02 | Phase 18 | Complete |
 | OUT-03 | Phase 19 | Complete |
 | OUT-04 | Phase 18 | Complete |
-| ERR-01 | Phase 21 | Pending |
-| ERR-02 | Phase 21 | Pending |
-| ERR-03 | Phase 21 | Pending |
+| ERR-01 | Phase 21 | Complete |
+| ERR-02 | Phase 21 | Complete |
+| ERR-03 | Phase 21 | Complete |
 | FLAG-01 | Phase 20 | Complete |
 | FLAG-02 | Phase 20 | Complete |
 | ARCH-01 | Phase 18 | Complete |
