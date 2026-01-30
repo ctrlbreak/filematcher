@@ -104,7 +104,10 @@ Plans:
   3. `q` response shows clean summary (files processed, files skipped) and exits cleanly
   4. Final summary shows user decisions (confirmed/skipped), execution results (success/failed), space saved, and audit log path
   5. All tests pass and edge cases covered
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 21-01-PLAN.md - Inline error display and quit summary
+- [ ] 21-02-PLAN.md - Enhanced final summary and tests
 
 ## Progress
 
@@ -114,7 +117,7 @@ Plans:
 | 19. Interactive Core | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 20. CLI Integration | v1.5 | 2/2 | ✓ Complete | 2026-01-30 |
 | 20.1 JSON Header Object Format | v1.5 | 1/1 | ✓ Complete | 2026-01-30 |
-| 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
+| 21. Error Handling & Polish | v1.5 | 0/2 | Not started | - |
 
 ---
 
