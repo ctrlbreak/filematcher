@@ -16,7 +16,7 @@ Transform execute mode from batch-only to interactive-by-default with per-file y
 - [x] **Phase 18: Formatter Extensions** - Add prompt formatting methods to ActionFormatter ABC
 - [x] **Phase 19: Interactive Core** - Build per-group prompt loop with y/n/a/q handling
 - [x] **Phase 20: CLI Integration** - Wire flags, TTY validation, and routing logic
-- [ ] **Phase 20.1: JSON Header Object Format** - Restructure JSON output with unified header object (INSERTED)
+- [x] **Phase 20.1: JSON Header Object Format** - Restructure JSON output with unified header object (INSERTED)
 - [ ] **Phase 21: Error Handling & Polish** - Error recovery, cancellation, and final summary
 
 ## Phase Details
@@ -85,7 +85,7 @@ Plans:
   6. Breaking change documented in release notes
 **Plans:** 1 plan
 Plans:
-- [ ] 20.1-01-PLAN.md - Update JsonActionFormatter and tests for header structure
+- [x] 20.1-01-PLAN.md - Update JsonActionFormatter and tests for header structure
 
 **Context from brainstorm:**
 - Current JSON has metadata scattered at root level
@@ -113,7 +113,7 @@ Plans:
 | 18. Formatter Extensions | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 19. Interactive Core | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 20. CLI Integration | v1.5 | 2/2 | ✓ Complete | 2026-01-30 |
-| 20.1 JSON Header Object Format | v1.5 | 0/1 | Not started | - |
+| 20.1 JSON Header Object Format | v1.5 | 1/1 | ✓ Complete | 2026-01-30 |
 | 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
 
 ---
