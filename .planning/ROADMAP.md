@@ -78,7 +78,7 @@ Plans:
 **Requirements**: JSON-01 (new)
 **Success Criteria** (what must be TRUE):
   1. Both compare and action mode JSON output have a `header` object containing metadata
-  2. Header contains: timestamp, mode, action, hashAlgorithm, directories
+  2. Header contains: name, version, timestamp, mode, action, hashAlgorithm, directories
   3. Directory keys unified to `master`/`duplicate` across all modes
   4. Data arrays remain at root level (matches, duplicateGroups)
   5. All existing JSON tests updated to new format
