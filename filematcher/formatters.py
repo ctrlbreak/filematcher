@@ -29,6 +29,7 @@ from filematcher.colors import (
     yellow,
     red,
     cyan,
+    bold,
     bold_yellow,
     bold_green,
     render_group_line,
@@ -65,6 +66,33 @@ class SpaceInfo:
 
 PREVIEW_BANNER = "=== PREVIEW MODE - Use --execute to apply changes ==="
 EXECUTE_BANNER = "=== EXECUTE MODE! ==="
+EXECUTE_BANNER_SEPARATOR = "-" * 40
+
+
+def format_execute_banner(
+    action: str,
+    group_count: int,
+    duplicate_count: int,
+    space_bytes: int,
+    color_config: ColorConfig | None = None
+) -> tuple[str, str]:
+    """Format execute mode banner with statistics.
+
+    Args:
+        action: Action type (hardlink, symlink, delete)
+        group_count: Number of duplicate groups
+        duplicate_count: Total number of duplicate files
+        space_bytes: Space in bytes to be saved
+        color_config: Color configuration for bold formatting
+
+    Returns:
+        Tuple of (banner_line, separator_line)
+    """
+    cc = color_config or ColorConfig(mode=ColorMode.NEVER)
+    action_bold = bold(action, cc)
+    space_str = format_file_size(space_bytes)
+    banner = f"{action_bold} mode: {group_count} groups, {duplicate_count} files, {space_str} to save"
+    return (banner, EXECUTE_BANNER_SEPARATOR)
 
 
 class ActionFormatter(ABC):
