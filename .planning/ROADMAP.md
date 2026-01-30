@@ -63,9 +63,12 @@ Plans:
   2. `--execute --yes` runs batch mode without prompts (existing behavior)
   3. Non-TTY stdin with `--execute` (no `--yes`) errors with message directing to `--yes`
   4. `--json --execute` without `--yes` errors with clear message
-  5. `--quiet --execute` implies `--yes` (runs batch mode)
+  5. `--quiet --execute` requires `--yes` (error without it)
   6. Interactive mode shows banner and statistics before first prompt
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 20-01-PLAN.md - Fail-fast flag validation and banner formatting
+- [ ] 20-02-PLAN.md - Mode routing and integration tests
 
 ### Phase 21: Error Handling & Polish
 
@@ -86,7 +89,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 18. Formatter Extensions | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 19. Interactive Core | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
-| 20. CLI Integration | v1.5 | 0/TBD | Not started | - |
+| 20. CLI Integration | v1.5 | 0/2 | Planned | - |
 | 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
 
 ---
@@ -110,7 +113,7 @@ All 16 v1 requirements mapped:
 | ERR-02 | 21 | Clean summary on cancellation |
 | ERR-03 | 21 | Comprehensive execution summary |
 | FLAG-01 | 20 | --json --execute requires --yes |
-| FLAG-02 | 20 | --quiet --execute implies --yes |
+| FLAG-02 | 20 | --quiet --execute requires --yes |
 | ARCH-01 | 18 | Consistent flow between modes |
 | ARCH-02 | 18 | Single code path for group formatting |
 
