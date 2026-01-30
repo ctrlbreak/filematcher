@@ -698,11 +698,15 @@ def main() -> int:
                     skipped_count=skipped_count,
                     space_saved=space_saved,
                     log_path=str(actual_log_path),
-                    failed_list=failed_list
+                    failed_list=failed_list,
+                    confirmed_count=len(master_results),
+                    user_skipped_count=0
                 )
 
                 action_formatter.finalize()
-                return determine_exit_code(success_count, failure_count)
+                if failure_count > 0:
+                    return EXIT_PARTIAL
+                return EXIT_SUCCESS
 
             else:
                 # Text mode: show banner for both interactive and batch modes
@@ -744,10 +748,14 @@ def main() -> int:
                         skipped_count=skipped_count,
                         space_saved=space_saved,
                         log_path=str(actual_log_path),
-                        failed_list=failed_list
+                        failed_list=failed_list,
+                        confirmed_count=len(master_results),
+                        user_skipped_count=0
                     )
 
-                    return determine_exit_code(success_count, failure_count)
+                    if failure_count > 0:
+                        return EXIT_PARTIAL
+                    return EXIT_SUCCESS
                 else:
                     # Interactive mode - prompt for each group
                     file_hash_lookup = build_file_hash_lookup(matches)
@@ -804,9 +812,13 @@ def main() -> int:
                         skipped_count=skipped_count,
                         space_saved=space_saved,
                         log_path=str(actual_log_path),
-                        failed_list=failed_list
+                        failed_list=failed_list,
+                        confirmed_count=confirmed_count,
+                        user_skipped_count=user_skipped_count
                     )
 
-                    return determine_exit_code(success_count, failure_count)
+                    if failure_count > 0:
+                        return EXIT_PARTIAL
+                    return EXIT_SUCCESS
 
     return 0
