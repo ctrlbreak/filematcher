@@ -149,9 +149,22 @@ class ActionFormatter(ABC):
         skipped_count: int,
         space_saved: int,
         log_path: str,
-        failed_list: list[FailedOperation]
+        failed_list: list[FailedOperation],
+        confirmed_count: int = 0,
+        user_skipped_count: int = 0
     ) -> None:
-        """Output execution summary after actions complete."""
+        """Output execution summary after actions complete.
+
+        Args:
+            success_count: Number of files successfully processed
+            failure_count: Number of files that failed
+            skipped_count: Number of files skipped (already linked)
+            space_saved: Total bytes saved
+            log_path: Path to audit log file
+            failed_list: List of failed operations with paths and errors
+            confirmed_count: Number of groups user confirmed (y/a)
+            user_skipped_count: Number of groups user skipped (n)
+        """
         ...
 
     @abstractmethod
@@ -404,7 +417,9 @@ class JsonActionFormatter(ActionFormatter):
         skipped_count: int,
         space_saved: int,
         log_path: str,
-        failed_list: list[FailedOperation]
+        failed_list: list[FailedOperation],
+        confirmed_count: int = 0,
+        user_skipped_count: int = 0
     ) -> None:
         failures = [
             {"path": path, "error": error}
@@ -417,7 +432,9 @@ class JsonActionFormatter(ActionFormatter):
             "skippedCount": skipped_count,
             "spaceSavedBytes": space_saved,
             "logPath": log_path,
-            "failures": failures
+            "failures": failures,
+            "userConfirmedCount": confirmed_count,
+            "userSkippedCount": user_skipped_count
         }
 
     def set_directories(self, master_dir: str, duplicate_dir: str) -> None:
@@ -743,20 +760,26 @@ class TextActionFormatter(ActionFormatter):
         skipped_count: int,
         space_saved: int,
         log_path: str,
-        failed_list: list[FailedOperation]
+        failed_list: list[FailedOperation],
+        confirmed_count: int = 0,
+        user_skipped_count: int = 0
     ) -> None:
         print()
         print("Execution complete:")
-        print(f"  Successful: {success_count}")
+        print(f"  User confirmed: {confirmed_count}")
+        print(f"  User skipped: {user_skipped_count}")
+        print(f"  Succeeded: {success_count}")
         print(f"  Failed: {failure_count}")
-        print(f"  Skipped: {skipped_count}")
-        print(f"  Space saved: {format_file_size(space_saved)}")
-        print(f"  Log file: {log_path}")
+        if skipped_count > 0:
+            print(f"  Already linked: {skipped_count}")
+        print(f"  Space freed: {format_file_size(space_saved)} ({space_saved:,} bytes)")
+        print(f"  Audit log: {log_path}")
         if failed_list:
             print()
             print("Failed files:")
+            x_mark = red("\u2717", self.cc)
             for path, error in sorted(failed_list):
-                print(f"  - {path}: {error}")
+                print(f"  {x_mark} {path}: {error}")
 
     def format_empty_result(self) -> None:
         print("No matching files found." if self._action == "compare" else "No duplicates found.")
