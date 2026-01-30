@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-01-28)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.5 Interactive Execute - Phase 20.1 complete, ready for Phase 21
+**Current focus:** v1.5 Interactive Execute - Phase 21 complete
 
 ## Current Position
 
-Phase: 20.1 of 21 (JSON Header Object Format)
+Phase: 21 of 21 (Error Handling & Polish)
 Plan: 01 of 01 (complete)
 Status: Phase complete
-Last activity: 2026-01-30 - Completed Phase 20.1 JSON header restructuring
+Last activity: 2026-01-30 - Completed Phase 21-01 error handling and quit summary
 
-Progress: [===============     ] 80% (4/5 phases complete)
+Progress: [====================] 100% (5/5 phases complete)
 
 ## Milestone History
 
@@ -63,10 +63,14 @@ Progress: [===============     ] 80% (4/5 phases complete)
 | 20.1-01 | Version 2.0 indicates breaking schema change | Major restructuring signals incompatibility with v1 consumers |
 | 20.1-01 | Header constructed in finalize() | Timestamp generated at output time, not initialization |
 | 20.1-01 | Compare mode has no action field | Only preview/execute modes include action field |
+| 21-01 | EXIT_USER_QUIT = 130 | Unix convention (128 + SIGINT) |
+| 21-01 | Errors displayed inline with red X | Visual consistency with confirmation status |
+| 21-01 | Failed operations still logged | Audit trail captures all attempts |
+| 21-01 | Audit log failure aborts early | Exit 2 before any file operations |
 
 ## Pending Todos
 
-None - JSON header todo completed in Phase 20.1.
+None - all v1.5 features complete.
 
 ## Blockers/Concerns
 
@@ -83,16 +87,17 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Completed Phase 20.1 Plan 01
+Stopped at: Completed Phase 21 Plan 01
 Resume file: None
 
 ## Roadmap Evolution
 
 - Phase 20.1 inserted after Phase 20: JSON Header Object Format (from todo research) - COMPLETE
+- Phase 21: Error Handling & Polish - COMPLETE
 
 ## Next Steps
 
-1. Continue to Phase 21 for Error Handling & Polish
+v1.5 milestone complete. Ready for release or additional polish.
 
 ---
-*Last updated: 2026-01-30 - Completed Phase 20.1-01 JSON header restructuring*
+*Last updated: 2026-01-30 - Completed Phase 21-01 error handling and quit summary*
