@@ -283,11 +283,11 @@ class TestActionExecution(BaseFileMatcherTest):
                 with patch('filematcher.actions.execute_action', side_effect=mock_execute_action):
                     output, exit_code = self.run_main_capture_output()
 
-        # Should return 3 for partial failure (some succeeded, some failed)
+        # Should return 2 (EXIT_PARTIAL) for partial failure (some succeeded, some failed)
         # Note: If no duplicates exist, this may return 0. With our test setup:
         # - file1.txt, file3.txt match different_name.txt, also_different_name.txt
         # So we should have duplicates to process
-        self.assertEqual(exit_code, 3)  # Partial failure
+        self.assertEqual(exit_code, 2)  # EXIT_PARTIAL for partial failure
 
     def test_all_flags_together(self):
         """All flags can be combined correctly."""
@@ -312,13 +312,14 @@ class TestActionExecution(BaseFileMatcherTest):
             with patch('sys.stdin.isatty', return_value=False):
                 output, exit_code = self.run_main_capture_output()
 
-        # Should show execution summary
+        # Should show execution summary (Phase 21 format)
         self.assertIn("Execution complete:", output)
-        self.assertIn("Successful:", output)
+        self.assertIn("Succeeded:", output)
         self.assertIn("Failed:", output)
-        self.assertIn("Skipped:", output)
-        self.assertIn("Space saved:", output)
-        self.assertIn("Log file:", output)
+        self.assertIn("User confirmed:", output)
+        self.assertIn("User skipped:", output)
+        self.assertIn("Space freed:", output)
+        self.assertIn("Audit log:", output)
 
     def test_log_requires_execute(self):
         """--log requires --execute flag."""

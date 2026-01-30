@@ -253,9 +253,9 @@ class TestExecuteMode(BaseFileMatcherTest):
             with patch('sys.stdin.isatty', return_value=True):
                 with patch('builtins.input', return_value='n'):
                     output = self.run_main_with_args([])
-                    # Should show execution summary even when skipping
+                    # Should show execution summary even when skipping (Phase 21 format)
                     self.assertIn("Execution complete:", output)
-                    self.assertIn("Successful:", output)
+                    self.assertIn("Succeeded:", output)
 
     def test_execute_abort_exit_code_zero(self):
         """Aborting should exit with code 0 (not an error)."""
