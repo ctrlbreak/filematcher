@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 Phase: 21 of 21 (Error Handling & Polish)
 Plan: Not yet planned
 Status: Ready to plan
-Last activity: 2026-01-30 - Completed quick task 011: Unify banners
+Last activity: 2026-01-30 - Completed quick task 012: Add separator line before mode banner
 
 Progress: [==============      ] 75% (3/4 phases complete)
 
@@ -74,6 +74,7 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 011 | Unify compare mode and execute mode banners | 2026-01-30 | 39881b0 | [011-unify-the-compare-mode-and-execute-mode-](./quick/011-unify-the-compare-mode-and-execute-mode-/) |
+| 012 | Add separator line before mode banner | 2026-01-30 | 92a1982 | [012-add-separator-line-before-mode-banner](./quick/012-add-separator-line-before-mode-banner/) |
 
 ## Session Continuity
 
@@ -87,4 +88,4 @@ Resume file: None
 2. Or `/gsd:plan-phase 21` to plan directly
 
 ---
-*Last updated: 2026-01-30 - Phase 20 verified complete*
+*Last updated: 2026-01-30 - Completed quick task 012*
