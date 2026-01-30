@@ -78,6 +78,10 @@ def format_execute_banner(
 ) -> tuple[str, str]:
     """Format execute mode banner with statistics.
 
+    .. deprecated::
+        Use TextActionFormatter.format_banner() instead.
+        This function is kept for backward compatibility.
+
     Args:
         action: Action type (hardlink, symlink, delete)
         group_count: Number of duplicate groups
@@ -116,8 +120,21 @@ class ActionFormatter(ABC):
         self.will_execute = will_execute
 
     @abstractmethod
-    def format_banner(self) -> None:
-        """Output the mode banner (PREVIEW or EXECUTE)."""
+    def format_banner(
+        self,
+        action: str,
+        group_count: int,
+        duplicate_count: int,
+        space_bytes: int
+    ) -> None:
+        """Output the mode banner with action statistics.
+
+        Args:
+            action: Action type (hardlink, symlink, delete)
+            group_count: Number of duplicate groups
+            duplicate_count: Total number of duplicate files
+            space_bytes: Space in bytes to be saved
+        """
         ...
 
     @abstractmethod
@@ -289,7 +306,14 @@ class JsonActionFormatter(ActionFormatter):
         self._metadata: dict[str, dict] = {}
 
     # No-op in JSON mode (data captured in structure)
-    def format_banner(self) -> None: pass
+    def format_banner(
+        self,
+        action: str,
+        group_count: int,
+        duplicate_count: int,
+        space_bytes: int
+    ) -> None:
+        pass
 
     def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
         self._data["action"] = action
@@ -556,16 +580,35 @@ class TextActionFormatter(ActionFormatter):
         self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
         self._prev_group_row_count = 0
 
-    def format_banner(self) -> None:
-        if self._action == "compare":
+    def format_banner(
+        self,
+        action: str,
+        group_count: int,
+        duplicate_count: int,
+        space_bytes: int
+    ) -> None:
+        """Output unified banner with statistics and mode indicator."""
+        if action == "compare":
             return
+
+        # Format the informative banner
+        action_bold = bold(action, self.cc)
+        space_str = format_file_size(space_bytes)
+        banner = f"{action_bold} mode: {group_count} groups, {duplicate_count} files, {space_str} to save"
+
+        # Add mode indicator
         if self.will_execute:
-            print(red(EXECUTE_BANNER, self.cc))
-        elif self.preview_mode:
-            print(bold_yellow(PREVIEW_BANNER, self.cc))
+            mode_indicator = red(" (EXECUTE)", self.cc)
         else:
-            print(red(EXECUTE_BANNER, self.cc))
-        print()
+            mode_indicator = yellow(" (PREVIEW)", self.cc)
+
+        print(banner + mode_indicator)
+        print(EXECUTE_BANNER_SEPARATOR)
+
+        # Show preview hint if in preview mode
+        if not self.will_execute and self.preview_mode:
+            print(dim("Use --execute to apply changes", self.cc))
+            print()
 
     def format_unified_header(self, action: str, dir1: str, dir2: str) -> None:
         if action == "compare":

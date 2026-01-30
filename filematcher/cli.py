@@ -19,7 +19,7 @@ from filematcher.actions import (
 from filematcher.types import Action, DuplicateGroup, FailedOperation
 from filematcher.formatters import (
     SpaceInfo, TextActionFormatter, JsonActionFormatter, ActionFormatter,
-    format_confirmation_prompt, calculate_space_savings, format_execute_banner,
+    format_confirmation_prompt, calculate_space_savings,
 )
 from filematcher.directory import find_matching_files, select_master_file
 
@@ -529,7 +529,12 @@ def main() -> int:
                 )
 
             if show_banner:
-                formatter.format_banner()
+                formatter.format_banner(
+                    args.action,
+                    space_info.group_count,
+                    space_info.duplicate_count,
+                    space_info.bytes_saved
+                )
 
             if args.summary:
                 if args.action == Action.COMPARE:
@@ -672,17 +677,14 @@ def main() -> int:
             else:
                 # Text mode: show banner for both interactive and batch modes
                 space_info = calculate_space_savings(master_results)
-                banner, separator = format_execute_banner(
-                    args.action.value,
-                    space_info.group_count,
-                    space_info.duplicate_count,
-                    space_info.bytes_saved,
-                    color_config
-                )
 
                 if not args.quiet:
-                    print(banner)
-                    print(separator)
+                    action_formatter.format_banner(
+                        args.action.value,
+                        space_info.group_count,
+                        space_info.duplicate_count,
+                        space_info.bytes_saved
+                    )
 
                 if args.yes:
                     # Batch mode - execute without prompts
