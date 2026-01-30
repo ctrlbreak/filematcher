@@ -16,6 +16,7 @@ RESET = "\033[0m"
 GREEN = "\033[32m"
 YELLOW = "\033[33m"
 RED = "\033[31m"
+BLUE = "\033[34m"
 CYAN = "\033[36m"
 BOLD = "\033[1m"
 DIM = "\033[2m"
@@ -136,6 +137,10 @@ def red(text: str, cc: ColorConfig) -> str:
 
 def cyan(text: str, cc: ColorConfig) -> str:
     return colorize(text, CYAN, cc)
+
+
+def blue(text: str, cc: ColorConfig) -> str:
+    return colorize(text, BLUE, cc)
 
 
 def dim(text: str, cc: ColorConfig) -> str:

@@ -522,13 +522,13 @@ def main() -> int:
         def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
             space_info = calculate_space_savings(master_results)
 
-            if not args.quiet:
+            if not args.quiet and args.action != Action.COMPARE:
                 formatter.format_unified_header(args.action, args.dir1, args.dir2)
                 formatter.format_summary_line(
                     space_info.group_count, space_info.duplicate_count, space_info.bytes_saved
                 )
 
-            if show_banner:
+            if show_banner or args.action == Action.COMPARE:
                 formatter.format_banner(
                     args.action,
                     space_info.group_count,

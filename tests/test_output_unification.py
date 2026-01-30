@@ -181,14 +181,14 @@ class TestUnifiedHeaders(unittest.TestCase):
         self.test_dir2 = str(Path(__file__).parent.parent / "test_dir2")
 
     def test_compare_mode_header(self):
-        """Compare mode should show 'Compare mode: dir1 vs dir2'."""
+        """Compare mode should show unified banner with (COMPARE) indicator."""
         result = subprocess.run(
             [sys.executable, "file_matcher.py", self.test_dir1, self.test_dir2],
             capture_output=True,
             text=True
         )
-        self.assertIn("Compare mode:", result.stdout)
-        self.assertIn("vs", result.stdout)
+        self.assertIn("compare mode:", result.stdout)
+        self.assertIn("(COMPARE)", result.stdout)
 
     def test_compare_mode_header_contains_directories(self):
         """Compare mode header should reference directory names."""

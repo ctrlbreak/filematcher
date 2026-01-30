@@ -28,6 +28,7 @@ from filematcher.colors import (
     green,
     yellow,
     red,
+    blue,
     cyan,
     bold,
     bold_yellow,
@@ -588,12 +589,18 @@ class TextActionFormatter(ActionFormatter):
         space_bytes: int
     ) -> None:
         """Output unified banner with statistics and mode indicator."""
-        if action == "compare":
-            return
-
-        # Format the informative banner
         action_bold = bold(action, self.cc)
         space_str = format_file_size(space_bytes)
+
+        if action == "compare":
+            # Compare mode: informational, no action taken
+            banner = f"{action_bold} mode: {group_count} groups, {duplicate_count} files, {space_str} reclaimable"
+            mode_indicator = blue(" (COMPARE)", self.cc)
+            print(banner + mode_indicator)
+            print(EXECUTE_BANNER_SEPARATOR)
+            return
+
+        # Action modes (hardlink/symlink/delete)
         banner = f"{action_bold} mode: {group_count} groups, {duplicate_count} files, {space_str} to save"
 
         # Add mode indicator
