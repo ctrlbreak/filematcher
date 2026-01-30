@@ -539,7 +539,7 @@ class TestFormatterEdgeCases(BaseFileMatcherTest):
             self.assertNotIn("Files with no content matches", output)
             # But should have valid JSON
             parsed = json_module.loads(output)
-            self.assertIn('unmatchedDir1', parsed)
+            self.assertIn('unmatchedMaster', parsed)
 
 
 if __name__ == "__main__":

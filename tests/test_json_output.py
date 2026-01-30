@@ -72,20 +72,27 @@ class TestJsonOutput(BaseFileMatcherTest):
         self.assertIsInstance(data, dict)
 
     def test_json_has_required_fields(self):
-        """JSON has all required top-level fields: timestamp, directories, hashAlgorithm, matches, summary."""
+        """JSON has header object and required top-level fields: header, matches, summary."""
         data, stderr, exit_code = self.run_main_with_json()
         self.assertEqual(exit_code, 0)
 
-        required_fields = ['timestamp', 'directories', 'hashAlgorithm', 'matches', 'summary']
+        # Top-level structure
+        required_fields = ['header', 'matches', 'summary']
         for field in required_fields:
             self.assertIn(field, data, f"Missing required field: {field}")
+
+        # Header structure
+        header = data['header']
+        header_fields = ['name', 'version', 'timestamp', 'mode', 'hashAlgorithm', 'directories']
+        for field in header_fields:
+            self.assertIn(field, header, f"Missing header field: {field}")
 
     def test_json_timestamp_format(self):
         """Timestamp is in RFC 3339 / ISO 8601 format."""
         data, stderr, exit_code = self.run_main_with_json()
         self.assertEqual(exit_code, 0)
 
-        timestamp = data['timestamp']
+        timestamp = data['header']['timestamp']
         # RFC 3339 format: YYYY-MM-DDTHH:MM:SS with optional fractional seconds and timezone
         # Examples: 2026-01-23T10:30:00+00:00 or 2026-01-23T10:30:00.123456+00:00
         rfc3339_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(\+\d{2}:\d{2}|Z)?$'
@@ -102,18 +109,18 @@ class TestJsonOutput(BaseFileMatcherTest):
         data, stderr, exit_code = self.run_main_with_json()
         self.assertEqual(exit_code, 0)
 
-        dir1 = data['directories']['dir1']
-        dir2 = data['directories']['dir2']
+        master = data['header']['directories']['master']
+        duplicate = data['header']['directories']['duplicate']
 
-        self.assertTrue(os.path.isabs(dir1), f"dir1 not absolute: {dir1}")
-        self.assertTrue(os.path.isabs(dir2), f"dir2 not absolute: {dir2}")
+        self.assertTrue(os.path.isabs(master), f"master not absolute: {master}")
+        self.assertTrue(os.path.isabs(duplicate), f"duplicate not absolute: {duplicate}")
 
     # =========================================================================
     # Compare Mode Tests
     # =========================================================================
 
     def test_json_matches_structure(self):
-        """Each match has hash, filesDir1, filesDir2."""
+        """Each match has hash, filesMaster, filesDuplicate."""
         data, stderr, exit_code = self.run_main_with_json()
         self.assertEqual(exit_code, 0)
 
@@ -124,11 +131,11 @@ class TestJsonOutput(BaseFileMatcherTest):
 
         for match in data['matches']:
             self.assertIn('hash', match)
-            self.assertIn('filesDir1', match)
-            self.assertIn('filesDir2', match)
+            self.assertIn('filesMaster', match)
+            self.assertIn('filesDuplicate', match)
             self.assertIsInstance(match['hash'], str)
-            self.assertIsInstance(match['filesDir1'], list)
-            self.assertIsInstance(match['filesDir2'], list)
+            self.assertIsInstance(match['filesMaster'], list)
+            self.assertIsInstance(match['filesDuplicate'], list)
 
     def test_json_unmatched_with_flag(self):
         """--show-unmatched includes unmatched file arrays."""
@@ -136,14 +143,14 @@ class TestJsonOutput(BaseFileMatcherTest):
         self.assertEqual(exit_code, 0)
 
         # Should have unmatched arrays
-        self.assertIn('unmatchedDir1', data)
-        self.assertIn('unmatchedDir2', data)
-        self.assertIsInstance(data['unmatchedDir1'], list)
-        self.assertIsInstance(data['unmatchedDir2'], list)
+        self.assertIn('unmatchedMaster', data)
+        self.assertIn('unmatchedDuplicate', data)
+        self.assertIsInstance(data['unmatchedMaster'], list)
+        self.assertIsInstance(data['unmatchedDuplicate'], list)
 
         # Based on test fixtures, there should be unmatched files
         # file2.txt in dir1 has unique content, file4.txt in dir2 has unique content
-        total_unmatched = len(data['unmatchedDir1']) + len(data['unmatchedDir2'])
+        total_unmatched = len(data['unmatchedMaster']) + len(data['unmatchedDuplicate'])
         self.assertGreater(total_unmatched, 0, "Expected unmatched files in test fixtures")
 
     def test_json_unmatched_without_flag(self):
@@ -152,8 +159,8 @@ class TestJsonOutput(BaseFileMatcherTest):
         self.assertEqual(exit_code, 0)
 
         # Arrays should exist but be empty when not requested
-        self.assertEqual(data['unmatchedDir1'], [])
-        self.assertEqual(data['unmatchedDir2'], [])
+        self.assertEqual(data['unmatchedMaster'], [])
+        self.assertEqual(data['unmatchedDuplicate'], [])
 
     def test_json_summary_only(self):
         """--summary mode produces output with summary statistics."""
@@ -164,8 +171,8 @@ class TestJsonOutput(BaseFileMatcherTest):
         self.assertIn('summary', data)
         summary = data['summary']
         self.assertIn('matchCount', summary)
-        self.assertIn('matchedFilesDir1', summary)
-        self.assertIn('matchedFilesDir2', summary)
+        self.assertIn('matchedFilesMaster', summary)
+        self.assertIn('matchedFilesDuplicate', summary)
 
     def test_json_verbose_includes_metadata(self):
         """--verbose adds file metadata (size, modified time)."""
@@ -190,15 +197,16 @@ class TestJsonOutput(BaseFileMatcherTest):
     # =========================================================================
 
     def test_json_action_mode_structure(self):
-        """Action mode JSON has mode, action, duplicateGroups."""
+        """Action mode JSON has header with mode/action, and duplicateGroups at root."""
         data, stderr, exit_code = self.run_main_with_json(['--action', 'hardlink'])
         self.assertEqual(exit_code, 0)
 
-        self.assertIn('mode', data)
-        self.assertIn('action', data)
+        self.assertIn('header', data)
+        self.assertIn('mode', data['header'])
+        self.assertIn('action', data['header'])
         self.assertIn('duplicateGroups', data)
 
-        self.assertEqual(data['action'], 'hardlink')
+        self.assertEqual(data['header']['action'], 'hardlink')
         self.assertIsInstance(data['duplicateGroups'], list)
 
     def test_json_action_preview_mode(self):
@@ -206,14 +214,14 @@ class TestJsonOutput(BaseFileMatcherTest):
         data, stderr, exit_code = self.run_main_with_json(['--action', 'hardlink'])
         self.assertEqual(exit_code, 0)
 
-        self.assertEqual(data['mode'], 'preview')
+        self.assertEqual(data['header']['mode'], 'preview')
 
     def test_json_action_execute_mode(self):
         """Mode is 'execute' when --execute --yes is used."""
         data, stderr, exit_code = self.run_main_with_json(['--action', 'hardlink', '--execute', '--yes'])
         self.assertEqual(exit_code, 0)
 
-        self.assertEqual(data['mode'], 'execute')
+        self.assertEqual(data['header']['mode'], 'execute')
         # Should have execution summary
         self.assertIn('execution', data)
         exec_info = data['execution']
@@ -241,15 +249,15 @@ class TestJsonOutput(BaseFileMatcherTest):
                 self.assertIn('sizeBytes', dup)
 
     def test_json_action_directories(self):
-        """Action mode has master and duplicate directory paths."""
+        """Action mode has master and duplicate directory paths in header."""
         data, stderr, exit_code = self.run_main_with_json(['--action', 'hardlink'])
         self.assertEqual(exit_code, 0)
 
-        self.assertIn('directories', data)
-        self.assertIn('master', data['directories'])
-        self.assertIn('duplicate', data['directories'])
-        self.assertTrue(os.path.isabs(data['directories']['master']))
-        self.assertTrue(os.path.isabs(data['directories']['duplicate']))
+        self.assertIn('directories', data['header'])
+        self.assertIn('master', data['header']['directories'])
+        self.assertIn('duplicate', data['header']['directories'])
+        self.assertTrue(os.path.isabs(data['header']['directories']['master']))
+        self.assertTrue(os.path.isabs(data['header']['directories']['duplicate']))
 
     def test_json_action_statistics(self):
         """Action mode has statistics with groupCount, duplicateCount, spaceSavingsBytes."""
@@ -271,22 +279,23 @@ class TestJsonOutput(BaseFileMatcherTest):
         data1, _, _ = self.run_main_with_json()
         data2, _, _ = self.run_main_with_json()
 
-        # Remove timestamps for comparison
-        data1_copy = dict(data1)
-        data2_copy = dict(data2)
-        del data1_copy['timestamp']
-        del data2_copy['timestamp']
+        # Remove timestamps from header for comparison
+        import copy
+        data1_copy = copy.deepcopy(data1)
+        data2_copy = copy.deepcopy(data2)
+        del data1_copy['header']['timestamp']
+        del data2_copy['header']['timestamp']
 
         self.assertEqual(data1_copy, data2_copy)
 
     def test_json_matches_sorted(self):
-        """Matches are sorted by first file in dir1."""
+        """Matches are sorted by first file in master."""
         data, stderr, exit_code = self.run_main_with_json()
         self.assertEqual(exit_code, 0)
 
         matches = data['matches']
         if len(matches) > 1:
-            first_files = [m['filesDir1'][0] for m in matches if m['filesDir1']]
+            first_files = [m['filesMaster'][0] for m in matches if m['filesMaster']]
             self.assertEqual(first_files, sorted(first_files))
 
     def test_json_files_within_groups_sorted(self):
@@ -295,10 +304,10 @@ class TestJsonOutput(BaseFileMatcherTest):
         self.assertEqual(exit_code, 0)
 
         for match in data['matches']:
-            files1 = match['filesDir1']
-            files2 = match['filesDir2']
-            self.assertEqual(files1, sorted(files1), "filesDir1 not sorted")
-            self.assertEqual(files2, sorted(files2), "filesDir2 not sorted")
+            files1 = match['filesMaster']
+            files2 = match['filesDuplicate']
+            self.assertEqual(files1, sorted(files1), "filesMaster not sorted")
+            self.assertEqual(files2, sorted(files2), "filesDuplicate not sorted")
 
     def test_json_action_groups_sorted(self):
         """Duplicate groups in action mode are sorted by master file path."""
@@ -329,14 +338,18 @@ class TestJsonOutput(BaseFileMatcherTest):
         self.assertEqual(exit_code, 0)
 
         # Check top-level fields
-        expected_camel = ['timestamp', 'directories', 'hashAlgorithm', 'matches',
-                        'unmatchedDir1', 'unmatchedDir2', 'summary']
+        expected_camel = ['header', 'matches', 'unmatchedMaster', 'unmatchedDuplicate', 'summary']
         for field in expected_camel:
             self.assertIn(field, data, f"Missing camelCase field: {field}")
 
+        # Check header fields
+        header_fields = ['hashAlgorithm', 'directories']
+        for field in header_fields:
+            self.assertIn(field, data['header'], f"Missing header camelCase field: {field}")
+
         # Check no snake_case variants
         snake_case_bad = ['hash_algorithm', 'unmatched_dir1', 'unmatched_dir2',
-                         'files_dir1', 'files_dir2']
+                         'files_dir1', 'files_dir2', 'unmatched_master', 'unmatched_duplicate']
         for field in snake_case_bad:
             self.assertNotIn(field, data, f"Found snake_case field: {field}")
 
@@ -362,10 +375,41 @@ class TestJsonOutput(BaseFileMatcherTest):
         self.assertEqual(exit_code, 0)
 
         summary = data['summary']
-        expected = ['matchCount', 'matchedFilesDir1', 'matchedFilesDir2',
-                   'unmatchedFilesDir1', 'unmatchedFilesDir2']
+        expected = ['matchCount', 'matchedFilesMaster', 'matchedFilesDuplicate',
+                   'unmatchedFilesMaster', 'unmatchedFilesDuplicate']
         for field in expected:
             self.assertIn(field, summary, f"Missing camelCase summary field: {field}")
+
+    # =========================================================================
+    # Header Structure Tests
+    # =========================================================================
+
+    def test_json_header_structure(self):
+        """Header object contains all required metadata fields."""
+        data, stderr, exit_code = self.run_main_with_json()
+        self.assertEqual(exit_code, 0)
+
+        self.assertIn('header', data)
+        header = data['header']
+
+        # Required header fields
+        self.assertEqual(header['name'], 'filematcher')
+        self.assertEqual(header['version'], '2.0')
+        self.assertIn('timestamp', header)
+        self.assertEqual(header['mode'], 'compare')
+        self.assertIn('hashAlgorithm', header)
+        self.assertIn('directories', header)
+        self.assertIn('master', header['directories'])
+        self.assertIn('duplicate', header['directories'])
+
+    def test_json_action_header_has_action_field(self):
+        """Action mode header includes action field."""
+        data, stderr, exit_code = self.run_main_with_json(['--action', 'hardlink'])
+        self.assertEqual(exit_code, 0)
+
+        header = data['header']
+        self.assertIn('action', header)
+        self.assertEqual(header['action'], 'hardlink')
 
     # =========================================================================
     # Integration Tests
@@ -376,14 +420,14 @@ class TestJsonOutput(BaseFileMatcherTest):
         data, stderr, exit_code = self.run_main_with_json(['--hash', 'sha256'])
         self.assertEqual(exit_code, 0)
 
-        self.assertEqual(data['hashAlgorithm'], 'sha256')
+        self.assertEqual(data['header']['hashAlgorithm'], 'sha256')
 
     def test_json_with_hash_md5(self):
         """hashAlgorithm shows correct value when using MD5 (default)."""
         data, stderr, exit_code = self.run_main_with_json()
         self.assertEqual(exit_code, 0)
 
-        self.assertEqual(data['hashAlgorithm'], 'md5')
+        self.assertEqual(data['header']['hashAlgorithm'], 'md5')
 
     def test_json_with_different_names_only(self):
         """--different-names-only filter is applied before JSON output."""
@@ -447,8 +491,8 @@ class TestJsonOutput(BaseFileMatcherTest):
         data, stderr, exit_code = self.run_main_with_json(['--action', 'symlink'])
         self.assertEqual(exit_code, 0)
 
-        self.assertEqual(data['action'], 'symlink')
-        self.assertEqual(data['mode'], 'preview')
+        self.assertEqual(data['header']['action'], 'symlink')
+        self.assertEqual(data['header']['mode'], 'preview')
 
         # Verify duplicate objects have correct action
         for group in data['duplicateGroups']:
@@ -460,8 +504,8 @@ class TestJsonOutput(BaseFileMatcherTest):
         data, stderr, exit_code = self.run_main_with_json(['--action', 'delete'])
         self.assertEqual(exit_code, 0)
 
-        self.assertEqual(data['action'], 'delete')
-        self.assertEqual(data['mode'], 'preview')
+        self.assertEqual(data['header']['action'], 'delete')
+        self.assertEqual(data['header']['mode'], 'preview')
 
         # Verify duplicate objects have correct action
         for group in data['duplicateGroups']:
@@ -508,8 +552,8 @@ class TestJsonOutput(BaseFileMatcherTest):
                 # Should have valid structure with empty matches
                 self.assertEqual(data['matches'], [])
                 self.assertEqual(data['summary']['matchCount'], 0)
-                self.assertEqual(data['summary']['matchedFilesDir1'], 0)
-                self.assertEqual(data['summary']['matchedFilesDir2'], 0)
+                self.assertEqual(data['summary']['matchedFilesMaster'], 0)
+                self.assertEqual(data['summary']['matchedFilesDuplicate'], 0)
 
     def test_json_verbose_metadata_timestamp_format(self):
         """Verbose mode metadata timestamps are in RFC 3339 format."""
@@ -536,13 +580,13 @@ class TestJsonOutput(BaseFileMatcherTest):
 
         # Should have all the features
         self.assertIn('metadata', data)  # From --verbose
-        self.assertIn('unmatchedDir1', data)  # From --show-unmatched
-        self.assertIn('unmatchedDir2', data)
+        self.assertIn('unmatchedMaster', data)  # From --show-unmatched
+        self.assertIn('unmatchedDuplicate', data)
 
         # Metadata should include unmatched files too
-        if data['unmatchedDir1'] or data['unmatchedDir2']:
+        if data['unmatchedMaster'] or data['unmatchedDuplicate']:
             # If there are unmatched files, they should have metadata
-            all_unmatched = data['unmatchedDir1'] + data['unmatchedDir2']
+            all_unmatched = data['unmatchedMaster'] + data['unmatchedDuplicate']
             for filepath in all_unmatched:
                 self.assertIn(filepath, data['metadata'],
                             f"Unmatched file missing from metadata: {filepath}")
@@ -562,8 +606,8 @@ class TestJsonOutput(BaseFileMatcherTest):
         # Count matches where all files have same basename
         def has_same_name_match(matches):
             for match in matches:
-                basenames1 = {os.path.basename(f) for f in match['filesDir1']}
-                basenames2 = {os.path.basename(f) for f in match['filesDir2']}
+                basenames1 = {os.path.basename(f) for f in match['filesMaster']}
+                basenames2 = {os.path.basename(f) for f in match['filesDuplicate']}
                 if basenames1 & basenames2:  # Intersection - same names
                     return True
             return False
@@ -649,7 +693,7 @@ class TestJsonOutputMocked(BaseFileMatcherTest):
         data = json.loads(stdout_capture.getvalue())
 
         # Check execution summary
-        self.assertEqual(data['mode'], 'execute')
+        self.assertEqual(data['header']['mode'], 'execute')
         self.assertIn('execution', data)
         exec_info = data['execution']
 
@@ -719,8 +763,8 @@ class TestJsonOutputSubprocess(BaseFileMatcherTest):
         match_count = len(data['matches'])
         self.assertGreaterEqual(match_count, 0)
 
-        # 2. Get first file from each match (like jq '.matches[].filesDir1[0]')
-        first_files = [m['filesDir1'][0] for m in data['matches'] if m['filesDir1']]
+        # 2. Get first file from each match (like jq '.matches[].filesMaster[0]')
+        first_files = [m['filesMaster'][0] for m in data['matches'] if m['filesMaster']]
         self.assertIsInstance(first_files, list)
 
         # 3. Get summary stats (like jq '.summary.matchCount')
