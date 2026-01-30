@@ -19,22 +19,11 @@ from filematcher.actions import (
 from filematcher.types import Action, DuplicateGroup, FailedOperation
 from filematcher.formatters import (
     SpaceInfo, TextActionFormatter, JsonActionFormatter, ActionFormatter,
-    format_confirmation_prompt, calculate_space_savings,
+    calculate_space_savings,
 )
 from filematcher.directory import find_matching_files, select_master_file
 
 logger = logging.getLogger(__name__)
-
-
-def confirm_execution(skip_confirm: bool = False, prompt: str = "Proceed? [y/N] ") -> bool:
-    """Prompt user for Y/N confirmation before executing changes."""
-    if skip_confirm:
-        return True
-    if not sys.stdin.isatty():
-        print("Non-interactive mode detected. Use --yes to skip confirmation.", file=sys.stderr)
-        return False
-    response = input(prompt).strip().lower()
-    return response in ('y', 'yes')
 
 
 def _normalize_response(response: str) -> str | None:

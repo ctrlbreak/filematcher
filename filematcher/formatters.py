@@ -811,38 +811,11 @@ def format_duplicate_group(
     )
 
 
-_ACTION_VERBS = {
-    "hardlink": "replaced with hard links",
-    "symlink": "replaced with symbolic links",
-    "delete": "permanently deleted"
-}
-
 _ACTION_PROMPT_VERBS = {
     Action.DELETE: "Delete duplicate?",
     Action.HARDLINK: "Create hardlink?",
     Action.SYMLINK: "Create symlink?",
 }
-
-
-def format_confirmation_prompt(
-    duplicate_count: int,
-    action: str,
-    space_savings: int,
-    cross_fs_count: int = 0
-) -> str:
-    """Format confirmation prompt showing action summary."""
-    action_verb = _ACTION_VERBS.get(action, f"processed with {action}")
-    space_str = format_file_size(space_savings)
-
-    prompt_parts = []
-    if action == Action.DELETE:
-        prompt_parts.append("WARNING: This action is IRREVERSIBLE.")
-    prompt_parts.append(f"{duplicate_count} files will be {action_verb}. ~{space_str} will be saved.")
-    if cross_fs_count > 0 and action == Action.HARDLINK:
-        prompt_parts.append(f"Note: {cross_fs_count} files on different filesystem will use symlink fallback.")
-    prompt_parts.append("Proceed? [y/N] ")
-
-    return "\n".join(prompt_parts)
 
 
 def format_statistics_footer(

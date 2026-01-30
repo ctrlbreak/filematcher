@@ -110,7 +110,6 @@ from filematcher.formatters import (
     # Formatting functions
     format_group_lines,
     format_duplicate_group,
-    format_confirmation_prompt,
     format_statistics_footer,
     calculate_space_savings,
 )
@@ -128,7 +127,6 @@ from filematcher.directory import (
 # This import depends on all other filematcher modules
 from filematcher.cli import (
     main,
-    confirm_execution,
     build_file_hash_lookup,
     get_cross_fs_for_hardlink,
     get_cross_fs_count,
@@ -212,12 +210,10 @@ __all__ = [
     # Utilities
     "format_file_size",
     "calculate_space_savings",
-    "confirm_execution",
     # Formatting helpers
     "format_duplicate_group",
     "format_group_lines",
     "format_statistics_footer",
-    "format_confirmation_prompt",
     # Constants
     "PREVIEW_BANNER",
     "BANNER_SEPARATOR",
