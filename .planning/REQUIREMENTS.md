@@ -23,17 +23,17 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
   - Accept `n`, `N`, `no`, `NO` etc.
   - Invalid input re-prompts with error message
 
-- [ ] **INT-04**: Non-TTY detection with clear error message
+- [x] **INT-04**: Non-TTY detection with clear error message
   - If stdin is not a TTY, print error to stderr and exit
   - Error message guides user to use `--yes` flag
 
-- [ ] **INT-05**: `--yes` flag bypasses all prompts (batch mode)
+- [x] **INT-05**: `--yes` flag bypasses all prompts (batch mode)
   - Current behavior preserved: `--execute --yes` = no prompts
   - `--execute` alone (without --yes) = per-file prompts (NEW)
 
 ### Output Flow (OUT)
 
-- [ ] **OUT-01**: Statistics shown BEFORE groups in interactive mode
+- [x] **OUT-01**: Statistics shown BEFORE groups in interactive mode
   - Banner: "EXECUTE MODE"
   - Statistics upfront: X groups, Y files, Z space to reclaim
   - Then per-group prompting begins
@@ -70,13 +70,13 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
 
 ### Flag Interactions (FLAG)
 
-- [ ] **FLAG-01**: `--json` with `--execute` requires `--yes`
+- [x] **FLAG-01**: `--json` with `--execute` requires `--yes`
   - Error message: "JSON output requires --yes flag with --execute"
   - Interactive prompts incompatible with JSON output
 
-- [ ] **FLAG-02**: `--quiet` with `--execute` implies `--yes`
+- [x] **FLAG-02**: `--quiet` with `--execute` requires explicit `--yes`
   - Can't suppress output AND prompt for input
-  - Auto-enable batch mode when quiet
+  - Error if --quiet --execute used without --yes
 
 ### Code Architecture (ARCH)
 
@@ -113,17 +113,17 @@ Redesign execute mode with per-file interactive confirmation that maintains cons
 | INT-01 | Phase 19 | Complete |
 | INT-02 | Phase 19 | Complete |
 | INT-03 | Phase 19 | Complete |
-| INT-04 | Phase 20 | Pending |
-| INT-05 | Phase 20 | Pending |
-| OUT-01 | Phase 20 | Pending |
+| INT-04 | Phase 20 | Complete |
+| INT-05 | Phase 20 | Complete |
+| OUT-01 | Phase 20 | Complete |
 | OUT-02 | Phase 18 | Complete |
 | OUT-03 | Phase 19 | Complete |
 | OUT-04 | Phase 18 | Complete |
 | ERR-01 | Phase 21 | Pending |
 | ERR-02 | Phase 21 | Pending |
 | ERR-03 | Phase 21 | Pending |
-| FLAG-01 | Phase 20 | Pending |
-| FLAG-02 | Phase 20 | Pending |
+| FLAG-01 | Phase 20 | Complete |
+| FLAG-02 | Phase 20 | Complete |
 | ARCH-01 | Phase 18 | Complete |
 | ARCH-02 | Phase 18 | Complete |
 

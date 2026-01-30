@@ -15,7 +15,7 @@ Transform execute mode from batch-only to interactive-by-default with per-file y
 
 - [x] **Phase 18: Formatter Extensions** - Add prompt formatting methods to ActionFormatter ABC
 - [x] **Phase 19: Interactive Core** - Build per-group prompt loop with y/n/a/q handling
-- [ ] **Phase 20: CLI Integration** - Wire flags, TTY validation, and routing logic
+- [x] **Phase 20: CLI Integration** - Wire flags, TTY validation, and routing logic
 - [ ] **Phase 21: Error Handling & Polish** - Error recovery, cancellation, and final summary
 
 ## Phase Details
@@ -67,8 +67,8 @@ Plans:
   6. Interactive mode shows banner and statistics before first prompt
 **Plans:** 2 plans
 Plans:
-- [ ] 20-01-PLAN.md - Fail-fast flag validation and banner formatting
-- [ ] 20-02-PLAN.md - Mode routing and integration tests
+- [x] 20-01-PLAN.md - Fail-fast flag validation and banner formatting
+- [x] 20-02-PLAN.md - Mode routing and integration tests
 
 ### Phase 21: Error Handling & Polish
 
@@ -89,7 +89,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 18. Formatter Extensions | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
 | 19. Interactive Core | v1.5 | 2/2 | ✓ Complete | 2026-01-29 |
-| 20. CLI Integration | v1.5 | 0/2 | Planned | - |
+| 20. CLI Integration | v1.5 | 2/2 | ✓ Complete | 2026-01-30 |
 | 21. Error Handling & Polish | v1.5 | 0/TBD | Not started | - |
 
 ---
