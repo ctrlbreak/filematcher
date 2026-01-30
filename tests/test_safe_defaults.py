@@ -389,5 +389,96 @@ class TestInteractiveFlagValidation(BaseFileMatcherTest):
             self.assertIn("execution", data)
 
 
+class TestModeRouting(BaseFileMatcherTest):
+    """Tests for interactive vs batch mode routing."""
+
+    def run_main_with_args(self, args: list[str]) -> str:
+        """Helper to run main() with given args and capture stdout."""
+        f = io.StringIO()
+        with redirect_stdout(f):
+            main()
+        return f.getvalue()
+
+    def test_execute_without_yes_prompts_interactively(self):
+        """--execute without --yes should prompt for each group."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'delete', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                # Respond 'n' to first prompt to skip
+                with patch('builtins.input', return_value='n') as mock_input:
+                    f = io.StringIO()
+                    with redirect_stdout(f):
+                        result = main()
+                    # input() should be called for interactive prompt
+                    self.assertTrue(mock_input.called)
+                    # Should see the [y/n/a/q] prompt format (not old [y/N])
+                    call_args = mock_input.call_args[0][0] if mock_input.call_args[0] else ""
+                    self.assertIn("[y/n/a/q]", call_args)
+
+    def test_execute_with_yes_no_prompts(self):
+        """--execute --yes should not prompt (batch mode)."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'hardlink', '--execute', '--yes']):
+            with patch('builtins.input') as mock_input:
+                f = io.StringIO()
+                with redirect_stdout(f):
+                    main()
+                # input() should NOT be called
+                mock_input.assert_not_called()
+
+    def test_execute_shows_banner_before_prompts(self):
+        """Interactive mode should show banner before first prompt."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'delete', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('builtins.input', return_value='q'):
+                    f = io.StringIO()
+                    with redirect_stdout(f):
+                        main()
+                    output = f.getvalue()
+                    # Banner should contain action and stats
+                    self.assertIn("delete", output.lower())
+                    self.assertIn("groups", output.lower())
+                    # 40-dash separator should appear
+                    self.assertIn("-" * 40, output)
+
+    def test_execute_batch_shows_banner(self):
+        """Batch mode should also show banner."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'hardlink', '--execute', '--yes']):
+            f = io.StringIO()
+            with redirect_stdout(f):
+                main()
+            output = f.getvalue()
+            # Banner should contain action and stats
+            self.assertIn("hardlink", output.lower())
+            self.assertIn("-" * 40, output)
+
+    def test_execute_interactive_q_exits_cleanly(self):
+        """Pressing 'q' in interactive mode should exit cleanly."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'delete', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                with patch('builtins.input', return_value='q'):
+                    f = io.StringIO()
+                    with redirect_stdout(f):
+                        result = main()
+                    # Should exit with 0 (clean exit)
+                    self.assertEqual(result, 0)
+
+    def test_execute_interactive_a_confirms_all(self):
+        """Pressing 'a' should confirm current and all remaining groups."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'hardlink', '--execute']):
+            with patch('sys.stdin.isatty', return_value=True):
+                # First prompt: 'a' to confirm all
+                with patch('builtins.input', return_value='a') as mock_input:
+                    f = io.StringIO()
+                    with redirect_stdout(f):
+                        main()
+                    # Should only be called once (then auto-confirms rest)
+                    self.assertEqual(mock_input.call_count, 1)
+
+
 if __name__ == "__main__":
     unittest.main()
