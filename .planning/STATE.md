@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 21 of 21 (Error Handling & Polish)
-Plan: 01 of 01 (complete)
+Plan: 02 of 02 (complete)
 Status: Phase complete
-Last activity: 2026-01-30 - Completed Phase 21-01 error handling and quit summary
+Last activity: 2026-01-30 - Completed Phase 21-02 execution summary and tests
 
-Progress: [====================] 100% (5/5 phases complete)
+Progress: [====================] 100% (5/5 phases, 6/6 plans complete)
 
 ## Milestone History
 
@@ -41,7 +41,7 @@ Progress: [====================] 100% (5/5 phases complete)
 
 ## Test Suite
 
-- Total tests: 286
+- Total tests: 295
 - All passing
 - Coverage: filematcher package fully tested
 
@@ -67,6 +67,9 @@ Progress: [====================] 100% (5/5 phases complete)
 | 21-01 | Errors displayed inline with red X | Visual consistency with confirmation status |
 | 21-01 | Failed operations still logged | Audit trail captures all attempts |
 | 21-01 | Audit log failure aborts early | Exit 2 before any file operations |
+| 21-02 | Three-way distinction in summary | User confirmed, user skipped, failed |
+| 21-02 | Dual-format space display | Human-readable AND bytes for clarity |
+| 21-02 | EXIT_PARTIAL (2) on any failures | Scripts can detect incomplete operations |
 
 ## Pending Todos
 
@@ -87,7 +90,7 @@ None.
 ## Session Continuity
 
 Last session: 2026-01-30
-Stopped at: Completed Phase 21 Plan 01
+Stopped at: Completed Phase 21 Plan 02
 Resume file: None
 
 ## Roadmap Evolution
@@ -100,4 +103,4 @@ Resume file: None
 v1.5 milestone complete. Ready for release or additional polish.
 
 ---
-*Last updated: 2026-01-30 - Completed Phase 21-01 error handling and quit summary*
+*Last updated: 2026-01-30 - Completed Phase 21-02 execution summary and tests*
