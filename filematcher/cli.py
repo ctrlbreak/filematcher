@@ -25,6 +25,12 @@ from filematcher.directory import find_matching_files, select_master_file
 
 logger = logging.getLogger(__name__)
 
+# Exit codes
+EXIT_SUCCESS = 0
+EXIT_ERROR = 1
+EXIT_PARTIAL = 2
+EXIT_USER_QUIT = 130  # 128 + SIGINT (Unix convention)
+
 
 def _normalize_response(response: str) -> str | None:
     """Normalize user response to single char or None if invalid.
@@ -78,7 +84,7 @@ def interactive_execute(
     verbose: bool = False,
     file_sizes_map: dict[str, dict[str, int]] | None = None,
     cross_fs_files: set[str] | None = None,
-) -> tuple[int, int, int, int, list[FailedOperation], int, int]:
+) -> tuple[int, int, int, int, list[FailedOperation], int, int, int, bool]:
     """Execute with per-group interactive confirmation.
 
     Displays each group, prompts y/n/a/q, executes immediately on confirmation.
@@ -98,7 +104,7 @@ def interactive_execute(
 
     Returns:
         Tuple of (success_count, failure_count, skipped_count, space_saved,
-                  failed_list, confirmed_count, user_skipped_count)
+                  failed_list, confirmed_count, user_skipped_count, remaining_count, user_quit)
     """
     success_count = 0
     failure_count = 0
@@ -107,6 +113,8 @@ def interactive_execute(
     failed_list: list[FailedOperation] = []
     confirmed_count = 0
     user_skipped_count = 0
+    remaining_count = 0
+    user_quit = False
     confirm_all = False
 
     total_groups = len(groups)
@@ -138,7 +146,17 @@ def interactive_execute(
                 # Execute this group - mirror execute_all_actions pattern
                 for dup in duplicates:
                     # Get file size BEFORE action (for space_saved calculation)
-                    file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    try:
+                        file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    except OSError as e:
+                        formatter.format_file_error(dup, str(e))
+                        if audit_logger:
+                            dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
+                            log_operation(audit_logger, action.value, dup, master_file,
+                                          0, dup_hash, success=False, error=str(e))
+                        failure_count += 1
+                        failed_list.append(FailedOperation(dup, str(e)))
+                        continue
                     dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
 
                     # Call execute_action with correct signature: (duplicate, master, action, ...)
@@ -161,6 +179,7 @@ def interactive_execute(
                         success_count += 1
                         space_saved += file_size
                     else:
+                        formatter.format_file_error(dup, error)
                         failure_count += 1
                         failed_list.append(FailedOperation(dup, error))
                 confirmed_count += 1
@@ -174,7 +193,17 @@ def interactive_execute(
                 # Execute this group - mirror execute_all_actions pattern
                 for dup in duplicates:
                     # Get file size BEFORE action (for space_saved calculation)
-                    file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    try:
+                        file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    except OSError as e:
+                        formatter.format_file_error(dup, str(e))
+                        if audit_logger:
+                            dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
+                            log_operation(audit_logger, action.value, dup, master_file,
+                                          0, dup_hash, success=False, error=str(e))
+                        failure_count += 1
+                        failed_list.append(FailedOperation(dup, str(e)))
+                        continue
                     dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
 
                     # Call execute_action with correct signature: (duplicate, master, action, ...)
@@ -197,6 +226,7 @@ def interactive_execute(
                         success_count += 1
                         space_saved += file_size
                     else:
+                        formatter.format_file_error(dup, error)
                         failure_count += 1
                         failed_list.append(FailedOperation(dup, error))
                 confirmed_count += 1
@@ -213,7 +243,17 @@ def interactive_execute(
                 # Execute this group - mirror execute_all_actions pattern
                 for dup in duplicates:
                     # Get file size BEFORE action (for space_saved calculation)
-                    file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    try:
+                        file_size = os.path.getsize(dup) if os.path.exists(dup) else 0
+                    except OSError as e:
+                        formatter.format_file_error(dup, str(e))
+                        if audit_logger:
+                            dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
+                            log_operation(audit_logger, action.value, dup, master_file,
+                                          0, dup_hash, success=False, error=str(e))
+                        failure_count += 1
+                        failed_list.append(FailedOperation(dup, str(e)))
+                        continue
                     dup_hash = file_hashes.get(dup, "unknown") if file_hashes else "unknown"
 
                     # Call execute_action with correct signature: (duplicate, master, action, ...)
@@ -236,19 +276,26 @@ def interactive_execute(
                         success_count += 1
                         space_saved += file_size
                     else:
+                        formatter.format_file_error(dup, error)
                         failure_count += 1
                         failed_list.append(FailedOperation(dup, error))
                 confirmed_count += 1
                 confirm_all = True
 
             elif response == 'q':
+                remaining_count = total_groups - i
+                user_quit = True
                 break
 
     except (KeyboardInterrupt, EOFError):
         print()  # Newline after ^C
+        # Calculate remaining based on last processed group
+        # i is defined in loop scope; if we got here, we were in a group
+        remaining_count = total_groups - i
+        user_quit = True
 
     return (success_count, failure_count, skipped_count, space_saved,
-            failed_list, confirmed_count, user_skipped_count)
+            failed_list, confirmed_count, user_skipped_count, remaining_count, user_quit)
 
 
 def build_file_hash_lookup(matches: dict[str, tuple[list[str], list[str]]]) -> dict[str, str]:
@@ -721,7 +768,8 @@ def main() -> int:
                     write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
 
                     (success_count, failure_count, skipped_count, space_saved,
-                     failed_list, confirmed_count, user_skipped_count) = interactive_execute(
+                     failed_list, confirmed_count, user_skipped_count,
+                     remaining_count, user_quit) = interactive_execute(
                         groups=sorted(master_results, key=lambda x: x[0]),
                         action=args.action,
                         formatter=action_formatter,
@@ -737,6 +785,17 @@ def main() -> int:
 
                     write_log_footer(audit_logger, success_count, failure_count,
                                    skipped_count, space_saved, failed_list)
+
+                    if user_quit:
+                        # User quit early via 'q' or Ctrl+C
+                        action_formatter.format_quit_summary(
+                            confirmed_count=confirmed_count,
+                            skipped_count=user_skipped_count,
+                            remaining_count=remaining_count,
+                            space_saved=space_saved,
+                            log_path=str(actual_log_path)
+                        )
+                        return EXIT_USER_QUIT
 
                     # Show execution summary
                     action_formatter.format_execution_summary(
