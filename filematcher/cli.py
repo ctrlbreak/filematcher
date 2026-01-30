@@ -408,6 +408,11 @@ def main() -> int:
 
     if args.json and args.execute and not args.yes:
         parser.error("--json with --execute requires --yes flag to confirm (no interactive prompts in JSON mode)")
+    if args.quiet and args.execute and not args.yes:
+        parser.error("--quiet and interactive mode are incompatible")
+    if args.execute and not args.yes and args.action != Action.COMPARE:
+        if not sys.stdin.isatty():
+            parser.error("stdin is not a terminal")
     if args.execute and args.action == Action.COMPARE:
         parser.error("compare action doesn't modify files - remove --execute flag")
     if args.log and not args.execute:
