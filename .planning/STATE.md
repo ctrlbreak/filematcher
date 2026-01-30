@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-01-28)
 ## Current Position
 
 Phase: 20 of 21 (CLI Integration)
-Plan: Not yet planned
-Status: Ready to plan
-Last activity: 2026-01-29 - Completed Phase 19 (Interactive Core)
+Plan: 01 of 02
+Status: In progress
+Last activity: 2026-01-30 - Completed 20-01-PLAN.md
 
-Progress: [==========          ] 50% (2/4 phases complete)
+Progress: [============        ] 62% (2.5/4 phases complete)
 
 ## Milestone History
 
@@ -41,7 +41,7 @@ Progress: [==========          ] 50% (2/4 phases complete)
 
 ## Test Suite
 
-- Total tests: 273
+- Total tests: 278
 - All passing
 - Coverage: filematcher package fully tested
 
@@ -58,6 +58,7 @@ Progress: [==========          ] 50% (2/4 phases complete)
 | 19-01 | Extended return tuple | confirmed_count and user_skipped_count for summary display |
 | 19-02 | Test with real file operations | Delete action verified by checking file existence |
 | 19-02 | subTest for variant testing | Comprehensive case handling (y/Y/yes/YES) with clear failure reporting |
+| 20-01 | Fail-fast at parser level | Non-TTY validation exits with code 2 before file scanning |
 
 ## Pending Todos
 
@@ -69,14 +70,13 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-01-29
-Stopped at: Completed Phase 19
+Last session: 2026-01-30
+Stopped at: Completed 20-01-PLAN.md
 Resume file: None
 
 ## Next Steps
 
-1. Run `/gsd:discuss-phase 20` to gather context for CLI Integration
-2. Or `/gsd:plan-phase 20` to plan directly
+1. Execute 20-02-PLAN.md (mode routing logic)
 
 ---
-*Last updated: 2026-01-29 - Phase 19 complete*
+*Last updated: 2026-01-30 - Plan 20-01 complete*
