@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from filematcher import main, PREVIEW_BANNER, EXECUTE_BANNER, confirm_execution
 from tests.test_base import BaseFileMatcherTest
+import json
 
 
 class TestFlagValidation(BaseFileMatcherTest):
@@ -288,19 +289,23 @@ class TestNonInteractiveMode(BaseFileMatcherTest):
     """Tests for non-interactive (piped/scripted) mode."""
 
     def test_non_tty_defaults_to_abort(self):
-        """Non-interactive mode should default to abort without --yes."""
+        """Non-interactive mode should fail-fast with parser.error without --yes.
+
+        This is fail-fast validation - fails BEFORE file scanning begins.
+        Exit code 2 is the argparse standard for argument errors.
+        """
         with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
                    '--action', 'hardlink', '--execute']):
             with patch('sys.stdin.isatty', return_value=False):
                 stderr_capture = io.StringIO()
-                stdout_capture = io.StringIO()
                 with redirect_stderr(stderr_capture):
-                    with redirect_stdout(stdout_capture):
-                        result = main()
-                # Should show message about non-interactive mode
-                self.assertIn("Non-interactive", stderr_capture.getvalue())
-                # Should return 0 (not an error)
-                self.assertEqual(result, 0)
+                    with self.assertRaises(SystemExit) as cm:
+                        main()
+                self.assertEqual(cm.exception.code, 2)
+                # Should show error about stdin not being a terminal
+                error_output = stderr_capture.getvalue()
+                self.assertIn("stdin", error_output.lower())
+                self.assertIn("terminal", error_output.lower())
 
     def test_non_tty_with_yes_proceeds(self):
         """Non-interactive mode with --yes should proceed without prompt."""
@@ -313,6 +318,71 @@ class TestNonInteractiveMode(BaseFileMatcherTest):
                 output = f.getvalue()
                 # Should NOT show abort message
                 self.assertNotIn("Aborted", output)
+
+
+class TestInteractiveFlagValidation(BaseFileMatcherTest):
+    """Tests for interactive mode flag validation."""
+
+    def test_quiet_execute_without_yes_fails(self):
+        """--quiet --execute without --yes should fail."""
+        stderr_capture = io.StringIO()
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'delete', '--execute', '--quiet']):
+            with redirect_stderr(stderr_capture):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+            self.assertEqual(cm.exception.code, 2)
+        error_output = stderr_capture.getvalue()
+        self.assertIn("--quiet", error_output)
+        self.assertIn("interactive", error_output.lower())
+
+    def test_quiet_execute_with_yes_succeeds(self):
+        """--quiet --execute --yes should work (batch mode)."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'hardlink', '--execute', '--quiet', '--yes']):
+            f = io.StringIO()
+            with redirect_stdout(f):
+                result = main()
+            # Should succeed (may have 0 or partial success depending on test files)
+            self.assertIn(result, [0, 2])  # 0 success, 2 partial
+
+    def test_non_tty_execute_without_yes_fails(self):
+        """Non-TTY stdin with --execute (no --yes) should fail early."""
+        stderr_capture = io.StringIO()
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'delete', '--execute']):
+            with patch('sys.stdin.isatty', return_value=False):
+                with redirect_stderr(stderr_capture):
+                    with self.assertRaises(SystemExit) as cm:
+                        main()
+                self.assertEqual(cm.exception.code, 2)
+        error_output = stderr_capture.getvalue()
+        self.assertIn("stdin", error_output.lower())
+        self.assertIn("terminal", error_output.lower())
+
+    def test_json_execute_without_yes_fails(self):
+        """--json --execute without --yes should fail (existing behavior)."""
+        stderr_capture = io.StringIO()
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'delete', '--execute', '--json']):
+            with redirect_stderr(stderr_capture):
+                with self.assertRaises(SystemExit) as cm:
+                    main()
+            self.assertEqual(cm.exception.code, 2)
+        error_output = stderr_capture.getvalue()
+        self.assertIn("--json", error_output)
+
+    def test_json_execute_with_yes_succeeds(self):
+        """--json --execute --yes should work."""
+        with patch('sys.argv', ['file_matcher.py', self.test_dir1, self.test_dir2,
+                   '--action', 'hardlink', '--execute', '--json', '--yes']):
+            f = io.StringIO()
+            with redirect_stdout(f):
+                result = main()
+            output = f.getvalue()
+            # Should produce valid JSON
+            data = json.loads(output)
+            self.assertIn("execution", data)
 
 
 if __name__ == "__main__":
