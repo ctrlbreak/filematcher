@@ -135,13 +135,13 @@ def execute_action(
 
 
 def determine_exit_code(success_count: int, failure_count: int) -> int:
-    """Determine exit code: 0=full success, 1=total failure, 3=partial completion."""
+    """Determine exit code: 0=full success, 1=total failure, 2=partial completion."""
     if failure_count == 0:
         return 0  # Full success
     elif success_count == 0 and failure_count > 0:
         return 1  # Total failure
     else:
-        return 3  # Partial completion
+        return 2  # Partial completion (consistent with EXIT_PARTIAL in cli.py)
 
 
 def execute_all_actions(

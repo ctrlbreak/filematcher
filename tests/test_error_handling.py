@@ -408,12 +408,11 @@ class TestExitCodes(BaseFileMatcherTest):
         self.assertEqual(exit_code, 0)
 
     def test_exit_partial_when_some_failures(self):
-        """Some failures returns exit 3 (from determine_exit_code)."""
+        """Some failures returns exit 2 (EXIT_PARTIAL)."""
         from filematcher.actions import determine_exit_code
-        # Note: determine_exit_code returns 3 for partial, not 2
-        # EXIT_PARTIAL=2 is used in CLI for interactive mode failures
+        # determine_exit_code returns 2 for partial, consistent with EXIT_PARTIAL
         exit_code = determine_exit_code(5, 2)
-        self.assertEqual(exit_code, 3)
+        self.assertEqual(exit_code, 2)
 
     def test_exit_user_quit_on_q_response(self):
         """User quit via 'q' returns exit 130."""

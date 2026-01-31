@@ -214,9 +214,9 @@ class TestDetermineExitCode(unittest.TestCase):
         """All failures returns exit code 1."""
         self.assertEqual(determine_exit_code(0, 5), 1)
 
-    def test_partial_returns_three(self):
-        """Mix of success and failure returns exit code 3."""
-        self.assertEqual(determine_exit_code(5, 3), 3)
+    def test_partial_returns_two(self):
+        """Mix of success and failure returns exit code 2 (EXIT_PARTIAL)."""
+        self.assertEqual(determine_exit_code(5, 3), 2)
 
     def test_zero_both_returns_zero(self):
         """Zero success and zero failure (nothing to do) returns 0."""
