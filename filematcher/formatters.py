@@ -841,7 +841,7 @@ class TextActionFormatter(ActionFormatter):
         if confirmed:
             symbol = green("\u2713", self.cc)
         else:
-            symbol = yellow("\u2717", self.cc)
+            symbol = red("\u2717", self.cc)
 
         # Use tracked terminal rows from last group (+1 for prompt line)
         rows_up = self._last_duplicate_rows + 1 if self._last_duplicate_rows > 0 else 0
