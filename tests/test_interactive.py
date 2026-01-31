@@ -232,7 +232,7 @@ class TestInteractiveExecute(unittest.TestCase):
         self.assertEqual(user_skipped, 0)  # Quit is not "skipped"
         self.assertEqual(success, 0)
         self.assertTrue(user_quit)  # User quit via 'q'
-        self.assertEqual(remaining, 1)  # 1 remaining group (quit on first)
+        self.assertEqual(remaining, 2)  # 2 remaining groups (quit on first, current group wasn't processed)
         # Both duplicates should still exist
         self.assertTrue(os.path.exists(self.dup1))
         self.assertTrue(os.path.exists(self.dup2))

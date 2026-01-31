@@ -1,5 +1,5 @@
 ---
-status: complete
+status: diagnosed
 phase: 21-error-handling-polish
 source: [21-01-SUMMARY.md, 21-02-SUMMARY.md, 21-03-SUMMARY.md]
 started: 2026-01-31T00:00:00Z
@@ -63,10 +63,14 @@ skipped: 0
   reason: "User reported: it says 0 skipped and 1 remaining in the Quit message. It should either say 1 skipped and 1 remaining or 0 skipped and 2 remaining as there were two groups. I prefer 2 remaining"
   severity: major
   test: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Loop uses enumerate(groups, start=1) so i is 1-indexed. Formula 'total_groups - i' is off by 1 because current group wasn't processed. Fix: 'total_groups - i + 1'"
+  artifacts:
+    - path: "filematcher/cli.py"
+      issue: "Line 286: remaining_count = total_groups - i (should be total_groups - i + 1)"
+    - path: "filematcher/cli.py"
+      issue: "Line 294: remaining_count = total_groups - i (same fix needed for KeyboardInterrupt)"
+  missing:
+    - "Change 'total_groups - i' to 'total_groups - i + 1' on lines 286 and 294"
 
 - truth: "Ctrl+C quit shows correct remaining count"
   status: failed
@@ -74,7 +78,9 @@ skipped: 0
   severity: major
   test: 2
   related_to: 1
-  root_cause: ""
-  artifacts: []
-  missing: []
-  debug_session: ""
+  root_cause: "Same as test 1 - KeyboardInterrupt handler at line 294 has same off-by-one bug"
+  artifacts:
+    - path: "filematcher/cli.py"
+      issue: "Line 294: remaining_count = total_groups - i"
+  missing:
+    - "Same fix as test 1"

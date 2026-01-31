@@ -283,7 +283,7 @@ def interactive_execute(
                 confirm_all = True
 
             elif response == 'q':
-                remaining_count = total_groups - i
+                remaining_count = total_groups - i + 1  # Current group wasn't processed
                 user_quit = True
                 break
 
@@ -291,7 +291,8 @@ def interactive_execute(
         print()  # Newline after ^C
         # Calculate remaining based on last processed group
         # i is defined in loop scope; if we got here, we were in a group
-        remaining_count = total_groups - i
+        # Current group wasn't processed, so add 1
+        remaining_count = total_groups - i + 1
         user_quit = True
 
     return (success_count, failure_count, skipped_count, space_saved,

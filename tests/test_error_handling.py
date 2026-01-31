@@ -359,8 +359,8 @@ class TestInteractiveExecuteErrorHandling(BaseFileMatcherTest):
             )
 
         success, failure, skipped, space, failed, confirmed, user_skipped, remaining, user_quit = result
-        # Quit at group 2 means group 3 remaining (1 remaining)
-        self.assertEqual(remaining, 1)
+        # Quit at group 2 means groups 2 and 3 remaining (current group wasn't processed)
+        self.assertEqual(remaining, 2)
         self.assertTrue(user_quit)
         self.assertEqual(confirmed, 1)  # One group confirmed before quit
 
