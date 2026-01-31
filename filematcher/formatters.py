@@ -847,15 +847,17 @@ class TextActionFormatter(ActionFormatter):
         rows_up = self._last_duplicate_rows + 1 if self._last_duplicate_rows > 0 else 0
 
         if rows_up > 0:
-            # Move cursor up, print status at start of line, move back down
+            # Move cursor up, print status at start of line, then clear prompt line
             # \033[nA = move cursor up n lines
             # \r = carriage return to start of line
             # \033[nB = move cursor down n lines
-            print(f"\033[{rows_up}A\r{symbol}   \033[{rows_up}B", end="")
-            print()  # Move to next line
+            # \033[K = clear from cursor to end of line
+            # Move up to duplicate line, print status, move down to prompt line, clear it
+            print(f"\033[{rows_up}A\r{symbol}   \033[{rows_up - 1}B\r\033[K", end="")
+            # Cursor now at start of cleared prompt line - next output overwrites it
         else:
             # Fallback: print on current line
-            print(symbol)  # Complete the line
+            print(symbol)
 
     def format_remaining_count(self, remaining: int) -> None:
         """Output message after 'a' (all) response."""

@@ -97,8 +97,10 @@ class TestTextActionFormatterPrompts(unittest.TestCase):
         self.assertIn("\u2713", output)
         # Should contain ANSI cursor up sequence for 2 rows (1 dup + 1 prompt)
         self.assertIn("\033[2A", output)
-        # Should contain ANSI cursor down sequence for 2 rows
-        self.assertIn("\033[2B", output)
+        # Should contain ANSI cursor down sequence for 1 row (to prompt line)
+        self.assertIn("\033[1B", output)
+        # Should contain line clear sequence
+        self.assertIn("\033[K", output)
 
     def test_format_confirmation_status_cursor_movement_for_skipped(self):
         """Cursor movement works for skipped (X) status too."""
@@ -112,8 +114,10 @@ class TestTextActionFormatterPrompts(unittest.TestCase):
         self.assertIn("\u2717", output)
         # Should contain ANSI cursor up sequence for 3 rows (2 dup + 1 prompt)
         self.assertIn("\033[3A", output)
-        # Should contain ANSI cursor down sequence for 3 rows
-        self.assertIn("\033[3B", output)
+        # Should contain ANSI cursor down sequence for 2 rows (to prompt line)
+        self.assertIn("\033[2B", output)
+        # Should contain line clear sequence
+        self.assertIn("\033[K", output)
 
     def test_format_remaining_count_output(self):
         """Remaining count outputs 'Processing N remaining groups...' message."""
