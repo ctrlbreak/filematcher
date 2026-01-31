@@ -2,52 +2,61 @@
 phase: 015
 plan: 01
 subsystem: interactive-ui
-tags: [ansi, cursor-movement, tty, confirmation-status]
+tags: [ansi, cursor-movement, tty, confirmation-status, line-wrapping]
 completed: 2026-01-31
-duration: ~10min
+duration: ~30min
 ---
 
 # Quick Task 015: Move Confirmation Status to Action Line - Summary
 
-**One-liner:** ANSI cursor movement places checkmark/X at start of action line instead of separate line after prompt.
+**One-liner:** ANSI cursor movement places checkmark/X at start of action line, handles line wrapping, clears prompt line.
 
 ## What Was Done
 
-### Task 1: Add ANSI cursor movement to format_confirmation_status
-- Added `lines_back` parameter to `format_confirmation_status()` method signature
-- When `lines_back > 0`: Uses ANSI escape codes (`\033[nA` up, `\033[nB` down) to move cursor
-- When `lines_back == 0`: Fallback mode prints status on current line (for testing/non-TTY)
-- Updated ABC `ActionFormatter` and `JsonActionFormatter` signatures
+### Initial Implementation
+- Added `lines_back` parameter to `format_confirmation_status()` for cursor movement
+- ANSI escape codes (`\033[nA` up, `\033[nB` down) position status on action line
 
-**Commit:** `7c83965` feat(015): add ANSI cursor movement to format_confirmation_status
+**Commits:** `7c83965`, `8908c4c`, `f434ab9`
 
-### Task 2: Pass duplicate count to format_confirmation_status
-- Calculated `lines_back = len(duplicates)` for cursor positioning
-- Added `+1` when verbose mode with file_hash (hash line shown after duplicates)
-- Updated all 4 calls in `interactive_execute()`: confirm_all, 'y', 'n', 'a' branches
+### Fix: Cursor Offset for Prompt Line
+- Changed calculation from `len(duplicates)` to `len(duplicates) + 1` to account for prompt line
 
-**Commit:** `8908c4c` feat(015): pass lines_back to format_confirmation_status in interactive_execute
+**Commit:** `0f6e6f9`
 
-### Task 3: Update tests for new behavior
-- Updated existing tests to verify no ANSI codes with `lines_back=0`
-- Added `test_format_confirmation_status_moves_cursor_up` - verifies ANSI sequences present
-- Added `test_format_confirmation_status_cursor_movement_for_skipped` - X symbol with cursor
-- Added `test_json_format_confirmation_status_ignores_lines_back` - JSON no-op preserved
+### Fix: Handle Line Wrapping
+- Added `_last_duplicate_rows` tracking to TextActionFormatter
+- Uses `terminal_rows_for_line()` to calculate actual terminal rows for wrapped lines
+- Formatter now internally tracks rows instead of receiving `lines_back` parameter
+- Removed unused `lines_back` calculation from cli.py
 
-**Commit:** `f434ab9` test(015): add tests for cursor movement in format_confirmation_status
+**Commits:** `75493e7`, `acaf73e`
+
+### Style: Cross Color
+- Changed skip cross from yellow to red (checkmark stays green)
+
+**Commit:** `61d5b03`
+
+### Fix: Clear Prompt Line
+- After showing status, cursor moves to prompt line and clears it
+- Next group overwrites the prompt line instead of appearing below
+- Removes extra blank line between groups
+
+**Commit:** `324247d`
 
 ## Files Modified
 
 | File | Changes |
 |------|---------|
-| `filematcher/formatters.py` | Added `lines_back` param, ANSI cursor movement logic |
-| `filematcher/cli.py` | Calculate and pass `lines_back` to format_confirmation_status |
-| `tests/test_formatters.py` | Added 3 new tests for cursor movement |
+| `filematcher/formatters.py` | `_last_duplicate_rows` tracking, `terminal_rows_for_line()` usage, prompt line clearing |
+| `filematcher/cli.py` | Removed unused `lines_back` calculation |
+| `tests/test_formatters.py` | Updated tests for new cursor movement behavior |
 
 ## Verification
 
-- All 308 tests pass (305 original + 3 new)
-- Manual verification in TTY shows status on action line
+- All 308 tests pass
+- Manual verification with short and long (wrapping) paths
+- Prompt line properly cleared between groups
 
 ## Output Change
 
@@ -57,15 +66,17 @@ duration: ~10min
     WILL DELETE: /path/dup/a.txt
 [1/2] Delete duplicate? [y/n/a/q] n
 X
+
+[2/2] MASTER: ...
 ```
 
 **After:**
 ```
 [1/2] MASTER: /path/master/a.txt
 X   WILL DELETE: /path/dup/a.txt
-[1/2] Delete duplicate? [y/n/a/q] n
+[2/2] MASTER: ...
 ```
 
-## Deviations from Plan
-
-None - plan executed exactly as written.
+- Status symbol appears on action line (green checkmark / red cross)
+- Prompt line cleared and overwritten by next group
+- Works correctly with long paths that wrap in terminal

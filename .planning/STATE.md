@@ -89,7 +89,7 @@ None.
 | 012 | Add separator line before mode banner | 2026-01-30 | 92a1982 | [012-add-separator-line-before-mode-banner](./quick/012-add-separator-line-before-mode-banner/) |
 | 013 | Remove dead code (confirm_execution, format_confirmation_prompt) | 2026-01-30 | f3cca35 | [013-check-and-remove-redundant-unused-code](./quick/013-check-and-remove-redundant-unused-code/) |
 | 014 | Remove TTY carriage return from group display | 2026-01-31 | 9a9391b | [014-remove-tty-carriage-return-from-group-di](./quick/014-remove-tty-carriage-return-from-group-di/) |
-| 015 | Move confirmation status to action line | 2026-01-31 | f434ab9 | [015-move-confirmation-status-to-action-line](./quick/015-move-confirmation-status-to-action-line/) |
+| 015 | Move confirmation status to action line | 2026-01-31 | 324247d | [015-move-confirmation-status-to-action-line](./quick/015-move-confirmation-status-to-action-line/) |
 
 ## Session Continuity
 
