@@ -332,6 +332,52 @@ def build_log_flags(
     return flags
 
 
+def _validate_args(args: argparse.Namespace, parser: argparse.ArgumentParser) -> None:
+    """Validate argument combinations, call parser.error() on invalid combinations."""
+    if args.json and args.execute and not args.yes:
+        parser.error("--json with --execute requires --yes flag to confirm (no interactive prompts in JSON mode)")
+    if args.quiet and args.execute and not args.yes:
+        parser.error("--quiet and interactive mode are incompatible")
+    if args.execute and not args.yes and args.action != Action.COMPARE:
+        if not sys.stdin.isatty():
+            parser.error("stdin is not a terminal")
+    if args.execute and args.action == Action.COMPARE:
+        parser.error("compare action doesn't modify files - remove --execute flag")
+    if args.log and not args.execute:
+        parser.error("--log requires --execute")
+    if args.fallback_symlink and args.action != Action.HARDLINK:
+        parser.error("--fallback-symlink only applies to --action hardlink")
+    if args.target_dir:
+        if args.action not in (Action.HARDLINK, Action.SYMLINK):
+            parser.error("--target-dir only applies to --action hardlink or --action symlink")
+        if not os.path.isdir(args.target_dir):
+            parser.error(f"--target-dir must be an existing directory: {args.target_dir}")
+
+
+def _setup_logging(args: argparse.Namespace) -> logging.Handler:
+    """Configure logging based on args. Returns the handler for potential cleanup."""
+    if args.quiet:
+        log_level = logging.ERROR
+    elif args.verbose:
+        log_level = logging.DEBUG
+    else:
+        log_level = logging.INFO
+
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter('%(message)s'))
+
+    # Configure filematcher loggers for CLI use
+    # Clear and set to ensure correct output stream (especially important across test runs)
+    for log in [logger,
+                logging.getLogger('filematcher.directory'),
+                logging.getLogger('filematcher.cli')]:
+        log.handlers.clear()
+        log.addHandler(handler)
+        log.setLevel(log_level)
+
+    return handler
+
+
 def execute_with_logging(
     dir1: str,
     dir2: str,
@@ -422,45 +468,11 @@ def main() -> int:
     # Convert string action to enum for type safety
     args.action = Action(args.action)
 
-    if args.json and args.execute and not args.yes:
-        parser.error("--json with --execute requires --yes flag to confirm (no interactive prompts in JSON mode)")
-    if args.quiet and args.execute and not args.yes:
-        parser.error("--quiet and interactive mode are incompatible")
-    if args.execute and not args.yes and args.action != Action.COMPARE:
-        if not sys.stdin.isatty():
-            parser.error("stdin is not a terminal")
-    if args.execute and args.action == Action.COMPARE:
-        parser.error("compare action doesn't modify files - remove --execute flag")
-    if args.log and not args.execute:
-        parser.error("--log requires --execute")
-    if args.fallback_symlink and args.action != Action.HARDLINK:
-        parser.error("--fallback-symlink only applies to --action hardlink")
-    if args.target_dir:
-        if args.action not in (Action.HARDLINK, Action.SYMLINK):
-            parser.error("--target-dir only applies to --action hardlink or --action symlink")
-        if not os.path.isdir(args.target_dir):
-            parser.error(f"--target-dir must be an existing directory: {args.target_dir}")
+    _validate_args(args, parser)
 
     master_path = Path(args.dir1).resolve()
 
-    if args.quiet:
-        log_level = logging.ERROR
-    elif args.verbose:
-        log_level = logging.DEBUG
-    else:
-        log_level = logging.INFO
-
-    handler = logging.StreamHandler(sys.stderr)
-    handler.setFormatter(logging.Formatter('%(message)s'))
-
-    # Configure filematcher loggers for CLI use
-    # Clear and set to ensure correct output stream (especially important across test runs)
-    for log in [logger,
-                logging.getLogger('filematcher.directory'),
-                logging.getLogger('filematcher.cli')]:
-        log.handlers.clear()
-        log.addHandler(handler)
-        log.setLevel(log_level)
+    _setup_logging(args)
 
     color_mode = determine_color_mode(args)
     color_config = ColorConfig(mode=color_mode, stream=sys.stdout)
