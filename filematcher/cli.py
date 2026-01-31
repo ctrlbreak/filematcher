@@ -140,16 +140,9 @@ def interactive_execute(
                 dir2_base=dir2_base
             )
 
-            # Calculate lines_back for cursor movement to first duplicate line
-            # +1 for the prompt line (cursor is on new line after input())
-            # In verbose mode with file_hash, there's a hash line after duplicates
-            lines_back = len(duplicates) + 1
-            if verbose and file_hash:
-                lines_back += 1
-
             if confirm_all:
                 # Auto-confirm: show status, execute immediately
-                formatter.format_confirmation_status(confirmed=True, lines_back=lines_back)
+                formatter.format_confirmation_status(confirmed=True)
                 # Execute this group - mirror execute_all_actions pattern
                 for dup in duplicates:
                     # Get file size BEFORE action (for space_saved calculation)
@@ -196,7 +189,7 @@ def interactive_execute(
             response = prompt_for_group(formatter, i, total_groups, action.value)
 
             if response == 'y':
-                formatter.format_confirmation_status(confirmed=True, lines_back=lines_back)
+                formatter.format_confirmation_status(confirmed=True)
                 # Execute this group - mirror execute_all_actions pattern
                 for dup in duplicates:
                     # Get file size BEFORE action (for space_saved calculation)
@@ -239,11 +232,11 @@ def interactive_execute(
                 confirmed_count += 1
 
             elif response == 'n':
-                formatter.format_confirmation_status(confirmed=False, lines_back=lines_back)
+                formatter.format_confirmation_status(confirmed=False)
                 user_skipped_count += 1
 
             elif response == 'a':
-                formatter.format_confirmation_status(confirmed=True, lines_back=lines_back)
+                formatter.format_confirmation_status(confirmed=True)
                 remaining = total_groups - i
                 if remaining > 0:
                     formatter.format_remaining_count(remaining)
