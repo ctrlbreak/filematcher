@@ -227,12 +227,15 @@ class ActionFormatter(ABC):
         ...
 
     @abstractmethod
-    def format_confirmation_status(self, confirmed: bool) -> None:
+    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0) -> None:
         """Output confirmation symbol after user decision.
 
-        Outputs on the SAME line as the prompt (user already typed response).
-        - confirmed=True: green checkmark
-        - confirmed=False: yellow X mark
+        Args:
+            confirmed: True for checkmark (confirmed), False for X (skipped)
+            lines_back: Number of lines to move cursor up to place status.
+                       If 0, prints status on current line (fallback mode).
+                       If > 0, moves cursor up, prints status at line start,
+                       then moves cursor back down.
         """
         ...
 
@@ -497,7 +500,7 @@ class JsonActionFormatter(ActionFormatter):
         # JSON mode never prompts interactively
         return ""
 
-    def format_confirmation_status(self, confirmed: bool) -> None:
+    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0) -> None:
         # No-op: JSON mode doesn't show inline status
         pass
 
@@ -818,13 +821,31 @@ class TextActionFormatter(ActionFormatter):
         progress = dim(f"[{group_index}/{total_groups}]", self.cc)
         return f"{progress} {verb} [y/n/a/q] "
 
-    def format_confirmation_status(self, confirmed: bool) -> None:
-        """Output checkmark or X after user response."""
+    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0) -> None:
+        """Output checkmark or X after user response.
+
+        Args:
+            confirmed: True for checkmark (confirmed), False for X (skipped)
+            lines_back: Number of lines to move cursor up to place status.
+                       If 0, prints status on current line (fallback mode).
+                       If > 0, moves cursor up, prints status at line start,
+                       then moves cursor back down.
+        """
         if confirmed:
-            print(green("\u2713", self.cc), end="")
+            symbol = green("\u2713", self.cc)
         else:
-            print(yellow("\u2717", self.cc), end="")
-        print()  # Complete the line
+            symbol = yellow("\u2717", self.cc)
+
+        if lines_back > 0:
+            # Move cursor up, print status at start of line, move back down
+            # \033[nA = move cursor up n lines
+            # \r = carriage return to start of line
+            # \033[nB = move cursor down n lines
+            print(f"\033[{lines_back}A\r{symbol}   \033[{lines_back}B", end="")
+            print()  # Move to next line
+        else:
+            # Fallback: print on current line
+            print(symbol)  # Complete the line
 
     def format_remaining_count(self, remaining: int) -> None:
         """Output message after 'a' (all) response."""
