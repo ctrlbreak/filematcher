@@ -469,6 +469,297 @@ def execute_with_logging(
     return success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path
 
 
+def _print_preview_output(
+    formatter: ActionFormatter,
+    master_results: list[DuplicateGroup],
+    matches: dict[str, tuple[list[str], list[str]]],
+    action: Action,
+    cross_fs_files: set[str],
+    warnings: list[str],
+    color_config: ColorConfig,
+    dir1: str,
+    dir2: str,
+    unmatched1: list[str],
+    unmatched2: list[str],
+    summary: bool,
+    show_unmatched: bool,
+    verbose: bool,
+    json_mode: bool,
+    target_dir: str | None,
+    show_banner: bool = True
+) -> None:
+    """Print preview output for compare/preview modes."""
+    matched_files1 = sum(len(files) for files, _ in matches.values())
+    matched_files2 = sum(len(files) for _, files in matches.values())
+    space_info = calculate_space_savings(master_results)
+
+    if show_banner:
+        formatter.format_banner(
+            action,
+            space_info.group_count,
+            space_info.duplicate_count,
+            space_info.bytes_saved
+        )
+
+    if summary:
+        if action == Action.COMPARE:
+            formatter.format_compare_summary(
+                match_count=len(matches),
+                matched_files1=matched_files1,
+                matched_files2=matched_files2,
+                dir1_name=dir1,
+                dir2_name=dir2
+            )
+            if show_unmatched and not json_mode:
+                print(f"\nUnmatched files summary:")
+                print(f"  Files in {dir1} with no match: {len(unmatched1)}")
+                print(f"  Files in {dir2} with no match: {len(unmatched2)}")
+        else:
+            cross_fs_count = get_cross_fs_count(action, cross_fs_files)
+            formatter.format_statistics(
+                group_count=space_info.group_count,
+                duplicate_count=space_info.duplicate_count,
+                master_count=len(master_results),
+                space_savings=space_info.bytes_saved,
+                action=action,
+                cross_fs_count=cross_fs_count
+            )
+    else:
+        if not matches:
+            formatter.format_empty_result()
+        else:
+            formatter.format_warnings(warnings)
+
+            sorted_results = sorted(master_results, key=lambda x: x[0])
+
+            for i, (master_file, duplicates, reason, file_hash) in enumerate(sorted_results):
+                file_sizes = None
+                if verbose or json_mode:
+                    file_sizes = build_file_sizes([master_file] + duplicates)
+
+                cross_fs_to_show = get_cross_fs_for_hardlink(action, cross_fs_files)
+                formatter.format_duplicate_group(
+                    master_file, duplicates,
+                    action=action,
+                    file_hash=file_hash,
+                    file_sizes=file_sizes,
+                    cross_fs_files=cross_fs_to_show,
+                    group_index=i + 1,
+                    total_groups=len(sorted_results),
+                    target_dir=target_dir,
+                    dir2_base=dir2
+                )
+
+                if i < len(sorted_results) - 1 and not json_mode and not color_config.is_tty:
+                    print()
+
+            if color_config.is_tty:
+                print()
+
+        if show_unmatched and action == Action.COMPARE:
+            formatter.format_unmatched_section(
+                dir1_label=dir1,
+                unmatched1=unmatched1,
+                dir2_label=dir2,
+                unmatched2=unmatched2
+            )
+
+        if matches:
+            cross_fs_count = get_cross_fs_count(action, cross_fs_files)
+            formatter.format_statistics(
+                group_count=space_info.group_count,
+                duplicate_count=space_info.duplicate_count,
+                master_count=len(master_results),
+                space_savings=space_info.bytes_saved,
+                action=action,
+                cross_fs_count=cross_fs_count
+            )
+
+
+def _execute_json_batch(
+    args: argparse.Namespace,
+    master_results: list[DuplicateGroup],
+    matches: dict[str, tuple[list[str], list[str]]],
+    cross_fs_files: set[str],
+    action_formatter: JsonActionFormatter,
+    color_config: ColorConfig
+) -> int:
+    """Execute in JSON mode with --yes flag (batch mode)."""
+    success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
+        dir1=args.dir1,
+        dir2=args.dir2,
+        action=args.action,
+        master_results=master_results,
+        matches=matches,
+        base_flags=['--execute', '--json', '--yes'],
+        verbose=args.verbose,
+        fallback_symlink=args.fallback_symlink,
+        log_path=args.log,
+        target_dir=args.target_dir
+    )
+
+    sorted_results = sorted(master_results, key=lambda x: x[0])
+    for i, (master_file, duplicates, reason, file_hash) in enumerate(sorted_results):
+        file_sizes = build_file_sizes([master_file] + duplicates)
+        cross_fs_to_show = get_cross_fs_for_hardlink(args.action, cross_fs_files)
+        action_formatter.format_duplicate_group(
+            master_file, duplicates,
+            action=args.action,
+            file_hash=file_hash,
+            file_sizes=file_sizes,
+            cross_fs_files=cross_fs_to_show,
+            group_index=i + 1,
+            total_groups=len(sorted_results),
+            target_dir=args.target_dir,
+            dir2_base=args.dir2
+        )
+
+    if color_config.is_tty:
+        print()
+
+    preview_space_info = calculate_space_savings(master_results)
+    cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
+    action_formatter.format_statistics(
+        group_count=preview_space_info.group_count,
+        duplicate_count=preview_space_info.duplicate_count,
+        master_count=len(master_results),
+        space_savings=preview_space_info.bytes_saved,
+        action=args.action,
+        cross_fs_count=cross_fs_count
+    )
+
+    action_formatter.format_execution_summary(
+        success_count=success_count,
+        failure_count=failure_count,
+        skipped_count=skipped_count,
+        space_saved=space_saved,
+        log_path=str(actual_log_path),
+        failed_list=failed_list,
+        confirmed_count=len(master_results),
+        user_skipped_count=0
+    )
+
+    action_formatter.finalize()
+    if failure_count > 0:
+        return EXIT_PARTIAL
+    return EXIT_SUCCESS
+
+
+def _execute_text_batch(
+    args: argparse.Namespace,
+    master_results: list[DuplicateGroup],
+    matches: dict[str, tuple[list[str], list[str]]],
+    color_config: ColorConfig
+) -> int:
+    """Execute in text mode with --yes flag (batch mode, no prompts)."""
+    success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
+        dir1=args.dir1,
+        dir2=args.dir2,
+        action=args.action,
+        master_results=master_results,
+        matches=matches,
+        base_flags=['--execute', '--yes'],
+        verbose=args.verbose,
+        yes=args.yes,
+        fallback_symlink=args.fallback_symlink,
+        log_path=args.log,
+        target_dir=args.target_dir
+    )
+
+    action_formatter_exec = TextActionFormatter(
+        verbose=args.verbose,
+        preview_mode=False,
+        action=args.action,
+        color_config=color_config
+    )
+    action_formatter_exec.format_execution_summary(
+        success_count=success_count,
+        failure_count=failure_count,
+        skipped_count=skipped_count,
+        space_saved=space_saved,
+        log_path=str(actual_log_path),
+        failed_list=failed_list,
+        confirmed_count=len(master_results),
+        user_skipped_count=0
+    )
+
+    if failure_count > 0:
+        return EXIT_PARTIAL
+    return EXIT_SUCCESS
+
+
+def _execute_interactive_mode(
+    args: argparse.Namespace,
+    master_results: list[DuplicateGroup],
+    matches: dict[str, tuple[list[str], list[str]]],
+    cross_fs_files: set[str],
+    action_formatter: TextActionFormatter
+) -> int:
+    """Execute in interactive mode - prompt for each group."""
+    file_hash_lookup = build_file_hash_lookup(matches)
+    file_sizes_map: dict[str, dict[str, int]] = {}
+    for master_file, duplicates, reason, file_hash in master_results:
+        file_sizes_map[master_file] = build_file_sizes([master_file] + duplicates)
+
+    cross_fs_to_show = get_cross_fs_for_hardlink(args.action, cross_fs_files)
+
+    # Create audit logger
+    log_path_obj = Path(args.log) if args.log else None
+    audit_logger, actual_log_path = create_audit_logger(log_path_obj)
+
+    base_flags = ['--execute']
+    flags = build_log_flags(base_flags, verbose=args.verbose,
+                           fallback_symlink=args.fallback_symlink,
+                           log_path=args.log, target_dir=args.target_dir)
+    write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
+
+    (success_count, failure_count, skipped_count, space_saved,
+     failed_list, confirmed_count, user_skipped_count,
+     remaining_count, user_quit) = interactive_execute(
+        groups=sorted(master_results, key=lambda x: x[0]),
+        action=args.action,
+        formatter=action_formatter,
+        fallback_symlink=args.fallback_symlink,
+        audit_logger=audit_logger,
+        file_hashes=file_hash_lookup,
+        target_dir=args.target_dir,
+        dir2_base=args.dir2,
+        verbose=args.verbose,
+        file_sizes_map=file_sizes_map,
+        cross_fs_files=cross_fs_to_show
+    )
+
+    write_log_footer(audit_logger, success_count, failure_count,
+                   skipped_count, space_saved, failed_list)
+
+    if user_quit:
+        # User quit early via 'q' or Ctrl+C
+        action_formatter.format_quit_summary(
+            confirmed_count=confirmed_count,
+            skipped_count=user_skipped_count,
+            remaining_count=remaining_count,
+            space_saved=space_saved,
+            log_path=str(actual_log_path)
+        )
+        return EXIT_USER_QUIT
+
+    # Show execution summary
+    action_formatter.format_execution_summary(
+        success_count=success_count,
+        failure_count=failure_count,
+        skipped_count=skipped_count,
+        space_saved=space_saved,
+        log_path=str(actual_log_path),
+        failed_list=failed_list,
+        confirmed_count=confirmed_count,
+        user_skipped_count=user_skipped_count
+    )
+
+    if failure_count > 0:
+        return EXIT_PARTIAL
+    return EXIT_SUCCESS
+
+
 def main() -> int:
     """Main entry point. Returns 0 on success, 1 on error."""
     parser = argparse.ArgumentParser(description='Find files with identical content across two directories.')
@@ -566,159 +857,34 @@ def main() -> int:
                 will_execute=args.execute
             )
 
-        def print_preview_output(formatter: ActionFormatter, show_banner: bool = True) -> None:
-            space_info = calculate_space_savings(master_results)
-
-            if show_banner:
-                formatter.format_banner(
-                    args.action,
-                    space_info.group_count,
-                    space_info.duplicate_count,
-                    space_info.bytes_saved
-                )
-
-            if args.summary:
-                if args.action == Action.COMPARE:
-                    formatter.format_compare_summary(
-                        match_count=len(matches),
-                        matched_files1=matched_files1,
-                        matched_files2=matched_files2,
-                        dir1_name=args.dir1,
-                        dir2_name=args.dir2
-                    )
-                    if args.show_unmatched and not args.json:
-                        print(f"\nUnmatched files summary:")
-                        print(f"  Files in {args.dir1} with no match: {len(unmatched1)}")
-                        print(f"  Files in {args.dir2} with no match: {len(unmatched2)}")
-                else:
-                    cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
-                    formatter.format_statistics(
-                        group_count=space_info.group_count,
-                        duplicate_count=space_info.duplicate_count,
-                        master_count=len(master_results),
-                        space_savings=space_info.bytes_saved,
-                        action=args.action,
-                        cross_fs_count=cross_fs_count
-                    )
-            else:
-                if not matches:
-                    formatter.format_empty_result()
-                else:
-                    formatter.format_warnings(warnings)
-
-                    sorted_results = sorted(master_results, key=lambda x: x[0])
-
-                    for i, (master_file, duplicates, reason, file_hash) in enumerate(sorted_results):
-                        file_sizes = None
-                        if args.verbose or args.json:
-                            file_sizes = build_file_sizes([master_file] + duplicates)
-
-                        cross_fs_to_show = get_cross_fs_for_hardlink(args.action, cross_fs_files)
-                        formatter.format_duplicate_group(
-                            master_file, duplicates,
-                            action=args.action,
-                            file_hash=file_hash,
-                            file_sizes=file_sizes,
-                            cross_fs_files=cross_fs_to_show,
-                            group_index=i + 1,
-                            total_groups=len(sorted_results),
-                            target_dir=args.target_dir,
-                            dir2_base=args.dir2
-                        )
-
-                        if i < len(sorted_results) - 1 and not args.json and not color_config.is_tty:
-                            print()
-
-                    if color_config.is_tty:
-                        print()
-
-                if args.show_unmatched and args.action == Action.COMPARE:
-                    formatter.format_unmatched_section(
-                        dir1_label=args.dir1,
-                        unmatched1=unmatched1,
-                        dir2_label=args.dir2,
-                        unmatched2=unmatched2
-                    )
-
-                if matches:
-                    cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
-                    formatter.format_statistics(
-                        group_count=space_info.group_count,
-                        duplicate_count=space_info.duplicate_count,
-                        master_count=len(master_results),
-                        space_savings=space_info.bytes_saved,
-                        action=args.action,
-                        cross_fs_count=cross_fs_count
-                    )
-
         if preview_mode:
-            print_preview_output(action_formatter, show_banner=True)
+            _print_preview_output(
+                formatter=action_formatter,
+                master_results=master_results,
+                matches=matches,
+                action=args.action,
+                cross_fs_files=cross_fs_files,
+                warnings=warnings,
+                color_config=color_config,
+                dir1=args.dir1,
+                dir2=args.dir2,
+                unmatched1=unmatched1,
+                unmatched2=unmatched2,
+                summary=args.summary,
+                show_unmatched=args.show_unmatched,
+                verbose=args.verbose,
+                json_mode=args.json,
+                target_dir=args.target_dir,
+                show_banner=True
+            )
             action_formatter.finalize()
 
         elif execute_mode:
             if args.json:
-                # JSON mode requires --yes, execute batch mode
-                success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
-                    dir1=args.dir1,
-                    dir2=args.dir2,
-                    action=args.action,
-                    master_results=master_results,
-                    matches=matches,
-                    base_flags=['--execute', '--json', '--yes'],
-                    verbose=args.verbose,
-                    fallback_symlink=args.fallback_symlink,
-                    log_path=args.log,
-                    target_dir=args.target_dir
+                return _execute_json_batch(
+                    args, master_results, matches, cross_fs_files,
+                    action_formatter, color_config
                 )
-
-                sorted_results = sorted(master_results, key=lambda x: x[0])
-                for i, (master_file, duplicates, reason, file_hash) in enumerate(sorted_results):
-                    file_sizes = None
-                    if args.verbose or args.json:
-                        file_sizes = build_file_sizes([master_file] + duplicates)
-                    cross_fs_to_show = get_cross_fs_for_hardlink(args.action, cross_fs_files)
-                    action_formatter.format_duplicate_group(
-                        master_file, duplicates,
-                        action=args.action,
-                        file_hash=file_hash,
-                        file_sizes=file_sizes,
-                        cross_fs_files=cross_fs_to_show,
-                        group_index=i + 1,
-                        total_groups=len(sorted_results),
-                        target_dir=args.target_dir,
-                        dir2_base=args.dir2
-                    )
-
-                if color_config.is_tty:
-                    print()
-
-                preview_space_info = calculate_space_savings(master_results)
-                cross_fs_count = get_cross_fs_count(args.action, cross_fs_files)
-                action_formatter.format_statistics(
-                    group_count=preview_space_info.group_count,
-                    duplicate_count=preview_space_info.duplicate_count,
-                    master_count=len(master_results),
-                    space_savings=preview_space_info.bytes_saved,
-                    action=args.action,
-                    cross_fs_count=cross_fs_count
-                )
-
-                action_formatter.format_execution_summary(
-                    success_count=success_count,
-                    failure_count=failure_count,
-                    skipped_count=skipped_count,
-                    space_saved=space_saved,
-                    log_path=str(actual_log_path),
-                    failed_list=failed_list,
-                    confirmed_count=len(master_results),
-                    user_skipped_count=0
-                )
-
-                action_formatter.finalize()
-                if failure_count > 0:
-                    return EXIT_PARTIAL
-                return EXIT_SUCCESS
-
             else:
                 # Text mode: show banner for both interactive and batch modes
                 space_info = calculate_space_savings(master_results)
@@ -732,104 +898,10 @@ def main() -> int:
                     )
 
                 if args.yes:
-                    # Batch mode - execute without prompts
-                    success_count, failure_count, skipped_count, space_saved, failed_list, actual_log_path = execute_with_logging(
-                        dir1=args.dir1,
-                        dir2=args.dir2,
-                        action=args.action,
-                        master_results=master_results,
-                        matches=matches,
-                        base_flags=['--execute', '--yes'],
-                        verbose=args.verbose,
-                        yes=args.yes,
-                        fallback_symlink=args.fallback_symlink,
-                        log_path=args.log,
-                        target_dir=args.target_dir
-                    )
-
-                    action_formatter_exec = TextActionFormatter(
-                        verbose=args.verbose,
-                        preview_mode=False,
-                        action=args.action,
-                        color_config=color_config
-                    )
-                    action_formatter_exec.format_execution_summary(
-                        success_count=success_count,
-                        failure_count=failure_count,
-                        skipped_count=skipped_count,
-                        space_saved=space_saved,
-                        log_path=str(actual_log_path),
-                        failed_list=failed_list,
-                        confirmed_count=len(master_results),
-                        user_skipped_count=0
-                    )
-
-                    if failure_count > 0:
-                        return EXIT_PARTIAL
-                    return EXIT_SUCCESS
+                    return _execute_text_batch(args, master_results, matches, color_config)
                 else:
-                    # Interactive mode - prompt for each group
-                    file_hash_lookup = build_file_hash_lookup(matches)
-                    file_sizes_map: dict[str, dict[str, int]] = {}
-                    for master_file, duplicates, reason, file_hash in master_results:
-                        file_sizes_map[master_file] = build_file_sizes([master_file] + duplicates)
-
-                    cross_fs_to_show = get_cross_fs_for_hardlink(args.action, cross_fs_files)
-
-                    # Create audit logger
-                    log_path_obj = Path(args.log) if args.log else None
-                    audit_logger, actual_log_path = create_audit_logger(log_path_obj)
-
-                    base_flags = ['--execute']
-                    flags = build_log_flags(base_flags, verbose=args.verbose,
-                                           fallback_symlink=args.fallback_symlink,
-                                           log_path=args.log, target_dir=args.target_dir)
-                    write_log_header(audit_logger, args.dir1, args.dir2, args.dir1, args.action, flags)
-
-                    (success_count, failure_count, skipped_count, space_saved,
-                     failed_list, confirmed_count, user_skipped_count,
-                     remaining_count, user_quit) = interactive_execute(
-                        groups=sorted(master_results, key=lambda x: x[0]),
-                        action=args.action,
-                        formatter=action_formatter,
-                        fallback_symlink=args.fallback_symlink,
-                        audit_logger=audit_logger,
-                        file_hashes=file_hash_lookup,
-                        target_dir=args.target_dir,
-                        dir2_base=args.dir2,
-                        verbose=args.verbose,
-                        file_sizes_map=file_sizes_map,
-                        cross_fs_files=cross_fs_to_show
+                    return _execute_interactive_mode(
+                        args, master_results, matches, cross_fs_files, action_formatter
                     )
-
-                    write_log_footer(audit_logger, success_count, failure_count,
-                                   skipped_count, space_saved, failed_list)
-
-                    if user_quit:
-                        # User quit early via 'q' or Ctrl+C
-                        action_formatter.format_quit_summary(
-                            confirmed_count=confirmed_count,
-                            skipped_count=user_skipped_count,
-                            remaining_count=remaining_count,
-                            space_saved=space_saved,
-                            log_path=str(actual_log_path)
-                        )
-                        return EXIT_USER_QUIT
-
-                    # Show execution summary
-                    action_formatter.format_execution_summary(
-                        success_count=success_count,
-                        failure_count=failure_count,
-                        skipped_count=skipped_count,
-                        space_saved=space_saved,
-                        log_path=str(actual_log_path),
-                        failed_list=failed_list,
-                        confirmed_count=confirmed_count,
-                        user_skipped_count=user_skipped_count
-                    )
-
-                    if failure_count > 0:
-                        return EXIT_PARTIAL
-                    return EXIT_SUCCESS
 
     return 0
