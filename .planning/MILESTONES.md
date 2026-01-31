@@ -1,5 +1,34 @@
 # Project Milestones: File Matcher
 
+## v1.5.0 Interactive Execute (Shipped: 2026-01-31)
+
+**Delivered:** Interactive execute mode with per-file y/n/a/q confirmation prompts, restructured JSON schema v2.0 with unified header object, and comprehensive error handling with enhanced execution summaries.
+
+**Phases completed:** 18-21 (10 plans total, including Phase 20.1 inserted)
+
+**Key accomplishments:**
+
+- Per-group interactive confirmation with y/n/a/q responses and progress indicators [3/10]
+- Restructured JSON output with unified header object (v2.0 schema, breaking change)
+- Fail-fast flag validation (--json/--quiet with --execute requires --yes)
+- Enhanced execution summary with three-way user decision tracking (confirmed/skipped/failed)
+- Inline error display with continuation on permission errors
+- Clean quit summary on 'q' response or Ctrl+C with exit code 130
+
+**Stats:**
+
+- 3,302 lines of Python (filematcher package)
+- 308 tests (90 new tests for interactive mode)
+- 5 phases, 10 plans
+- 105 commits in milestone
+- 3 days (2026-01-28 → 2026-01-31)
+
+**Git range:** `v1.4.0` → `v1.5.0`
+
+**What's next:** Consider help command (?) during prompts, undo last action, or progress bars for large operations.
+
+---
+
 ## v1.4.0 Package Structure (Shipped: 2026-01-28)
 
 **Delivered:** Refactored 2,455-line monolith to 8-module filematcher/ package with acyclic dependency hierarchy, full backward compatibility, and no circular imports.

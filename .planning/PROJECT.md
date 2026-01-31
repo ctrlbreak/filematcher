@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Python CLI utility that finds files with identical content across two directory hierarchies and deduplicates them using hard links, symbolic links, or deletion. Features preview-by-default safety, master directory protection, comprehensive audit logging, JSON output for scripting, and TTY-aware color output. Implemented as a proper Python package (filematcher/) with full backward compatibility.
+A Python CLI utility that finds files with identical content across two directory hierarchies and deduplicates them using hard links, symbolic links, or deletion. Features interactive per-file confirmation during execute mode, preview-by-default safety, master directory protection, comprehensive audit logging, JSON output for scripting (v2.0 schema), and TTY-aware color output. Implemented as a proper Python package (filematcher/) with full backward compatibility.
 
 ## Core Value
 
@@ -10,20 +10,20 @@ Safely deduplicate files across directories while preserving the master copy and
 
 ## Current State
 
-**Shipped:** v1.4.0 (2026-01-28)
+**Shipped:** v1.5.0 (2026-01-31)
 
-Architecture: filematcher/ package with 8 modules and thin file_matcher.py wrapper for backward compatibility.
+Architecture: filematcher/ package with 8 modules, interactive execute mode, and JSON v2.0 schema.
 
 ```
 filematcher/
   __init__.py     (216 lines - 67 re-exports)
   __main__.py     (7 lines - python -m entry point)
-  cli.py          (614 lines - CLI entry point)
+  cli.py          (850+ lines - CLI, interactive execute)
   colors.py       (328 lines - ANSI colors, ColorConfig)
   hashing.py      (139 lines - MD5/SHA-256, sparse sampling)
   filesystem.py   (158 lines - hardlink/symlink detection)
-  actions.py      (437 lines - action execution, audit logging)
-  formatters.py   (1174 lines - Text/JSON formatters)
+  actions.py      (450+ lines - action execution, audit logging)
+  formatters.py   (1300+ lines - Text/JSON formatters with prompts)
   directory.py    (207 lines - directory indexing)
 
 file_matcher.py   (26 lines - backward compat wrapper)
@@ -35,7 +35,7 @@ file_matcher.py   (26 lines - backward compat wrapper)
 - pathlib for file operations
 - os.link/symlink for deduplication actions
 - logging module for audit trails
-- ActionFormatter ABC with Text/JSON implementations
+- ActionFormatter ABC with Text/JSON implementations (extended with prompt methods)
 
 ## Requirements
 
@@ -66,14 +66,19 @@ file_matcher.py   (26 lines - backward compat wrapper)
 - ✓ Backward compatibility for `python file_matcher.py` invocation — v1.4
 - ✓ Pip install functionality (`filematcher` command) — v1.4
 - ✓ All 218 tests pass with package imports — v1.4
+- ✓ Per-file confirmation prompts in execute mode (y/n/a/q) — v1.5
+- ✓ Progress indicator showing group position [3/10] — v1.5
+- ✓ Consistent output structure with preview mode — v1.5
+- ✓ Visual feedback during interactive execution (✓/✗ status) — v1.5
+- ✓ `--yes` flag bypasses all prompts (batch mode) — v1.5
+- ✓ JSON schema v2.0 with unified header object — v1.5
+- ✓ Fail-fast validation for incompatible flag combinations — v1.5
+- ✓ Enhanced execution summary with user decision tracking — v1.5
+- ✓ 308 tests pass with interactive mode coverage — v1.5
 
 ### Active
 
-**v1.5 Interactive Execute:**
-- [ ] Per-file confirmation prompts in execute mode (yes/no/all/cancel)
-- [ ] Consistent output structure with preview mode
-- [ ] Visual feedback during interactive execution
-- [ ] Maintain `--yes` flag behavior (skip all prompts)
+(None — planning next milestone)
 
 ### Out of Scope
 
@@ -113,16 +118,11 @@ file_matcher.py   (26 lines - backward compat wrapper)
 | Direct imports for leaf modules | No circular import risk for hashing, filesystem, colors | ✓ Good |
 | Thin wrapper pattern | file_matcher.py re-exports from filematcher, 26 lines | ✓ Good |
 | Audit logging in actions.py | Cohesive module, both concern file modifications | ✓ Good |
-
-## Current Milestone: v1.5 Interactive Execute
-
-**Goal:** Redesign execute mode with per-file interactive confirmation that maintains consistency with preview mode output.
-
-**Target features:**
-- Per-file yes/no/all/cancel prompts during execute mode
-- Output structure consistent with preview mode (same group display)
-- Visual feedback showing progress and results inline
-- `--yes` flag continues to skip all prompts
+| Interactive by default for --execute | Safer UX, user reviews each action; --yes for scripts | ✓ Good |
+| y/n/a/q response pattern | Follows git add -p convention; intuitive for developers | ✓ Good |
+| JSON schema v2.0 with header object | Cleaner structure, consistent directory naming | ✓ Good |
+| Exit code 130 for user quit | Unix convention (128 + SIGINT) | ✓ Good |
+| Fail-fast flag validation | Errors before file scanning saves time | ✓ Good |
 
 ---
-*Last updated: 2026-01-28 after starting v1.5 milestone*
+*Last updated: 2026-01-31 after v1.5 milestone*

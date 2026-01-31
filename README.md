@@ -87,15 +87,60 @@ filematcher dir1 dir2 --action delete
 To actually execute the changes, add `--execute`:
 
 ```bash
-# Execute with confirmation prompt
+# Execute with per-file confirmation (interactive mode)
 filematcher dir1 dir2 --action hardlink --execute
 
-# Execute without prompt (for scripts)
+# Execute without prompts (batch mode for scripts)
 filematcher dir1 dir2 --action hardlink --execute --yes
 
 # Execute with custom log file
 filematcher dir1 dir2 --action hardlink --execute --log changes.log
 ```
+
+### Interactive Execute Mode
+
+When you run `--execute` without `--yes`, you'll be prompted for each duplicate group:
+
+```
+=== EXECUTE MODE ===
+Action: hardlink | Groups: 5 | Files: 8 | Space: 1.2 MB
+
+[MASTER] /path/dir1/file1.txt (1.2 KB)
+    [WILL HARDLINK] /path/dir2/copy.txt
+
+[1/5] Hardlink this group? [y/n/a/q]:
+```
+
+**Response options:**
+- `y` (yes) - Execute action on this group, continue to next
+- `n` (no) - Skip this group, continue to next
+- `a` (all) - Execute on this and all remaining groups without prompting
+- `q` (quit) - Stop immediately, show summary of what was done
+
+After each response, you'll see confirmation:
+```
+✓ Confirmed - hardlinked 1 file
+```
+or
+```
+✗ Skipped
+```
+
+**Final summary shows:**
+```
+=== Execution Complete ===
+User confirmed: 3 groups
+User skipped: 1 group
+Succeeded: 3
+Failed: 0
+Space freed: 3.6 KB (3,686 bytes)
+Audit log: filematcher_20260131_120000.log
+```
+
+**Flag requirements:**
+- `--json --execute` requires `--yes` (JSON output incompatible with prompts)
+- `--quiet --execute` requires `--yes` (can't suppress output and prompt)
+- Non-TTY stdin (piped input) requires `--yes`
 
 ### Cross-Filesystem Support
 
@@ -175,20 +220,27 @@ filematcher dir1 dir2 --action hardlink --json
 filematcher dir1 dir2 --action hardlink --execute --yes --json
 ```
 
+### Schema (v2.0)
+
+**Note:** v1.5.0 introduced JSON schema v2.0 with a unified header object. See [Breaking Changes](#breaking-changes-v15) below.
+
 ### Schema (Compare Mode)
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `timestamp` | string | Execution time (RFC 3339 format) |
-| `directories.dir1` | string | First directory path (absolute) |
-| `directories.dir2` | string | Second directory path (absolute) |
-| `hashAlgorithm` | string | Hash algorithm used ("md5" or "sha256") |
+| `header.name` | string | "filematcher" |
+| `header.version` | string | Schema version (e.g., "2.0") |
+| `header.timestamp` | string | Execution time (RFC 3339 format) |
+| `header.mode` | string | "compare" |
+| `header.hashAlgorithm` | string | Hash algorithm used ("md5" or "sha256") |
+| `header.directories.master` | string | Master directory path (absolute) |
+| `header.directories.duplicate` | string | Duplicate directory path (absolute) |
 | `matches` | array | Groups of files with matching content |
 | `matches[].hash` | string | Content hash for the group |
 | `matches[].filesDir1` | array | File paths from dir1 (sorted) |
 | `matches[].filesDir2` | array | File paths from dir2 (sorted) |
-| `unmatchedDir1` | array | Unmatched files in dir1 (with --show-unmatched) |
-| `unmatchedDir2` | array | Unmatched files in dir2 (with --show-unmatched) |
+| `unmatchedMaster` | array | Unmatched files in master dir (with --show-unmatched) |
+| `unmatchedDuplicate` | array | Unmatched files in duplicate dir (with --show-unmatched) |
 | `summary.matchCount` | number | Number of unique content hashes with matches |
 | `summary.matchedFilesDir1` | number | Files with matches in dir1 |
 | `summary.matchedFilesDir2` | number | Files with matches in dir2 |
@@ -200,11 +252,14 @@ filematcher dir1 dir2 --action hardlink --execute --yes --json
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `timestamp` | string | Execution time (RFC 3339) |
-| `mode` | string | "preview" or "execute" |
-| `action` | string | "hardlink", "symlink", or "delete" |
-| `directories.master` | string | Master directory path (absolute) |
-| `directories.duplicate` | string | Duplicate directory path (absolute) |
+| `header.name` | string | "filematcher" |
+| `header.version` | string | Schema version (e.g., "2.0") |
+| `header.timestamp` | string | Execution time (RFC 3339) |
+| `header.mode` | string | "preview" or "execute" |
+| `header.action` | string | "hardlink", "symlink", or "delete" |
+| `header.hashAlgorithm` | string | Hash algorithm used |
+| `header.directories.master` | string | Master directory path (absolute) |
+| `header.directories.duplicate` | string | Duplicate directory path (absolute) |
 | `warnings` | array | Warning messages (e.g., multiple files in master with same content) |
 | `duplicateGroups` | array | Groups of duplicates |
 | `duplicateGroups[].masterFile` | string | Master file path (preserved) |
@@ -371,10 +426,43 @@ Space reclaimed: 2.4 KB
 
 | Code | Meaning |
 |------|---------|
-| 0 | Success (or user aborted) |
+| 0 | Success (or user aborted with 'n' on all) |
 | 1 | All operations failed |
-| 2 | Invalid arguments |
-| 3 | Partial success (some operations failed) |
+| 2 | Invalid arguments or partial success (some operations failed) |
+| 130 | User quit (q response or Ctrl+C during interactive mode) |
+
+## Breaking Changes (v1.5)
+
+### JSON Schema v2.0
+
+v1.5.0 restructured JSON output with a unified header object:
+
+**Metadata moved to header:**
+```json
+// OLD (v1.x)
+{"timestamp": "...", "mode": "preview", ...}
+
+// NEW (v2.0)
+{"header": {"name": "filematcher", "version": "2.0", "timestamp": "...", "mode": "preview", ...}, ...}
+```
+
+**Directory keys renamed:**
+```json
+// OLD
+{"directories": {"dir1": "/path", "dir2": "/path"}}
+
+// NEW
+{"header": {"directories": {"master": "/path", "duplicate": "/path"}}}
+```
+
+**Unmatched field names:**
+```json
+// OLD
+{"unmatchedDir1": [...], "unmatchedDir2": [...]}
+
+// NEW
+{"unmatchedMaster": [...], "unmatchedDuplicate": [...]}
+```
 
 ## Output Streams
 

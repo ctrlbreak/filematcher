@@ -2,6 +2,44 @@
 
 All notable changes to the File Matcher project will be documented in this file.
 
+## [1.5.0] - 2026-01-31
+
+### Changed
+- **Interactive Execute Mode**: `--execute` now prompts for each file group by default
+- **JSON Schema v2.0**: Restructured JSON output with unified header object (breaking change)
+
+### Added
+- **Per-file Confirmation**: Interactive y/n/a/q prompts during execute mode
+  - `y` (yes) - execute action on this group
+  - `n` (no) - skip this group
+  - `a` (all) - execute on all remaining groups without prompting
+  - `q` (quit) - stop processing immediately
+- **Progress Indicator**: Prompts show position like `[3/10]`
+- **Enhanced Execution Summary**: Shows user decisions (confirmed/skipped) and execution results separately
+- **Fail-fast Flag Validation**: Invalid flag combinations caught before file scanning
+- **Exit Code 130**: User quit (q or Ctrl+C) returns Unix-standard exit code
+
+### Breaking Changes
+- **JSON Schema v2.0**: Metadata moved to `header` object
+  - OLD: `data.timestamp`, `data.mode`
+  - NEW: `data.header.timestamp`, `data.header.mode`
+- **Directory Keys Renamed** (JSON):
+  - OLD: `data.directories.dir1`, `data.directories.dir2`
+  - NEW: `data.header.directories.master`, `data.header.directories.duplicate`
+- **Unmatched Field Names** (JSON):
+  - OLD: `data.unmatchedDir1`, `data.unmatchedDir2`
+  - NEW: `data.unmatchedMaster`, `data.unmatchedDuplicate`
+
+### Flag Interactions
+- `--json --execute` now requires `--yes` (no interactive prompts in JSON mode)
+- `--quiet --execute` now requires `--yes` (can't suppress output and prompt)
+- Non-TTY stdin with `--execute` requires `--yes`
+
+### Technical Details
+- 308 unit tests, all passing
+- 5 phases, 10 plans implemented
+- ActionFormatter ABC extended with interactive prompt methods
+
 ## [1.4.0] - 2026-01-28
 
 ### Changed
