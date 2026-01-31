@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 Phase: N/A (between milestones)
 Plan: N/A
 Status: Ready for next milestone
-Last activity: 2026-01-31 - Completed quick task 017: Code quality improvements
+Last activity: 2026-01-31 - Completed quick task 018: Reduce main() complexity
 
 Progress: Milestone v1.5 shipped
 
@@ -70,6 +70,7 @@ None.
 |---|-------------|------|--------|-----------|
 | 016 | Code quality review and improvement suggestions | 2026-01-31 | ff7f28d | [016-check-the-codebase-for-good-coding-pract](./quick/016-check-the-codebase-for-good-coding-pract/) |
 | 017 | Code quality improvements (from 016 review) | 2026-01-31 | 0a72b30 | [017-implement-code-quality-improvements](./quick/017-implement-code-quality-improvements/) |
+| 018 | Reduce main() complexity (425 -> 145 lines) | 2026-01-31 | 9201d49 | [018-improve-the-complexity-of-the-main-funct](./quick/018-improve-the-complexity-of-the-main-funct/) |
 
 ## Next Steps
 
@@ -79,4 +80,4 @@ Start next milestone with `/gsd:new-milestone` to:
 3. Create new ROADMAP.md
 
 ---
-*Last updated: 2026-01-31 - Quick task 017 complete*
+*Last updated: 2026-01-31 - Quick task 018 complete*
