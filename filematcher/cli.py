@@ -378,6 +378,52 @@ def _setup_logging(args: argparse.Namespace) -> logging.Handler:
     return handler
 
 
+def _build_master_results(
+    matches: dict[str, tuple[list[str], list[str]]],
+    master_path: Path,
+    action: Action
+) -> tuple[list[DuplicateGroup], set[str], list[str], int]:
+    """Build master results from matches, detecting cross-filesystem files and hardlinked duplicates.
+
+    Args:
+        matches: Dict mapping hash -> (files_in_dir1, files_in_dir2)
+        master_path: Path to master directory
+        action: Action being performed (affects cross-fs detection)
+
+    Returns:
+        Tuple of (master_results, cross_fs_files, warnings, total_already_hardlinked)
+    """
+    master_results: list[DuplicateGroup] = []
+    warnings: list[str] = []
+    total_already_hardlinked = 0
+    master_dir_str = str(master_path)
+
+    for file_hash, (files1, files2) in matches.items():
+        all_files = files1 + files2
+
+        master_files_in_group = [f for f in all_files if is_in_directory(f, master_dir_str)]
+        if len(master_files_in_group) > 1:
+            warnings.append(f"Warning: Multiple files in master directory have identical content: {', '.join(master_files_in_group)}")
+
+        master_file, duplicates, reason = select_master_file(all_files, master_path)
+        actionable_dups, hardlinked_dups = filter_hardlinked_duplicates(master_file, duplicates)
+        total_already_hardlinked += len(hardlinked_dups)
+
+        if actionable_dups:
+            master_results.append(DuplicateGroup(master_file, actionable_dups, reason, file_hash))
+
+    if total_already_hardlinked > 0:
+        logger.info(f"Skipped {total_already_hardlinked} files already hardlinked to master (no space savings)")
+
+    # Detect cross-filesystem files for hardlink action
+    cross_fs_files: set[str] = set()
+    if action == Action.HARDLINK:
+        for master_file, duplicates, reason, _ in master_results:
+            cross_fs_files.update(check_cross_filesystem(master_file, duplicates))
+
+    return master_results, cross_fs_files, warnings, total_already_hardlinked
+
+
 def execute_with_logging(
     dir1: str,
     dir2: str,
@@ -496,36 +542,9 @@ def main() -> int:
     matched_files2 = sum(len(files) for _, files in matches.values())
 
     if master_path:
-        master_results = []
-        total_masters = 0
-        total_duplicates = 0
-        total_already_hardlinked = 0
-        warnings = []
-
-        for file_hash, (files1, files2) in matches.items():
-            all_files = files1 + files2
-            master_dir_str = str(master_path)
-
-            master_files_in_group = [f for f in all_files if is_in_directory(f, master_dir_str)]
-            if len(master_files_in_group) > 1:
-                warnings.append(f"Warning: Multiple files in master directory have identical content: {', '.join(master_files_in_group)}")
-
-            master_file, duplicates, reason = select_master_file(all_files, master_path)
-            actionable_dups, hardlinked_dups = filter_hardlinked_duplicates(master_file, duplicates)
-            total_already_hardlinked += len(hardlinked_dups)
-
-            if actionable_dups:
-                master_results.append(DuplicateGroup(master_file, actionable_dups, reason, file_hash))
-                total_masters += 1
-                total_duplicates += len(actionable_dups)
-
-        if total_already_hardlinked > 0:
-            logger.info(f"Skipped {total_already_hardlinked} files already hardlinked to master (no space savings)")
-
-        cross_fs_files = set()
-        if args.action == Action.HARDLINK:
-            for master_file, duplicates, reason, _ in master_results:
-                cross_fs_files.update(check_cross_filesystem(master_file, duplicates))
+        master_results, cross_fs_files, warnings, _ = _build_master_results(
+            matches, master_path, args.action
+        )
 
         preview_mode = not args.execute
         execute_mode = args.action != Action.COMPARE and args.execute
