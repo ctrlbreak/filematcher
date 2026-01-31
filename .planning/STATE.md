@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-01-31)
 Phase: N/A (between milestones)
 Plan: N/A
 Status: Ready for next milestone
-Last activity: 2026-01-31 - v1.5 milestone complete
+Last activity: 2026-01-31 - Completed quick task 016: Code quality review
 
 Progress: Milestone v1.5 shipped
 
@@ -63,6 +63,12 @@ None - milestone complete.
 ## Blockers/Concerns
 
 None.
+
+### Quick Tasks Completed
+
+| # | Description | Date | Commit | Directory |
+|---|-------------|------|--------|-----------|
+| 016 | Code quality review and improvement suggestions | 2026-01-31 | ff7f28d | [016-check-the-codebase-for-good-coding-pract](./quick/016-check-the-codebase-for-good-coding-pract/) |
 
 ## Next Steps
 
