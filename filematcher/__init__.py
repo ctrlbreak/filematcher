@@ -139,91 +139,33 @@ __version__ = "1.5.0"
 __all__ = [
     # Version
     "__version__",
-    # ANSI constants (from colors)
-    "RESET",
-    "GREEN",
-    "YELLOW",
-    "RED",
-    "CYAN",
-    "BOLD",
-    "DIM",
-    "BOLD_GREEN",
-    "BOLD_YELLOW",
-    # Color system classes
+
+    # Core types
+    "Action",
+    "DuplicateGroup",
+    "FailedOperation",
+
+    # Configuration
     "ColorMode",
     "ColorConfig",
-    # Output formatters
+
+    # Formatters (public API for custom output)
     "ActionFormatter",
     "TextActionFormatter",
     "JsonActionFormatter",
-    # Structured output types
-    "GroupLine",
-    "SpaceInfo",
-    "DuplicateGroup",
-    "FailedOperation",
-    "Action",
-    # Color helper functions
-    "colorize",
-    "green",
-    "yellow",
-    "red",
-    "cyan",
-    "dim",
-    "bold",
-    "bold_yellow",
-    "bold_green",
-    "render_group_line",
-    "determine_color_mode",
-    # Terminal helpers
-    "strip_ansi",
-    "visible_len",
-    "terminal_rows_for_line",
-    # Hashing functions
-    "get_file_hash",
-    "get_sparse_hash",
-    "create_hasher",
-    # Hashing constants
-    "LARGE_FILE_THRESHOLD",
-    "SPARSE_SAMPLE_SIZE",
-    "READ_CHUNK_SIZE",
-    # Directory operations
-    "index_directory",
+
+    # Core operations
     "find_matching_files",
+    "index_directory",
     "select_master_file",
-    # Action execution
     "execute_action",
-    "safe_replace_with_link",
     "execute_all_actions",
-    "determine_exit_code",
-    # Filesystem helpers
+
+    # Filesystem utilities
     "is_hardlink_to",
     "is_symlink_to",
     "check_cross_filesystem",
-    "get_device_id",
-    "filter_hardlinked_duplicates",
-    "is_in_directory",
-    # Audit logging
-    "create_audit_logger",
-    "log_operation",
-    "write_log_header",
-    "write_log_footer",
-    # Utilities
-    "format_file_size",
-    "calculate_space_savings",
-    # Formatting helpers
-    "format_duplicate_group",
-    "format_group_lines",
-    "format_statistics_footer",
-    # Constants
-    "PREVIEW_BANNER",
-    "BANNER_SEPARATOR",
-    # Internal helpers (used by tests)
-    "select_oldest",
-    "build_file_hash_lookup",
-    "get_cross_fs_for_hardlink",
-    "get_cross_fs_count",
-    "build_file_sizes",
-    "build_log_flags",
+
     # Entry point
     "main",
 ]
