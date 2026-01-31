@@ -633,7 +633,6 @@ class TextActionFormatter(ActionFormatter):
     ):
         super().__init__(verbose, preview_mode, action, will_execute)
         self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
-        self._prev_group_row_count = 0
 
     def format_banner(
         self,
@@ -691,8 +690,6 @@ class TextActionFormatter(ActionFormatter):
         target_dir: str | None = None,
         dir2_base: str | None = None
     ) -> None:
-        inline_progress = self.cc.is_tty and group_index is not None and total_groups is not None
-
         lines: list[GroupLine] = format_duplicate_group(
             master_file=master_file,
             duplicates=duplicates,
@@ -709,23 +706,12 @@ class TextActionFormatter(ActionFormatter):
         if self.verbose and file_hash:
             lines.append(GroupLine(line_type="hash", label="  Hash: ", path=f"{file_hash[:10]}..."))
 
-        if inline_progress:
-            term_width = shutil.get_terminal_size().columns
-            if self._prev_group_row_count > 0:
-                for _ in range(self._prev_group_row_count):
-                    sys.stdout.write('\033[A\033[K')
-                sys.stdout.flush()
-            if lines:
-                lines[0].prefix = f"[{group_index}/{total_groups}] "
+        # Add group index prefix to first line if provided
+        if group_index is not None and total_groups is not None and lines:
+            lines[0].prefix = f"[{group_index}/{total_groups}] "
 
-        row_count = 0
         for line in lines:
-            rendered = render_group_line(line, self.cc)
-            print(rendered)
-            row_count += terminal_rows_for_line(rendered, term_width) if inline_progress else 1
-
-        if inline_progress:
-            self._prev_group_row_count = row_count
+            print(render_group_line(line, self.cc))
 
     def format_statistics(
         self,
