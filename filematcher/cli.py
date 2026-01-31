@@ -141,8 +141,9 @@ def interactive_execute(
             )
 
             # Calculate lines_back for cursor movement to first duplicate line
+            # +1 for the prompt line (cursor is on new line after input())
             # In verbose mode with file_hash, there's a hash line after duplicates
-            lines_back = len(duplicates)
+            lines_back = len(duplicates) + 1
             if verbose and file_hash:
                 lines_back += 1
 
