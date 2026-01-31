@@ -13,8 +13,6 @@ from datetime import datetime, timezone
 import json
 import logging
 import os
-import shutil
-import sys
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -33,7 +31,6 @@ from filematcher.colors import (
     bold_yellow,
     bold_green,
     render_group_line,
-    terminal_rows_for_line,
 )
 
 from filematcher.types import Action, DuplicateGroup, FailedOperation
