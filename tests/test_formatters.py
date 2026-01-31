@@ -86,29 +86,33 @@ class TestTextActionFormatterPrompts(unittest.TestCase):
         self.assertNotIn("\033[", output)
 
     def test_format_confirmation_status_moves_cursor_up(self):
-        """With lines_back > 0, uses ANSI cursor movement."""
+        """With _last_duplicate_rows set, uses ANSI cursor movement."""
+        # Set up formatter state (simulates calling format_duplicate_group first)
+        self.formatter._last_duplicate_rows = 1  # 1 duplicate row + 1 prompt = 2 total
         stdout_capture = io.StringIO()
         with redirect_stdout(stdout_capture):
-            self.formatter.format_confirmation_status(confirmed=True, lines_back=2)
+            self.formatter.format_confirmation_status(confirmed=True)
         output = stdout_capture.getvalue()
         # Should contain checkmark
         self.assertIn("\u2713", output)
-        # Should contain ANSI cursor up sequence for 2 lines
+        # Should contain ANSI cursor up sequence for 2 rows (1 dup + 1 prompt)
         self.assertIn("\033[2A", output)
-        # Should contain ANSI cursor down sequence for 2 lines
+        # Should contain ANSI cursor down sequence for 2 rows
         self.assertIn("\033[2B", output)
 
     def test_format_confirmation_status_cursor_movement_for_skipped(self):
         """Cursor movement works for skipped (X) status too."""
+        # Set up formatter state (simulates calling format_duplicate_group first)
+        self.formatter._last_duplicate_rows = 2  # 2 duplicate rows + 1 prompt = 3 total
         stdout_capture = io.StringIO()
         with redirect_stdout(stdout_capture):
-            self.formatter.format_confirmation_status(confirmed=False, lines_back=3)
+            self.formatter.format_confirmation_status(confirmed=False)
         output = stdout_capture.getvalue()
         # Should contain X mark
         self.assertIn("\u2717", output)
-        # Should contain ANSI cursor up sequence for 3 lines
+        # Should contain ANSI cursor up sequence for 3 rows (2 dup + 1 prompt)
         self.assertIn("\033[3A", output)
-        # Should contain ANSI cursor down sequence for 3 lines
+        # Should contain ANSI cursor down sequence for 3 rows
         self.assertIn("\033[3B", output)
 
     def test_format_remaining_count_output(self):

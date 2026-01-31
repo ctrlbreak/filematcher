@@ -14,6 +14,7 @@ import json
 import logging
 import os
 from pathlib import Path
+import shutil
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ from filematcher.colors import (
     bold_yellow,
     bold_green,
     render_group_line,
+    terminal_rows_for_line,
 )
 
 from filematcher.types import Action, DuplicateGroup, FailedOperation
@@ -232,10 +234,8 @@ class ActionFormatter(ABC):
 
         Args:
             confirmed: True for checkmark (confirmed), False for X (skipped)
-            lines_back: Number of lines to move cursor up to place status.
-                       If 0, prints status on current line (fallback mode).
-                       If > 0, moves cursor up, prints status at line start,
-                       then moves cursor back down.
+            lines_back: Deprecated, ignored by TextActionFormatter.
+                       Terminal rows are calculated automatically.
         """
         ...
 
@@ -633,6 +633,8 @@ class TextActionFormatter(ActionFormatter):
     ):
         super().__init__(verbose, preview_mode, action, will_execute)
         self.cc = color_config or ColorConfig(mode=ColorMode.NEVER)
+        # Track terminal rows for cursor movement in interactive mode
+        self._last_duplicate_rows: int = 0
 
     def format_banner(
         self,
@@ -710,8 +712,15 @@ class TextActionFormatter(ActionFormatter):
         if group_index is not None and total_groups is not None and lines:
             lines[0].prefix = f"[{group_index}/{total_groups}] "
 
+        # Track terminal rows for non-master lines (for cursor movement)
+        term_width = shutil.get_terminal_size().columns
+        self._last_duplicate_rows = 0
         for line in lines:
-            print(render_group_line(line, self.cc))
+            rendered = render_group_line(line, self.cc)
+            print(rendered)
+            # Count rows for non-master lines (duplicates and hash)
+            if line.line_type != "master":
+                self._last_duplicate_rows += terminal_rows_for_line(rendered, term_width)
 
     def format_statistics(
         self,
@@ -826,22 +835,23 @@ class TextActionFormatter(ActionFormatter):
 
         Args:
             confirmed: True for checkmark (confirmed), False for X (skipped)
-            lines_back: Number of lines to move cursor up to place status.
-                       If 0, prints status on current line (fallback mode).
-                       If > 0, moves cursor up, prints status at line start,
-                       then moves cursor back down.
+            lines_back: Deprecated, ignored. Terminal rows are now calculated
+                       automatically based on the last displayed group.
         """
         if confirmed:
             symbol = green("\u2713", self.cc)
         else:
             symbol = yellow("\u2717", self.cc)
 
-        if lines_back > 0:
+        # Use tracked terminal rows from last group (+1 for prompt line)
+        rows_up = self._last_duplicate_rows + 1 if self._last_duplicate_rows > 0 else 0
+
+        if rows_up > 0:
             # Move cursor up, print status at start of line, move back down
             # \033[nA = move cursor up n lines
             # \r = carriage return to start of line
             # \033[nB = move cursor down n lines
-            print(f"\033[{lines_back}A\r{symbol}   \033[{lines_back}B", end="")
+            print(f"\033[{rows_up}A\r{symbol}   \033[{rows_up}B", end="")
             print()  # Move to next line
         else:
             # Fallback: print on current line
