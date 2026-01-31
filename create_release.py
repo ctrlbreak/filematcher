@@ -158,17 +158,9 @@ Release Date: {datetime.now().strftime('%Y-%m-%d')}
 Python Version: 3.9+
 Dependencies: None (standard library only)
 
-## What's New in {version}
+## What's New
 
-Package structure refactoring for better code organization:
-
-- Refactored to filematcher/ package structure
-- pip installable via pyproject.toml
-- Full backward compatibility with file_matcher.py
-- JSON output for scripting (--json flag)
-- TTY-aware color output (--color/--no-color flags)
-- Unified output format across all modes
-- 218 unit tests covering all functionality
+See RELEASE_NOTES_v{version}.md for detailed changes.
 
 ## File Structure
 
@@ -185,7 +177,7 @@ Package structure refactoring for better code organization:
 - README.md - Complete documentation
 - CHANGELOG.md - Version history
 - LICENSE - MIT license
-- tests/ - Unit test suite (218 tests)
+- tests/ - Unit test suite (308 tests)
 - test_dir1/, test_dir2/ - Example test directories
 - complex_test/ - Advanced test scenarios
 """
