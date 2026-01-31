@@ -64,22 +64,52 @@ class TestTextActionFormatterPrompts(unittest.TestCase):
         self.assertTrue(prompt.endswith(" "))
 
     def test_format_confirmation_status_confirmed(self):
-        """Confirmed status outputs checkmark symbol (U+2713)."""
+        """Confirmed status outputs checkmark symbol (U+2713) with lines_back=0."""
         stdout_capture = io.StringIO()
         with redirect_stdout(stdout_capture):
-            self.formatter.format_confirmation_status(confirmed=True)
+            self.formatter.format_confirmation_status(confirmed=True, lines_back=0)
         output = stdout_capture.getvalue()
         # Should contain checkmark U+2713
         self.assertIn("\u2713", output)
+        # Fallback mode: no ANSI cursor movement
+        self.assertNotIn("\033[", output)
 
     def test_format_confirmation_status_skipped(self):
-        """Skipped status outputs X symbol (U+2717)."""
+        """Skipped status outputs X symbol (U+2717) with lines_back=0."""
         stdout_capture = io.StringIO()
         with redirect_stdout(stdout_capture):
-            self.formatter.format_confirmation_status(confirmed=False)
+            self.formatter.format_confirmation_status(confirmed=False, lines_back=0)
         output = stdout_capture.getvalue()
         # Should contain X mark U+2717
         self.assertIn("\u2717", output)
+        # Fallback mode: no ANSI cursor movement
+        self.assertNotIn("\033[", output)
+
+    def test_format_confirmation_status_moves_cursor_up(self):
+        """With lines_back > 0, uses ANSI cursor movement."""
+        stdout_capture = io.StringIO()
+        with redirect_stdout(stdout_capture):
+            self.formatter.format_confirmation_status(confirmed=True, lines_back=2)
+        output = stdout_capture.getvalue()
+        # Should contain checkmark
+        self.assertIn("\u2713", output)
+        # Should contain ANSI cursor up sequence for 2 lines
+        self.assertIn("\033[2A", output)
+        # Should contain ANSI cursor down sequence for 2 lines
+        self.assertIn("\033[2B", output)
+
+    def test_format_confirmation_status_cursor_movement_for_skipped(self):
+        """Cursor movement works for skipped (X) status too."""
+        stdout_capture = io.StringIO()
+        with redirect_stdout(stdout_capture):
+            self.formatter.format_confirmation_status(confirmed=False, lines_back=3)
+        output = stdout_capture.getvalue()
+        # Should contain X mark
+        self.assertIn("\u2717", output)
+        # Should contain ANSI cursor up sequence for 3 lines
+        self.assertIn("\033[3A", output)
+        # Should contain ANSI cursor down sequence for 3 lines
+        self.assertIn("\033[3B", output)
 
     def test_format_remaining_count_output(self):
         """Remaining count outputs 'Processing N remaining groups...' message."""
@@ -110,9 +140,18 @@ class TestJsonActionFormatterPrompts(unittest.TestCase):
         """JSON formatter does nothing for confirmation status."""
         stdout_capture = io.StringIO()
         with redirect_stdout(stdout_capture):
-            self.formatter.format_confirmation_status(confirmed=True)
+            self.formatter.format_confirmation_status(confirmed=True, lines_back=0)
         output = stdout_capture.getvalue()
         # Should produce no output
+        self.assertEqual(output, "")
+
+    def test_json_format_confirmation_status_ignores_lines_back(self):
+        """JSON formatter ignores lines_back parameter."""
+        stdout_capture = io.StringIO()
+        with redirect_stdout(stdout_capture):
+            self.formatter.format_confirmation_status(confirmed=True, lines_back=5)
+        output = stdout_capture.getvalue()
+        # Should produce no output regardless of lines_back
         self.assertEqual(output, "")
 
     def test_json_format_remaining_count_noop(self):
