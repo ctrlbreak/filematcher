@@ -24,8 +24,10 @@ These features are researched and ready to implement:
 
 ## Performance
 
-- `--parallel N` - Multi-threaded hashing for faster indexing
+- Size pre-filtering - Skip hashing files with unique sizes (see research below)
+- Partial hash - Hash first 4KB before full hash (see research below)
 - `--verify` - Verify existing hardlinks still point to same content
+- `--parallel N` - Multi-threaded hashing (note: may hurt performance on HDDs due to seek overhead)
 
 ## Multi-Directory
 
@@ -116,6 +118,106 @@ The cache is an **optimization, not a guarantee**. When in doubt, re-hash. This 
 - fclones: https://github.com/pkolaczk/fclones
 - mtime analysis: https://apenwarr.ca/log/20181113
 - XDG spec: https://wiki.archlinux.org/title/XDG_Base_Directory
+
+---
+
+## Research: Performance Optimizations
+
+*Researched 2026-02-01*
+
+### Current Implementation Status
+
+| Feature | Status | Location |
+|---------|--------|----------|
+| Size pre-filtering | **No** | `index_directory()` hashes every file |
+| Partial hash | **No** | Goes straight to full hash |
+| Sparse sampling (fast mode) | **Yes** | For files >100MB, samples 5×1MB chunks |
+| Early hardlink detection | **No** | Doesn't check inodes before hashing |
+
+Current flow in `directory.py:53-94`:
+```python
+for each file in directory:
+    hash = get_file_hash(file)  # hashes EVERYTHING
+    group_by_hash[hash].append(file)
+```
+
+The sparse hash in `hashing.py:42-72` is good but only activates for >100MB files in fast mode.
+
+### Optimization 1: Size Pre-filtering (Biggest Win)
+
+Files with unique sizes cannot be duplicates. Skip hashing them entirely.
+
+**Proposed approach:**
+```python
+# Phase 1: Collect sizes (very fast - just stat calls)
+dir1_sizes = {path: size for path, size in walk(dir1)}
+dir2_sizes = {path: size for path, size in walk(dir2)}
+
+# Phase 2: Find common sizes across both directories
+common_sizes = set(dir1_sizes.values()) & set(dir2_sizes.values())
+
+# Phase 3: Only hash files with sizes that exist in both dirs
+for path, size in dir1_sizes.items():
+    if size in common_sizes:
+        hash_file(path)
+```
+
+**Impact:** In typical directories, 50-80% of files have unique sizes → zero hashing needed.
+
+**Implementation notes:**
+- Requires refactoring `index_directory()` to accept size filter
+- Or refactor `find_matching_files()` to do cross-directory size analysis first
+- ~30-50 lines of code change
+
+### Optimization 2: Partial Hash (Second Win)
+
+For files with matching sizes, hash first 4KB before computing full hash.
+
+**Proposed approach:**
+```python
+partial_hash = hash(first_4KB)
+if partial_hashes_match_across_dirs:
+    full_hash = hash(entire_file)
+else:
+    skip  # different content confirmed with minimal I/O
+```
+
+**Impact:** Rules out most "same size, different content" files with minimal I/O.
+
+**Implementation notes:**
+- Add `get_partial_hash()` function to `hashing.py`
+- Two-phase comparison: partial hash first, full hash only on partial match
+- More complex control flow but significant I/O savings
+
+### Optimization 3: Early Hardlink Detection
+
+Before hashing, check if files are already hardlinked to each other.
+
+**Proposed approach:**
+```python
+if stat(file1).st_ino == stat(file2).st_ino and stat(file1).st_dev == stat(file2).st_dev:
+    skip  # already hardlinked, no action needed
+```
+
+**Impact:** Avoids re-hashing files already processed in previous runs.
+
+**Implementation notes:**
+- Already partially implemented in `is_hardlink_to()` in `filesystem.py`
+- Need to call earlier in the pipeline, before hashing
+
+### Why Not Parallel Hashing?
+
+Parallel hashing (`--parallel N`) can actually **hurt** performance on spinning HDDs:
+- Random seeks between files kill sequential read performance
+- HDDs are optimized for sequential access, not parallel random access
+- Only beneficial on SSDs or when files are on different physical disks
+
+### Recommended Priority
+
+1. **Size pre-filtering** - Biggest win, moderate refactoring
+2. **Cache** (see above) - Huge win on re-runs, already researched
+3. **Partial hash** - Good win, more complex implementation
+4. **Early hardlink detection** - Minor win, easy implementation
 
 ---
 *Created: 2026-02-01*
