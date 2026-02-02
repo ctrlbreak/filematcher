@@ -229,13 +229,15 @@ class ActionFormatter(ABC):
         ...
 
     @abstractmethod
-    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0) -> None:
+    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0, has_prompt: bool = True) -> None:
         """Output confirmation symbol after user decision.
 
         Args:
             confirmed: True for checkmark (confirmed), False for X (skipped)
             lines_back: Deprecated, ignored by TextActionFormatter.
                        Terminal rows are calculated automatically.
+            has_prompt: True if a prompt line was shown (normal interactive mode),
+                       False if no prompt (auto-confirm mode). Affects cursor positioning.
         """
         ...
 
@@ -500,7 +502,7 @@ class JsonActionFormatter(ActionFormatter):
         # JSON mode never prompts interactively
         return ""
 
-    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0) -> None:
+    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0, has_prompt: bool = True) -> None:
         # No-op: JSON mode doesn't show inline status
         pass
 
@@ -830,31 +832,41 @@ class TextActionFormatter(ActionFormatter):
         progress = dim(f"[{group_index}/{total_groups}]", self.cc)
         return f"{progress} {verb} [y/n/a/q] "
 
-    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0) -> None:
+    def format_confirmation_status(self, confirmed: bool, lines_back: int = 0, has_prompt: bool = True) -> None:
         """Output checkmark or X after user response.
 
         Args:
             confirmed: True for checkmark (confirmed), False for X (skipped)
             lines_back: Deprecated, ignored. Terminal rows are now calculated
                        automatically based on the last displayed group.
+            has_prompt: True if a prompt line was shown (normal interactive mode),
+                       False if no prompt (auto-confirm mode). Affects cursor positioning.
         """
         if confirmed:
             symbol = green("\u2713", self.cc)
         else:
             symbol = red("\u2717", self.cc)
 
-        # Use tracked terminal rows from last group (+1 for prompt line)
-        rows_up = self._last_duplicate_rows + 1 if self._last_duplicate_rows > 0 else 0
+        # Use tracked terminal rows from last group
+        # Add +1 for prompt line only if a prompt was shown
+        prompt_offset = 1 if has_prompt else 0
+        rows_up = self._last_duplicate_rows + prompt_offset if self._last_duplicate_rows > 0 else 0
 
         if rows_up > 0:
-            # Move cursor up, print status at start of line, then clear prompt line
+            # Move cursor up, print status at start of line
             # \033[nA = move cursor up n lines
             # \r = carriage return to start of line
             # \033[nB = move cursor down n lines
             # \033[K = clear from cursor to end of line
-            # Move up to duplicate line, print status, move down to prompt line, clear it
-            print(f"\033[{rows_up}A\r{symbol}   \033[{rows_up - 1}B\r\033[K", end="")
-            # Cursor now at start of cleared prompt line - next output overwrites it
+            if has_prompt:
+                # Move up to duplicate line, print status, move down to prompt line, clear it
+                print(f"\033[{rows_up}A\r{symbol}   \033[{rows_up - 1}B\r\033[K", end="")
+                # Cursor now at start of cleared prompt line - next output overwrites it
+            else:
+                # No prompt line - move up to duplicate line, print status, move back down
+                print(f"\033[{rows_up}A\r{symbol}   \033[{rows_up}B", end="")
+                # Cursor now at the line after the group - print newline for next group
+                print()
         else:
             # Fallback: print on current line
             print(symbol)

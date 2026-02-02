@@ -204,8 +204,8 @@ def interactive_execute(
             )
 
             if confirm_all:
-                # Auto-confirm: show status, execute immediately
-                formatter.format_confirmation_status(confirmed=True)
+                # Auto-confirm: show status (no prompt line), execute immediately
+                formatter.format_confirmation_status(confirmed=True, has_prompt=False)
                 # Execute this group
                 s, f, sk, sp, fl = _execute_group_duplicates(
                     duplicates, master_file, action, formatter,
