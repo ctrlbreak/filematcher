@@ -37,6 +37,6 @@ Sleep 1500ms
 
 Type "a"
 Enter
-Sleep 3000ms
+Sleep 5000ms
 
-Sleep 2000ms
+Sleep 5000ms
