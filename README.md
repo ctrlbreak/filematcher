@@ -1,16 +1,25 @@
 # File Matcher
 
-A Python CLI utility that finds files with identical content across two directory hierarchies and optionally deduplicates them using hard links, symbolic links, or deletion.
+Deduplicate files by content, not name. Reclaim space with hardlinks/symlinks while preserving alternate filenames. Preview-first safety, audit logging. Built for media libraries.
+
+[![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
+
+## Use Cases
+
+- **Media Libraries** — Deduplicate movies/TV shows across Plex, Sonarr, Radarr directories
+- **Backups** — Find and link identical files across backup drives to save space
+- **Downloads** — Clean up duplicate downloads while keeping organized copies
 
 ## Features
 
-- Find files with identical content across two directories
-- Compare using MD5 or SHA-256 content hashing
-- Fast mode with sparse sampling for large files (>100MB)
-- **Deduplicate** by replacing duplicates with hard links, symbolic links, or deleting them
-- Safe by default: preview changes before executing
-- Audit logging of all modifications
-- Pure Python standard library (no external dependencies)
+- **Content-based matching** — Find duplicates by hash, not filename
+- **Preserve filenames** — Replace duplicates with hardlinks/symlinks keeping original names
+- **Preview-first safety** — See changes before executing (requires `--execute` flag)
+- **Interactive mode** — Confirm each action with y/n/a/q prompts
+- **Audit logging** — Full trail of all modifications
+- **Fast mode** — Sparse sampling for large files (>100MB)
+- **No dependencies** — Pure Python standard library
 
 ## Installation
 
@@ -525,7 +534,7 @@ Note: JSON output (`--json`) never includes color codes regardless of flags.
 ## Testing
 
 ```bash
-# Run all tests (228 tests)
+# Run all tests (308 tests)
 python3 run_tests.py
 
 # Run specific test module
