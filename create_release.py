@@ -1,231 +1,210 @@
 #!/usr/bin/env python3
 """
-Release Package Creator for File Matcher
+Release Script for File Matcher
 
-This script creates a release package for distribution on GitHub.
-It creates a clean archive with only the necessary files for users.
+Creates a GitHub release with notes extracted from CHANGELOG.md.
+GitHub automatically generates source archives from tags.
 
-To create a release package:
-# Update version in create_release.py and pyproject.toml
-python3 create_release.py 1.5.1
-git tag -a v1.5.1 -m "Release version 1.5.1"
-git push origin v1.5.1
-# Then upload the new archives to GitHub
+Usage:
+    python3 create_release.py 1.5.1        # Create release for version
+    python3 create_release.py 1.5.1 --dry-run  # Preview without creating
 """
 
-import os
-import shutil
-import zipfile
-import tarfile
-from datetime import datetime
+import re
+import subprocess
+import sys
 from pathlib import Path
 
-def create_release_package(version="1.4.0"):
-    """Create a release package for the specified version."""
-    
-    # Create release directory
-    release_dir = f"filematcher-{version}"
-    if os.path.exists(release_dir):
-        shutil.rmtree(release_dir)
-    os.makedirs(release_dir)
-    
-    # Files to include in release
-    include_files = [
-        "file_matcher.py",
-        "pyproject.toml",
-        "README.md",
-        "CHANGELOG.md",
-        "LICENSE",
-        "requirements.txt",
-        "run_tests.py"
-    ]
 
-    # Directories to include
-    include_dirs = [
-        "filematcher",
-        "tests"
-    ]
-    
-    # Copy main files
-    for file in include_files:
-        if os.path.exists(file):
-            shutil.copy2(file, release_dir)
-            print(f"✓ Added {file}")
-    
-    # Copy directories (excluding __pycache__)
-    def ignore_pycache(directory, files):
-        return [f for f in files if f == '__pycache__' or f.endswith('.pyc')]
+def get_version_from_files() -> dict[str, str]:
+    """Read version from all source files."""
+    versions = {}
 
-    for dir_name in include_dirs:
-        if os.path.exists(dir_name):
-            shutil.copytree(dir_name, os.path.join(release_dir, dir_name), ignore=ignore_pycache)
-            print(f"✓ Added directory {dir_name}")
-    
-    # Create test directories for users
-    test_dirs = ["test_dir1", "test_dir2", "complex_test"]
-    for test_dir in test_dirs:
-        if os.path.exists(test_dir):
-            shutil.copytree(test_dir, os.path.join(release_dir, test_dir))
-            print(f"✓ Added test directory {test_dir}")
-    
-    # Create installation instructions
-    install_instructions = f"""# File Matcher {version} - Installation
+    # pyproject.toml
+    pyproject = Path("pyproject.toml")
+    if pyproject.exists():
+        match = re.search(r'version\s*=\s*"([^"]+)"', pyproject.read_text())
+        if match:
+            versions["pyproject.toml"] = match.group(1)
 
-## Quick Start
+    # filematcher/__init__.py
+    init_file = Path("filematcher/__init__.py")
+    if init_file.exists():
+        match = re.search(r'__version__\s*=\s*"([^"]+)"', init_file.read_text())
+        if match:
+            versions["filematcher/__init__.py"] = match.group(1)
 
-### Option 1: Install via pip (recommended)
-```bash
-pip install .
-filematcher <master_dir> <duplicate_dir> [options]
-```
+    # file_matcher.py
+    wrapper = Path("file_matcher.py")
+    if wrapper.exists():
+        match = re.search(r'Version:\s*(\S+)', wrapper.read_text())
+        if match:
+            versions["file_matcher.py"] = match.group(1)
 
-### Option 2: Run directly
-```bash
-python3 file_matcher.py <master_dir> <duplicate_dir> [options]
-```
+    return versions
 
-**Requirements**: Python 3.9 or higher
 
-## Running Tests
+def extract_changelog_section(version: str) -> str | None:
+    """Extract the changelog section for a specific version."""
+    changelog = Path("CHANGELOG.md")
+    if not changelog.exists():
+        return None
 
-To verify the installation:
-```bash
-python3 run_tests.py
-```
+    content = changelog.read_text()
 
-## Examples
+    # Match from ## [version] to the next ## [version] or end
+    pattern = rf'## \[{re.escape(version)}\][^\n]*\n(.*?)(?=\n## \[|\Z)'
+    match = re.search(pattern, content, re.DOTALL)
 
-### Finding Duplicate Files
+    if match:
+        return match.group(1).strip()
+    return None
 
-```bash
-# Basic comparison (dir1 is master, dir2 has duplicates)
-filematcher test_dir1 test_dir2
 
-# Show files with no matches
-filematcher test_dir1 test_dir2 --show-unmatched
+def check_tag_exists(version: str) -> bool:
+    """Check if git tag already exists."""
+    result = subprocess.run(
+        ["git", "tag", "-l", f"v{version}"],
+        capture_output=True, text=True
+    )
+    return bool(result.stdout.strip())
 
-# Fast mode for large files
-filematcher test_dir1 test_dir2 --fast
 
-# Summary counts only
-filematcher test_dir1 test_dir2 --summary
+def check_release_exists(version: str) -> bool:
+    """Check if GitHub release already exists."""
+    result = subprocess.run(
+        ["gh", "release", "view", f"v{version}"],
+        capture_output=True, text=True
+    )
+    return result.returncode == 0
 
-# JSON output for scripting
-filematcher test_dir1 test_dir2 --json
-```
 
-### Deduplicating Files
+def create_release(version: str, dry_run: bool = False) -> bool:
+    """Create a GitHub release for the specified version."""
 
-```bash
-# Preview hard link deduplication (safe - no changes made)
-filematcher master_dir duplicate_dir --action hardlink
-
-# Execute deduplication with confirmation
-filematcher master_dir duplicate_dir --action hardlink --execute
-
-# Execute without prompt (for scripts)
-filematcher master_dir duplicate_dir --action hardlink --execute --yes
-
-# With custom log file
-filematcher master_dir duplicate_dir --action hardlink --execute --log changes.log
-```
-
-## Features
-
-- Find files with identical content across directories
-- Compare using MD5 or SHA-256 content hashing
-- Fast mode with sparse sampling for large files (>100MB)
-- **Deduplicate** with hard links, symbolic links, or deletion
-- Safe by default: preview changes before executing
-- Audit logging of all modifications
-- JSON output for scripting
-- TTY-aware color output
-- No external dependencies
-
-For more information, see README.md
-"""
-    
-    with open(os.path.join(release_dir, "INSTALL.md"), "w") as f:
-        f.write(install_instructions)
-    print("✓ Created INSTALL.md")
-    
-    # Create version info file
-    version_info = f"""# File Matcher Version Information
-
-Version: {version}
-Release Date: {datetime.now().strftime('%Y-%m-%d')}
-Python Version: 3.9+
-Dependencies: None (standard library only)
-
-## What's New
-
-See CHANGELOG.md for detailed changes.
-
-## File Structure
-
-- filematcher/ - Main package
-  - cli.py - Command-line interface and main()
-  - colors.py - TTY-aware color output
-  - hashing.py - MD5/SHA-256 content hashing
-  - filesystem.py - Filesystem helpers
-  - actions.py - Action execution and audit logging
-  - formatters.py - Text and JSON output formatters
-  - directory.py - Directory indexing and matching
-- file_matcher.py - Backward compatibility wrapper
-- pyproject.toml - Package configuration
-- README.md - Complete documentation
-- CHANGELOG.md - Version history
-- LICENSE - MIT license
-- tests/ - Unit test suite (308 tests)
-- test_dir1/, test_dir2/ - Example test directories
-- complex_test/ - Advanced test scenarios
-"""
-    
-    with open(os.path.join(release_dir, "VERSION.md"), "w") as f:
-        f.write(version_info)
-    print("✓ Created VERSION.md")
-    
-    # Create archives
-    print("\nCreating release archives...")
-    
-    # ZIP archive
-    zip_filename = f"filematcher-{version}.zip"
-    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, dirs, files in os.walk(release_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                arcname = os.path.relpath(file_path, release_dir)
-                zipf.write(file_path, arcname)
-    print(f"✓ Created {zip_filename}")
-    
-    # TAR.GZ archive
-    tar_filename = f"filematcher-{version}.tar.gz"
-    with tarfile.open(tar_filename, "w:gz") as tar:
-        tar.add(release_dir, arcname=os.path.basename(release_dir))
-    print(f"✓ Created {tar_filename}")
-    
-    # Clean up release directory
-    shutil.rmtree(release_dir)
-    print(f"✓ Cleaned up temporary files")
-    
-    print(f"\n🎉 Release package created successfully!")
-    print(f"📦 Files created:")
-    print(f"   - {zip_filename}")
-    print(f"   - {tar_filename}")
-    print(f"\n📋 Next steps:")
-    print(f"   1. Review the archives")
-    print(f"   2. Create a GitHub release with tag v{version}")
-    print(f"   3. Upload these archives to the GitHub release")
-    print(f"   4. Update the release notes with the changelog")
-
-if __name__ == "__main__":
-    import sys
-
-    version = "1.5.1"
-    if len(sys.argv) > 1:
-        version = sys.argv[1]
-
-    print(f"Creating File Matcher release package v{version}")
+    print(f"{'[DRY RUN] ' if dry_run else ''}Creating release v{version}")
     print("=" * 50)
 
-    create_release_package(version)
+    # 1. Verify version consistency
+    print("\n1. Checking version consistency...")
+    versions = get_version_from_files()
+
+    all_match = all(v == version for v in versions.values())
+    for file, ver in versions.items():
+        status = "✓" if ver == version else "✗"
+        print(f"   {status} {file}: {ver}")
+
+    if not all_match:
+        print(f"\n✗ Version mismatch! Update files to {version} first.")
+        return False
+    print("   All versions match.")
+
+    # 2. Extract changelog
+    print("\n2. Extracting changelog section...")
+    changelog_section = extract_changelog_section(version)
+
+    if not changelog_section:
+        print(f"   ✗ No changelog entry found for [{version}]")
+        print("   Add an entry to CHANGELOG.md first.")
+        return False
+    print(f"   ✓ Found changelog ({len(changelog_section)} chars)")
+
+    # 3. Check if tag exists
+    print("\n3. Checking git tag...")
+    tag_exists = check_tag_exists(version)
+    if tag_exists:
+        print(f"   ✓ Tag v{version} exists")
+    else:
+        print(f"   Tag v{version} does not exist, will create")
+
+    # 4. Check if release exists
+    print("\n4. Checking GitHub release...")
+    release_exists = check_release_exists(version)
+    if release_exists:
+        print(f"   ✗ Release v{version} already exists!")
+        print("   Use 'gh release edit' to update, or delete and recreate.")
+        return False
+    print(f"   ✓ Release v{version} does not exist")
+
+    # 5. Show preview
+    print("\n5. Release notes preview:")
+    print("-" * 50)
+    # Truncate for preview if very long
+    preview = changelog_section[:500] + "..." if len(changelog_section) > 500 else changelog_section
+    print(preview)
+    print("-" * 50)
+
+    if dry_run:
+        print("\n[DRY RUN] Would create:")
+        print(f"   - Git tag: v{version}")
+        print(f"   - GitHub release: v{version}")
+        print("\nRun without --dry-run to create the release.")
+        return True
+
+    # 6. Create tag if needed
+    if not tag_exists:
+        print(f"\n6. Creating git tag v{version}...")
+        result = subprocess.run(
+            ["git", "tag", "-a", f"v{version}", "-m", f"Release version {version}"],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print(f"   ✗ Failed to create tag: {result.stderr}")
+            return False
+        print(f"   ✓ Created tag v{version}")
+
+        # Push tag
+        print(f"   Pushing tag to origin...")
+        result = subprocess.run(
+            ["git", "push", "origin", f"v{version}"],
+            capture_output=True, text=True
+        )
+        if result.returncode != 0:
+            print(f"   ✗ Failed to push tag: {result.stderr}")
+            return False
+        print(f"   ✓ Pushed tag v{version}")
+    else:
+        print("\n6. Tag already exists, skipping creation")
+
+    # 7. Create GitHub release
+    print(f"\n7. Creating GitHub release...")
+
+    # Format release notes
+    release_notes = f"## What's Changed\n\n{changelog_section}"
+
+    result = subprocess.run(
+        ["gh", "release", "create", f"v{version}",
+         "--title", f"v{version}",
+         "--notes", release_notes],
+        capture_output=True, text=True
+    )
+
+    if result.returncode != 0:
+        print(f"   ✗ Failed to create release: {result.stderr}")
+        return False
+
+    print(f"   ✓ Created release v{version}")
+
+    # 8. Get release URL
+    result = subprocess.run(
+        ["gh", "release", "view", f"v{version}", "--json", "url", "-q", ".url"],
+        capture_output=True, text=True
+    )
+    if result.returncode == 0:
+        print(f"\n🎉 Release created successfully!")
+        print(f"   {result.stdout.strip()}")
+
+    return True
+
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print("Usage: python3 create_release.py <version> [--dry-run]")
+        print("Example: python3 create_release.py 1.5.2")
+        sys.exit(1)
+
+    version = sys.argv[1]
+    dry_run = "--dry-run" in sys.argv
+
+    success = create_release(version, dry_run)
+    sys.exit(0 if success else 1)
