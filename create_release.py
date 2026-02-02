@@ -7,9 +7,9 @@ It creates a clean archive with only the necessary files for users.
 
 To create a release package:
 # Update version in create_release.py and pyproject.toml
-python3 create_release.py 1.4.0
-git tag -a v1.4.0 -m "Release version 1.4.0"
-git push origin v1.4.0
+python3 create_release.py 1.5.1
+git tag -a v1.5.1 -m "Release version 1.5.1"
+git push origin v1.5.1
 # Then upload the new archives to GitHub
 """
 
@@ -35,7 +35,6 @@ def create_release_package(version="1.4.0"):
         "pyproject.toml",
         "README.md",
         "CHANGELOG.md",
-        f"RELEASE_NOTES_v{version}.md",
         "LICENSE",
         "requirements.txt",
         "run_tests.py"
@@ -160,7 +159,7 @@ Dependencies: None (standard library only)
 
 ## What's New
 
-See RELEASE_NOTES_v{version}.md for detailed changes.
+See CHANGELOG.md for detailed changes.
 
 ## File Structure
 
@@ -222,7 +221,7 @@ See RELEASE_NOTES_v{version}.md for detailed changes.
 if __name__ == "__main__":
     import sys
 
-    version = "1.4.0"
+    version = "1.5.1"
     if len(sys.argv) > 1:
         version = sys.argv[1]
 
