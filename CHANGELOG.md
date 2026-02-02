@@ -2,6 +2,18 @@
 
 All notable changes to the File Matcher project will be documented in this file.
 
+## [1.5.1] - 2026-02-02
+
+### Changed
+- **Reduced public API surface** from 89 to 18 exports in `__init__.py` — cleaner, more focused interface
+- **Fixed exit code inconsistency** — partial failures now correctly return exit code 2
+
+### Internal
+- **Reduced main() complexity** from 425 to 145 lines via 6 helper functions
+- Extracted `_validate_args()`, `_setup_logging()`, `_build_master_results()`
+- Extracted `_execute_json_batch()`, `_execute_text_batch()`, `_execute_interactive_mode()`
+- Extracted `_execute_group_duplicates()` helper to eliminate duplicate code
+
 ## [1.5.0] - 2026-01-31
 
 ### Changed
