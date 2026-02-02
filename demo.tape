@@ -9,46 +9,47 @@ Set Height 500
 Set Theme "Dracula"
 Set Padding 20
 Set Shell zsh
+Set TypingSpeed 50ms
 
-# Show the command we're about to run
-Type "# Find duplicate files across directories"
+# Start fresh
+Hide
+Type "cd /Users/patrick/dev/cursor_projects/filematcher && clear"
 Enter
 Sleep 500ms
+Show
+
+# Compare mode
+Type "# Find duplicate files"
+Enter
+Sleep 300ms
 
 Type "python file_matcher.py /tmp/demo_master /tmp/demo_other"
 Enter
-Sleep 2s
+Sleep 2500ms
 
-Type ""
-Enter
-Sleep 500ms
-
+# Preview mode
 Type "# Preview hardlink deduplication"
 Enter
-Sleep 500ms
+Sleep 300ms
 
 Type "python file_matcher.py /tmp/demo_master /tmp/demo_other --action hardlink"
 Enter
-Sleep 2s
+Sleep 2500ms
 
-Type ""
+# Execute mode
+Type "# Execute with interactive confirmation (y/n/a/q)"
 Enter
-Sleep 500ms
-
-Type "# Execute with interactive confirmation"
-Enter
-Sleep 500ms
+Sleep 300ms
 
 Type "python file_matcher.py /tmp/demo_master /tmp/demo_other --action hardlink --execute"
 Enter
+Sleep 2000ms
+
+# Answer prompts
+Type "y"
 Sleep 1500ms
 
-# Answer first prompt with 'y'
-Type "y"
-Sleep 1s
-
-# Answer second prompt with 'n'
 Type "n"
-Sleep 1s
+Sleep 2000ms
 
-Sleep 2s
+Sleep 1500ms
