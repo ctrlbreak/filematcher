@@ -2,6 +2,20 @@
 
 All notable changes to the File Matcher project will be documented in this file.
 
+## [1.5.2] - 2026-02-02
+
+### Fixed
+- **Auto-confirm display bug** — when pressing 'a' to process all remaining groups, output was corrupted due to incorrect cursor positioning
+
+### Changed
+- **Simplified README** — reduced from 571 to 214 lines, extracted JSON schema to separate file
+- **Improved documentation** — clearer examples using `master_dir`/`other_dir` naming, expanded jq examples
+
+### Added
+- **Animated demo GIF** — shows interactive hardlink execution with colored output
+- **Demo regeneration script** — `create_demo.sh` for updating the GIF
+- **JSON schema reference** — `JSON_SCHEMA.md` with full schema documentation
+
 ## [1.5.1] - 2026-02-02
 
 ### Changed

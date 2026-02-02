@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-File Matcher (v1.5.1) is a Python CLI utility that finds files with identical content across two directory hierarchies and can deduplicate them using hardlinks, symlinks, or deletion. It uses content hashing (MD5 or SHA-256) to identify matches and supports a "fast mode" for large files using sparse sampling. The first directory (`dir1`) is the implicit **master directory** - files there are preserved while duplicates in `dir2` are candidates for action.
+File Matcher (v1.5.2) is a Python CLI utility that finds files with identical content across two directory hierarchies and can deduplicate them using hardlinks, symlinks, or deletion. It uses content hashing (MD5 or SHA-256) to identify matches and supports a "fast mode" for large files using sparse sampling. The first directory (`dir1`) is the implicit **master directory** - files there are preserved while duplicates in `dir2` are candidates for action.
 
 ## Development Setup
 

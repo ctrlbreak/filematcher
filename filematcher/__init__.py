@@ -134,7 +134,7 @@ from filematcher.cli import (
     build_log_flags,
 )
 
-__version__ = "1.5.1"
+__version__ = "1.5.2"
 
 __all__ = [
     # Version

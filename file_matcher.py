@@ -10,7 +10,7 @@ Usage (all equivalent):
     python -m filematcher <args>
     filematcher <args>  # after pip install
 
-Version: 1.5.1
+Version: 1.5.2
 """
 
 from __future__ import annotations
