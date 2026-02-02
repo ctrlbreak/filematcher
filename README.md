@@ -14,7 +14,7 @@ Deduplicate files by content, not name. Reclaim space with hardlinks/symlinks wh
 ## Features
 
 - **Content-based matching** — Find duplicates by hash, not filename
-- **Preserve filenames** — Replace duplicates with hardlinks/symlinks keeping original names
+- **Preserve filenames** — Duplicates become links but keep their original names and paths
 - **Preview-first safety** — See changes before executing (requires `--execute` flag)
 - **Interactive mode** — Confirm each action with y/n/a/q prompts
 - **Audit logging** — Full trail of all modifications
@@ -98,7 +98,8 @@ When running `--execute` without `--yes`, you're prompted for each group:
 # Cross-filesystem: fall back to symlink when hardlink fails
 filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
 
-# Target directory: create links elsewhere instead of replacing in dir2
+# Target directory: create links in a new location, preserving duplicate filenames
+# e.g., dir2/movies/film.mkv → /backup/movies/film.mkv (linked to master)
 filematcher dir1 dir2 --action hardlink --target-dir /backup --execute
 ```
 
@@ -117,7 +118,7 @@ filematcher dir1 dir2 --action hardlink --target-dir /backup --execute
 | `--verbose` | `-v` | Show detailed progress |
 | `--log` | `-l` | Custom audit log path |
 | `--fallback-symlink` | | Use symlink if hardlink fails (cross-filesystem) |
-| `--target-dir` | `-t` | Create links here instead of dir2 |
+| `--target-dir` | `-t` | Create links in new location (preserves dir2 structure/names) |
 | `--json` | `-j` | JSON output (see [JSON_SCHEMA.md](JSON_SCHEMA.md)) |
 | `--quiet` | `-q` | Suppress progress messages |
 | `--color` | | Force color output |
