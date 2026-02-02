@@ -155,3 +155,30 @@ Development planning docs in `.planning/`:
 ## Git Conventions
 
 - Do not add Claude attribution (e.g., `Co-Authored-By: Claude`) to commit messages
+
+## Release Workflow
+
+When completing a milestone and releasing a new version:
+
+1. **Update version numbers** in all 3 files:
+   - `pyproject.toml` (`version = "X.Y.Z"`)
+   - `filematcher/__init__.py` (`__version__ = "X.Y.Z"`)
+   - `file_matcher.py` (`Version: X.Y.Z`)
+
+2. **Add changelog entry** to `CHANGELOG.md` with the new version section
+
+3. **Commit** the version bump and changelog
+
+4. **Run release script**:
+   ```bash
+   python3 create_release.py X.Y.Z --dry-run  # Preview first
+   python3 create_release.py X.Y.Z            # Create release
+   ```
+
+The script will:
+- Verify version consistency across files
+- Extract release notes from CHANGELOG.md
+- Create and push git tag
+- Create GitHub release with extracted notes
+
+GitHub automatically generates source archives (zip/tar.gz) from the tag.
