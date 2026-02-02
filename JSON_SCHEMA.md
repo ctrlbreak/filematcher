@@ -5,7 +5,7 @@ File Matcher JSON output schema (v2.0). Use `--json` flag to enable.
 ## Compare Mode
 
 ```bash
-filematcher dir1 dir2 --json
+filematcher master_dir other_dir --json
 ```
 
 | Field | Type | Description |
@@ -19,13 +19,13 @@ filematcher dir1 dir2 --json
 | `header.directories.duplicate` | string | Duplicate directory path (absolute) |
 | `matches` | array | Groups of files with matching content |
 | `matches[].hash` | string | Content hash for the group |
-| `matches[].filesDir1` | array | File paths from dir1 (sorted) |
-| `matches[].filesDir2` | array | File paths from dir2 (sorted) |
+| `matches[].filesDir1` | array | File paths from master_dir (sorted) |
+| `matches[].filesDir2` | array | File paths from other_dir (sorted) |
 | `unmatchedMaster` | array | Unmatched files in master dir (with `--show-unmatched`) |
 | `unmatchedDuplicate` | array | Unmatched files in duplicate dir (with `--show-unmatched`) |
 | `summary.matchCount` | number | Number of unique content hashes with matches |
-| `summary.matchedFilesDir1` | number | Files with matches in dir1 |
-| `summary.matchedFilesDir2` | number | Files with matches in dir2 |
+| `summary.matchedFilesDir1` | number | Files with matches in master_dir |
+| `summary.matchedFilesDir2` | number | Files with matches in other_dir |
 | `metadata` | object | Per-file metadata (with `--verbose`) |
 | `metadata[path].sizeBytes` | number | File size in bytes |
 | `metadata[path].modified` | string | Last modified time (RFC 3339) |
@@ -33,8 +33,8 @@ filematcher dir1 dir2 --json
 ## Action Mode (Preview/Execute)
 
 ```bash
-filematcher dir1 dir2 --action hardlink --json
-filematcher dir1 dir2 --action hardlink --execute --yes --json
+filematcher master_dir other_dir --action hardlink --json
+filematcher master_dir other_dir --action hardlink --execute --yes --json
 ```
 
 | Field | Type | Description |
@@ -81,46 +81,46 @@ filematcher dir1 dir2 --action hardlink --execute --yes --json
 
 ```bash
 # List matching file pairs (first match from each directory)
-filematcher dir1 dir2 --json | \
+filematcher master_dir other_dir --json | \
   jq -r '.matches[] | "\(.filesDir1[0]) <-> \(.filesDir2[0])"'
 
 # Get match count
-filematcher dir1 dir2 --json | jq '.summary.matchCount'
+filematcher master_dir other_dir --json | jq '.summary.matchCount'
 
-# List all matched files from dir1
-filematcher dir1 dir2 --json | jq -r '.matches[].filesDir1[]'
+# List all matched files from master_dir
+filematcher master_dir other_dir --json | jq -r '.matches[].filesDir1[]'
 
 # Show matches with file count per group
-filematcher dir1 dir2 --json | \
-  jq -r '.matches[] | "\(.filesDir1 | length) in dir1, \(.filesDir2 | length) in dir2: \(.hash[:12])..."'
+filematcher master_dir other_dir --json | \
+  jq -r '.matches[] | "\(.filesDir1 | length) in master, \(.filesDir2 | length) in other: \(.hash[:12])..."'
 ```
 
 ### Action Mode (Preview)
 
 ```bash
 # Summary with human-readable space savings
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq '{groups: .statistics.groupCount, files: .statistics.duplicateCount,
        savings_mb: (.statistics.spaceSavingsBytes / 1048576 | floor)}'
 
 # List duplicate paths (one per line)
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq -r '.duplicateGroups[].duplicates[].path'
 
 # Show master → duplicate mappings
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq -r '.duplicateGroups[] | "\(.masterFile) -> \(.duplicates[].path)"'
 
 # Find large duplicates (>100MB)
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq -r '.duplicateGroups[].duplicates[] | select(.sizeBytes > 104857600) | .path'
 
 # List cross-filesystem files (can't hardlink)
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq -r '.duplicateGroups[].duplicates[] | select(.crossFilesystem) | .path'
 
 # Count duplicates by extension
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq -r '[.duplicateGroups[].duplicates[].path | split(".") | .[-1]] | group_by(.) | map({ext: .[0], count: length}) | sort_by(-.count)[]'
 ```
 
@@ -128,16 +128,16 @@ filematcher dir1 dir2 --action hardlink --json | \
 
 ```bash
 # Get execution summary
-filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+filematcher master_dir other_dir --action hardlink --execute --yes --json | \
   jq '{success: .execution.successCount, failed: .execution.failureCount,
        skipped: .execution.skippedCount, saved_mb: (.execution.spaceSavedBytes / 1048576 | floor)}'
 
 # List failures with error messages
-filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+filematcher master_dir other_dir --action hardlink --execute --yes --json | \
   jq -r '.execution.failures[] | "\(.path): \(.error)"'
 
 # Check if all operations succeeded
-filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+filematcher master_dir other_dir --action hardlink --execute --yes --json | \
   jq '.execution.failureCount == 0'
 ```
 

@@ -25,10 +25,10 @@ Deduplicate files by content, not name. Reclaim space with hardlinks/symlinks wh
 
 ```bash
 pip install .                # Install
-filematcher dir1 dir2        # Run
+filematcher master_dir other_dir        # Run
 
 # Or run directly
-python file_matcher.py dir1 dir2
+python file_matcher.py master_dir other_dir
 
 # Development
 pip install -e .
@@ -38,16 +38,16 @@ pip install -e .
 
 ```bash
 # Find matching files
-filematcher dir1 dir2
+filematcher master_dir other_dir
 
 # Preview deduplication (safe - no changes made)
-filematcher dir1 dir2 --action hardlink
+filematcher master_dir other_dir --action hardlink
 
 # Execute deduplication (interactive confirmation)
-filematcher dir1 dir2 --action hardlink --execute
+filematcher master_dir other_dir --action hardlink --execute
 
 # Execute without prompts (for scripts)
-filematcher dir1 dir2 --action hardlink --execute --yes
+filematcher master_dir other_dir --action hardlink --execute --yes
 ```
 
 ## Usage
@@ -55,28 +55,28 @@ filematcher dir1 dir2 --action hardlink --execute --yes
 ### Finding Duplicates
 
 ```bash
-filematcher dir1 dir2                    # Basic comparison
-filematcher dir1 dir2 --different-names-only  # Only different filenames
-filematcher dir1 dir2 --show-unmatched   # Include unmatched files
-filematcher dir1 dir2 --summary          # Counts only
-filematcher dir1 dir2 --fast             # Fast mode for large files
-filematcher dir1 dir2 --hash sha256      # Use SHA-256 instead of MD5
+filematcher master_dir other_dir                    # Basic comparison
+filematcher master_dir other_dir --different-names-only  # Only different filenames
+filematcher master_dir other_dir --show-unmatched   # Include unmatched files
+filematcher master_dir other_dir --summary          # Counts only
+filematcher master_dir other_dir --fast             # Fast mode for large files
+filematcher master_dir other_dir --hash sha256      # Use SHA-256 instead of MD5
 ```
 
 ### Deduplicating
 
-The first directory is the **master** (files preserved). Duplicates in dir2 are replaced/deleted.
+The first directory is the **master** (files preserved). Duplicates in the other directory are replaced/deleted.
 
 ```bash
 # Preview (default - no changes)
-filematcher dir1 dir2 --action hardlink
-filematcher dir1 dir2 --action symlink
-filematcher dir1 dir2 --action delete
+filematcher master_dir other_dir --action hardlink
+filematcher master_dir other_dir --action symlink
+filematcher master_dir other_dir --action delete
 
 # Execute
-filematcher dir1 dir2 --action hardlink --execute
-filematcher dir1 dir2 --action hardlink --execute --yes    # Skip prompts
-filematcher dir1 dir2 --action hardlink --execute --log changes.log
+filematcher master_dir other_dir --action hardlink --execute
+filematcher master_dir other_dir --action hardlink --execute --yes    # Skip prompts
+filematcher master_dir other_dir --action hardlink --execute --log changes.log
 ```
 
 ### Interactive Mode
@@ -96,11 +96,11 @@ When running `--execute` without `--yes`, you're prompted for each group:
 
 ```bash
 # Cross-filesystem: fall back to symlink when hardlink fails
-filematcher dir1 dir2 --action hardlink --fallback-symlink --execute
+filematcher master_dir other_dir --action hardlink --fallback-symlink --execute
 
 # Target directory: create links in a new location, preserving duplicate filenames
-# e.g., dir2/movies/film.mkv → /backup/movies/film.mkv (linked to master)
-filematcher dir1 dir2 --action hardlink --target-dir /backup --execute
+# e.g., other_dir/movies/film.mkv → /backup/movies/film.mkv (linked to master)
+filematcher master_dir other_dir --action hardlink --target-dir /backup --execute
 ```
 
 ## Command-Line Reference
@@ -118,7 +118,7 @@ filematcher dir1 dir2 --action hardlink --target-dir /backup --execute
 | `--verbose` | `-v` | Show detailed progress |
 | `--log` | `-l` | Custom audit log path |
 | `--fallback-symlink` | | Use symlink if hardlink fails (cross-filesystem) |
-| `--target-dir` | `-t` | Create links in new location (preserves dir2 structure/names) |
+| `--target-dir` | `-t` | Create links in new location (preserves other_dir structure/names) |
 | `--json` | `-j` | JSON output (see [JSON_SCHEMA.md](JSON_SCHEMA.md)) |
 | `--quiet` | `-q` | Suppress progress messages |
 | `--color` | | Force color output |
@@ -130,29 +130,29 @@ Use `--json` for machine-readable output. See [JSON_SCHEMA.md](JSON_SCHEMA.md) f
 
 ```bash
 # Count matches and show space savings (human-readable)
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq '{groups: .statistics.groupCount, files: .statistics.duplicateCount,
        savings_mb: (.statistics.spaceSavingsBytes / 1048576 | floor)}'
 
 # List all duplicate paths (one per line)
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq -r '.duplicateGroups[].duplicates[].path'
 
 # Show master → duplicate mappings
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq -r '.duplicateGroups[] | "\(.masterFile) -> \(.duplicates[].path)"'
 
 # Find large duplicates (>100MB)
-filematcher dir1 dir2 --action hardlink --json | \
+filematcher master_dir other_dir --action hardlink --json | \
   jq -r '.duplicateGroups[].duplicates[] | select(.sizeBytes > 104857600) | .path'
 
 # Get execution results
-filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+filematcher master_dir other_dir --action hardlink --execute --yes --json | \
   jq '{success: .execution.successCount, failed: .execution.failureCount,
        saved_mb: (.execution.spaceSavedBytes / 1048576 | floor)}'
 
 # List failures with error messages
-filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+filematcher master_dir other_dir --action hardlink --execute --yes --json | \
   jq -r '.execution.failures[] | "\(.path): \(.error)"'
 ```
 
@@ -176,7 +176,7 @@ All modifications are logged:
 Timestamp: 2026-01-20T10:30:00
 Action: hardlink
 ==============================
-[2026-01-20T10:30:01] HARDLINK /dir2/dup.txt -> /dir1/master.txt (1.2 KB) OK
+[2026-01-20T10:30:01] HARDLINK /other_dir/dup.txt -> /master_dir/file.txt (1.2 KB) OK
 ==============================
 Completed: 2 successful, 0 failed
 Space reclaimed: 2.4 KB
