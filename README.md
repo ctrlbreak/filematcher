@@ -92,6 +92,52 @@ When running `--execute` without `--yes`, you're prompted for each group:
 - `a` — Execute all remaining without prompting
 - `q` — Quit immediately
 
+### Sample Output
+
+**Preview mode** (`--action hardlink`):
+
+```
+=== PREVIEW MODE ===                              (yellow, bold)
+Action: hardlink | Groups: 3 | Files: 5 | Space: 24.5 MB
+
+[MASTER] /media/movies/Inception.mkv (1.2 GB)     (green)
+    [WOULD HARDLINK] /downloads/inception.mkv     (yellow)
+
+[MASTER] /media/movies/Matrix.mkv (950 MB)        (green)
+    [WOULD HARDLINK] /downloads/the_matrix.mkv    (yellow)
+    [WOULD HARDLINK] /old_backup/Matrix.mkv       (yellow)
+
+--- Statistics ---                                (cyan)
+Duplicate groups: 3
+Space to be reclaimed: 24.5 MB
+
+Use --execute to apply changes
+```
+
+**Execute mode** (`--action hardlink --execute`):
+
+```
+=== EXECUTE MODE ===                              (cyan, bold)
+Action: hardlink | Groups: 3 | Files: 5 | Space: 24.5 MB
+
+[MASTER] /media/movies/Inception.mkv (1.2 GB)     (green)
+    [WILL HARDLINK] /downloads/inception.mkv      (yellow)
+
+[1/3] Hardlink this group? [y/n/a/q]: y
+✓ Confirmed - hardlinked 1 file                   (green)
+
+[MASTER] /media/movies/Matrix.mkv (950 MB)        (green)
+    [WILL HARDLINK] /downloads/the_matrix.mkv     (yellow)
+    [WILL HARDLINK] /old_backup/Matrix.mkv        (yellow)
+
+[2/3] Hardlink this group? [y/n/a/q]: n
+✗ Skipped                                         (yellow)
+
+=== Execution Complete ===
+Succeeded: 1 | Failed: 0 | Skipped: 1
+Space freed: 1.2 GB
+```
+
 ### Advanced Options
 
 ```bash
