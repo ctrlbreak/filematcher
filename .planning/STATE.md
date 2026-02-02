@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-01-31)
 
 **Core value:** Safely deduplicate files across directories while preserving the master copy and logging all changes.
-**Current focus:** v1.5 shipped — planning next milestone
+**Current focus:** v1.5.1 shipped — planning next milestone
 
 ## Current Position
 
 Phase: N/A (between milestones)
 Plan: N/A
 Status: Ready for next milestone
-Last activity: 2026-01-31 - Completed quick task 018: Reduce main() complexity
+Last activity: 2026-02-02 - Completed quick task 019: GitHub release v1.5.1
 
 Progress: Milestone v1.5 shipped
 
@@ -71,6 +71,7 @@ None.
 | 016 | Code quality review and improvement suggestions | 2026-01-31 | ff7f28d | [016-check-the-codebase-for-good-coding-pract](./quick/016-check-the-codebase-for-good-coding-pract/) |
 | 017 | Code quality improvements (from 016 review) | 2026-01-31 | 0a72b30 | [017-implement-code-quality-improvements](./quick/017-implement-code-quality-improvements/) |
 | 018 | Reduce main() complexity (425 -> 145 lines) | 2026-01-31 | 9201d49 | [018-improve-the-complexity-of-the-main-funct](./quick/018-improve-the-complexity-of-the-main-funct/) |
+| 019 | GitHub release v1.5.1 with docs update | 2026-02-02 | f2dca08 | [019-github-release-v151-with-docs-update](./quick/019-github-release-v151-with-docs-update/) |
 
 ## Next Steps
 
@@ -80,4 +81,4 @@ Start next milestone with `/gsd:new-milestone` to:
 3. Create new ROADMAP.md
 
 ---
-*Last updated: 2026-01-31 - Quick task 018 complete*
+*Last updated: 2026-02-02 - Quick task 019 complete*
