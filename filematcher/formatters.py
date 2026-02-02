@@ -864,9 +864,7 @@ class TextActionFormatter(ActionFormatter):
                 # Cursor now at start of cleared prompt line - next output overwrites it
             else:
                 # No prompt line - move up to duplicate line, print status, move back down
-                print(f"\033[{rows_up}A\r{symbol}   \033[{rows_up}B", end="")
-                # Cursor now at the line after the group - print newline for next group
-                print()
+                print(f"\033[{rows_up}A\r{symbol}   \033[{rows_up}B", end="", flush=True)
         else:
             # Fallback: print on current line
             print(symbol)
