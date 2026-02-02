@@ -77,22 +77,68 @@ filematcher dir1 dir2 --action hardlink --execute --yes --json
 
 ## jq Examples
 
+### Compare Mode
+
 ```bash
-# List matching file pairs
-filematcher dir1 dir2 --json | jq -r '.matches[] | "\(.filesDir1[0]) <-> \(.filesDir2[0])"'
+# List matching file pairs (first match from each directory)
+filematcher dir1 dir2 --json | \
+  jq -r '.matches[] | "\(.filesDir1[0]) <-> \(.filesDir2[0])"'
 
 # Get match count
 filematcher dir1 dir2 --json | jq '.summary.matchCount'
 
-# Space savings in MB
-filematcher dir1 dir2 --action hardlink --json | jq '.statistics.spaceSavingsBytes / 1048576'
+# List all matched files from dir1
+filematcher dir1 dir2 --json | jq -r '.matches[].filesDir1[]'
 
-# List duplicate paths
-filematcher dir1 dir2 --action hardlink --json | jq -r '.duplicateGroups[].duplicates[].path'
+# Show matches with file count per group
+filematcher dir1 dir2 --json | \
+  jq -r '.matches[] | "\(.filesDir1 | length) in dir1, \(.filesDir2 | length) in dir2: \(.hash[:12])..."'
+```
 
-# Execution summary
+### Action Mode (Preview)
+
+```bash
+# Summary with human-readable space savings
+filematcher dir1 dir2 --action hardlink --json | \
+  jq '{groups: .statistics.groupCount, files: .statistics.duplicateCount,
+       savings_mb: (.statistics.spaceSavingsBytes / 1048576 | floor)}'
+
+# List duplicate paths (one per line)
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '.duplicateGroups[].duplicates[].path'
+
+# Show master → duplicate mappings
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '.duplicateGroups[] | "\(.masterFile) -> \(.duplicates[].path)"'
+
+# Find large duplicates (>100MB)
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '.duplicateGroups[].duplicates[] | select(.sizeBytes > 104857600) | .path'
+
+# List cross-filesystem files (can't hardlink)
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '.duplicateGroups[].duplicates[] | select(.crossFilesystem) | .path'
+
+# Count duplicates by extension
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '[.duplicateGroups[].duplicates[].path | split(".") | .[-1]] | group_by(.) | map({ext: .[0], count: length}) | sort_by(-.count)[]'
+```
+
+### Execution Results
+
+```bash
+# Get execution summary
 filematcher dir1 dir2 --action hardlink --execute --yes --json | \
-  jq '{success: .execution.successCount, failed: .execution.failureCount}'
+  jq '{success: .execution.successCount, failed: .execution.failureCount,
+       skipped: .execution.skippedCount, saved_mb: (.execution.spaceSavedBytes / 1048576 | floor)}'
+
+# List failures with error messages
+filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+  jq -r '.execution.failures[] | "\(.path): \(.error)"'
+
+# Check if all operations succeeded
+filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+  jq '.execution.failureCount == 0'
 ```
 
 ## Notes

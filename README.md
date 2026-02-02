@@ -129,15 +129,31 @@ filematcher dir1 dir2 --action hardlink --target-dir /backup --execute
 Use `--json` for machine-readable output. See [JSON_SCHEMA.md](JSON_SCHEMA.md) for full schema.
 
 ```bash
-# Get space savings
-filematcher dir1 dir2 --action hardlink --json | jq '.statistics.spaceSavingsBytes'
+# Count matches and show space savings (human-readable)
+filematcher dir1 dir2 --action hardlink --json | \
+  jq '{groups: .statistics.groupCount, files: .statistics.duplicateCount,
+       savings_mb: (.statistics.spaceSavingsBytes / 1048576 | floor)}'
 
-# List duplicate paths
-filematcher dir1 dir2 --action hardlink --json | jq -r '.duplicateGroups[].duplicates[].path'
+# List all duplicate paths (one per line)
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '.duplicateGroups[].duplicates[].path'
 
-# Execution summary
+# Show master → duplicate mappings
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '.duplicateGroups[] | "\(.masterFile) -> \(.duplicates[].path)"'
+
+# Find large duplicates (>100MB)
+filematcher dir1 dir2 --action hardlink --json | \
+  jq -r '.duplicateGroups[].duplicates[] | select(.sizeBytes > 104857600) | .path'
+
+# Get execution results
 filematcher dir1 dir2 --action hardlink --execute --yes --json | \
-  jq '{success: .execution.successCount, failed: .execution.failureCount}'
+  jq '{success: .execution.successCount, failed: .execution.failureCount,
+       saved_mb: (.execution.spaceSavedBytes / 1048576 | floor)}'
+
+# List failures with error messages
+filematcher dir1 dir2 --action hardlink --execute --yes --json | \
+  jq -r '.execution.failures[] | "\(.path): \(.error)"'
 ```
 
 Note: `--json --execute` requires `--yes` (no interactive prompts in JSON mode).
